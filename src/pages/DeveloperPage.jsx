@@ -8,7 +8,8 @@ import { ArrowLeft, ArrowUpRight, Mail, Zap, Sparkles, Code2, Palette, Rocket, H
 /* ============ 3D PARTICLE FIELD ============ */
 function ParticleUniverse() {
   const ref = useRef()
-  const count = 2200
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  const count = isMobile ? 400 : 2000
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -20,7 +21,7 @@ function ParticleUniverse() {
       arr[i * 3 + 2] = r * Math.cos(phi)
     }
     return arr
-  }, [])
+  }, [count])
   useFrame((s) => {
     if (!ref.current) return
     ref.current.rotation.y = s.clock.elapsedTime * 0.04
@@ -31,7 +32,7 @@ function ParticleUniverse() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.025} color="#CCFF00" sizeAttenuation transparent opacity={0.7} />
+      <pointsMaterial size={isMobile ? 0.03 : 0.025} color="#CCFF00" sizeAttenuation transparent opacity={0.7} />
     </points>
   )
 }
@@ -253,8 +254,8 @@ export default function DeveloperPage() {
 
         {/* HERO */}
         <section className="relative min-h-[100vh] flex items-center overflow-hidden">
-          <div className="absolute inset-0">
-            <Canvas camera={{ position: [0, 0, 7], fov: 50 }} dpr={[1, 1.6]} className="!absolute inset-0">
+          <div className="absolute inset-0 pointer-events-none">
+            <Canvas camera={{ position: [0, 0, 7], fov: 50 }} dpr={[1, 1.4]} className="!absolute inset-0 pointer-events-none">
               <ambientLight intensity={0.5} />
               <directionalLight position={[4, 5, 4]} intensity={1.1} />
               <pointLight position={[-5, -4, -4]} color="#7000FF" intensity={2.4} />

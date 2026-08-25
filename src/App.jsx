@@ -21,7 +21,12 @@ function useScrollProgress() {
   const [progress, setProgress] = useState(0)
   useEffect(() => {
     const onScroll = () => {
-      const scrolled = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight
+      if (scrollable <= 0) {
+        setProgress(0)
+        return
+      }
+      const scrolled = window.scrollY / scrollable
       setProgress(Math.min(1, Math.max(0, scrolled)))
     }
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -35,18 +40,22 @@ function useActiveSection(ids) {
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) setActive('#' + e.target.id) })
-    }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 })
+    }, { rootMargin: '-30% 0px -30% 0px', threshold: 0 })
     ids.forEach(id => { const el = document.querySelector(id); if (el) obs.observe(el) })
     return () => obs.disconnect()
   }, [ids])
   return active
 }
 function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth <= breakpoint
+  })
   useEffect(() => {
-    const mql = window.matchMedia(`(max-width:${breakpoint}px)`)
-    const onChange = () => setIsMobile(mql.matches || 'ontouchstart' in window)
-    onChange(); mql.addEventListener('change', onChange)
+    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`)
+    const onChange = () => setIsMobile(mql.matches)
+    onChange()
+    mql.addEventListener('change', onChange)
     return () => mql.removeEventListener('change', onChange)
   }, [breakpoint])
   return isMobile
@@ -398,8 +407,8 @@ function FloatingShape() {
   return (
     <Float speed={isMobile ? 0.8 : 1.5} rotationIntensity={isMobile ? 0.4 : 0.8} floatIntensity={isMobile ? 0.8 : 1.5}>
       <mesh ref={meshRef} scale={isMobile ? 1.25 : 1.7}>
-        <torusKnotGeometry args={[1, 0.28, isMobile ? 64 : 128, isMobile ? 16 : 32]} />
-        <MeshDistortMaterial color="#CCFF00" roughness={0.08} metalness={0.95} distort={0.35} speed={1.8} emissive="#CCFF00" emissiveIntensity={0.15} />
+        <torusKnotGeometry args={[1, 0.28, isMobile ? 48 : 128, isMobile ? 12 : 32]} />
+        <MeshDistortMaterial color="#CCFF00" roughness={0.08} metalness={0.95} distort={isMobile ? 0.2 : 0.35} speed={isMobile ? 1.2 : 1.8} emissive="#CCFF00" emissiveIntensity={0.15} />
       </mesh>
     </Float>
   )
@@ -408,7 +417,7 @@ function ParticleField() {
   const pointsRef = useRef()
   const isMobile = useIsMobile()
   const reduced = usePrefersReducedMotion()
-  const count = isMobile ? 600 : 1800
+  const count = isMobile ? 250 : 1600
   const particles = useMemo(() => {
     const arr = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) { arr[i * 3] = (Math.random() - 0.5) * 22; arr[i * 3 + 1] = (Math.random() - 0.5) * 22; arr[i * 3 + 2] = (Math.random() - 0.5) * 22 }
@@ -419,7 +428,7 @@ function ParticleField() {
   return (
     <points ref={pointsRef}>
       <bufferGeometry><bufferAttribute attach="attributes-position" count={count} array={particles} itemSize={3} /></bufferGeometry>
-      <pointsMaterial size={isMobile ? 0.022 : 0.018} color="#7000FF" sizeAttenuation transparent opacity={isMobile ? 0.4 : 0.55} />
+      <pointsMaterial size={isMobile ? 0.025 : 0.018} color="#7000FF" sizeAttenuation transparent opacity={isMobile ? 0.4 : 0.55} />
     </points>
   )
 }
@@ -637,8 +646,8 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
   return (
     <section ref={ref} id="hero" className="relative min-h-[88vh] sm:min-h-[92vh] overflow-hidden bg-[#08080A] flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* 3D BG - hidden on very small or reduced motion, dpr capped */}
-      <div className="absolute inset-0" aria-hidden>
-        <Canvas camera={{ position: [0, 0, 6], fov: 45 }} dpr={[1, isMobile ? 1.4 : 2]} gl={{ antialias: !isMobile, powerPreference: 'high-performance' }} className="!absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <Canvas camera={{ position: [0, 0, 6], fov: 45 }} dpr={[1, isMobile ? 1 : 1.75]} gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }} className="!absolute inset-0 pointer-events-none">
           <ambientLight intensity={0.5} /><directionalLight position={[5, 5, 5]} intensity={1} /><pointLight position={[-5, -5, -5]} color="#7000FF" intensity={2} />
           <ParticleField /><FloatingShape /><Environment preset="city" />
         </Canvas>
@@ -811,7 +820,7 @@ function LabsPin() {
   const { scrollYProgress } = useScroll({ target: wrapRef, offset: ["start start", "end end"] })
   const x = useTransform(scrollYProgress, [0, 1], ["0%", "-72%"])
   const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
-  const isMobile = useIsMobile(768)
+  const isMobile = useIsMobile(1024)
   const labs = [
     { icon: Cpu, title: 'VLSI SILICON', sub: '45nm • RISC-V • FPGA', desc: 'Custom 32-bit cores on Artix-7, synthesis to tape-out mindset.', color: '#CCFF00', img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=80', stats: '120+ PROTOTYPES' },
     { icon: Bot, title: 'ROBOTICS ARENA', sub: 'ROS 2 • LiDAR • ROVER', desc: 'Autonomous rovers, obstacle avoidance, search & rescue demos.', color: '#7000FF', img: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=900&q=80', stats: '24H HACKATHON' },
@@ -820,16 +829,16 @@ function LabsPin() {
   ]
   if (isMobile) {
     return (
-      <section className="bg-[#08080A] py-12 relative overflow-hidden">
-        <div className="px-4">
-          <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] mb-3"><Waves className="w-3.5 h-3.5" /> LABS — SCROLL TO EXPLORE</div>
-          <h2 className="font-display font-[800] text-[32px] leading-none tracking-tighter"><span className="text-white">FOUR LABS.</span> <span className="text-stroke">ONE MISSION.</span></h2>
+      <section className="bg-[#08080A] py-12 sm:py-16 relative overflow-hidden">
+        <div className="px-4 sm:px-6">
+          <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] mb-3"><Waves className="w-3.5 h-3.5" /> LABS — SWIPE TO EXPLORE</div>
+          <h2 className="font-display font-[800] text-[32px] sm:text-[40px] leading-none tracking-tighter"><span className="text-white">FOUR LABS.</span> <span className="text-stroke">ONE MISSION.</span></h2>
         </div>
-        <div className="mt-6 flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 pb-4">
+        <div className="mt-6 flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 sm:px-6 pb-4 touch-pan-x">
           {labs.map(l => {
             const Icon = l.icon
             return (
-              <div key={l.title} className="snap-center shrink-0 w-[84vw] max-w-[360px] rounded-[24px] overflow-hidden bg-[#111] border border-white/10">
+              <div key={l.title} className="snap-center shrink-0 w-[84vw] max-w-[360px] rounded-[24px] overflow-hidden bg-[#111] border border-white/10 shadow-lg">
                 <div className="h-44 relative overflow-hidden"><img src={l.img} alt={l.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" /><div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" /><span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{l.sub}</span><span className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-white text-black grid place-items-center"><Icon className="w-4 h-4" /></span></div>
                 <div className="p-5"><div className="text-[11px] font-mono tracking-widest" style={{ color: l.color }}>{l.stats}</div><h3 className="font-display font-black text-xl leading-none mt-1">{l.title}</h3><p className="text-sm text-white/60 mt-2 leading-relaxed">{l.desc}</p></div>
               </div>
@@ -1442,36 +1451,6 @@ function AchievementsSection() {
           </div>
         </div>
       </div>
-      {/* Keep original grid for fallback SEO / no-js - hidden */}
-      <div className="hidden" aria-hidden><div className="grid md:grid-cols-2 gap-5" /></div>
-        <div className="grid md:grid-cols-2 gap-5">
-          {ACHIEVEMENTS.map((a, idx) => {
-            const Icon = a.icon, isPatent = a.index === '02'
-            return (
-              <TiltCard key={a.index} intensity={7} className="h-full">
-              <GlareCard className="h-full rounded-[24px]">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: idx * 0.07 }} onClick={() => isPatent && setPatentOpen(true)} className={`glare-card group relative h-full rounded-[24px] bg-[#111] border border-white/10 p-6 md:p-8 flex flex-col gap-6 overflow-hidden hover:border-white/20 transition-colors ${isPatent ? 'cursor-pointer hover:border-[#CCFF00]/40 hover:shadow-[0_0_40px_rgba(204,255,0,0.12)]' : ''}`}>
-                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)`, backgroundSize: '18px 18px' }} aria-hidden />
-                <div className="absolute bottom-2 right-4 text-[92px] font-display font-black leading-none text-white/[0.03] group-hover:text-white/[0.05] transition-colors select-none">{a.index}</div>
-                {isPatent && <div className="absolute top-4 right-4 w-2 h-2 bg-[#CCFF00] rounded-full animate-ping" aria-hidden />}
-                <div className="relative space-y-4">
-                  <div className="flex justify-between items-start gap-2">
-                    <span className="text-[10px] font-black tracking-widest px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 backdrop-blur">{a.type}</span>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full bg-white text-black shadow-sm"><Star className="w-3.5 h-3.5 text-[#FFB800] fill-[#FFB800]" />{a.metric}</span>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="w-[52px] h-[52px] rounded-2xl bg-white/5 border border-white/10 grid place-items-center shrink-0 group-hover:bg-[#CCFF00] group-hover:border-[#CCFF00] group-hover:text-black transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"><Icon className="w-6 h-6" style={{ color: isPatent ? '#CCFF00' : a.color }} /></div>
-                    <div className="min-w-0"><h3 className="font-display font-black text-[17px] sm:text-lg leading-tight line-clamp-2">{a.title}</h3><p className="text-xs font-mono font-bold text-[#CCFF00] mt-1 truncate">{a.team}</p></div>
-                  </div>
-                  <p className="text-sm text-white/60 leading-relaxed line-clamp-3">{a.desc}</p>
-                </div>
-                <div className="relative mt-auto pt-4 border-t border-white/10 flex justify-between text-xs font-mono text-white/30"><span className="flex items-center gap-2"><span className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse shadow-[0_0_8px_#00FF88]" /> VERIFIED MILESTONE {isPatent && '• CLICK TO VERIFY'}</span><ExternalLink className="w-4 h-4 group-hover:text-white group-hover:translate-x-0.5 transition-all" /></div>
-              </motion.div>
-              </GlareCard>
-              </TiltCard>
-            )
-          })}
-        </div>
       <AnimatePresence>
         {patentOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setPatentOpen(false)}>
           <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-md rounded-[24px] bg-[#0F0F0F] border-2 border-[#CCFF00]/30 p-7 space-y-5" onClick={e => e.stopPropagation()}>
@@ -2056,15 +2035,22 @@ export default function App() {
   }
   useEffect(() => {
     if (reduced) return
+    const isTouchDevice = typeof window !== 'undefined' && (
+      window.matchMedia('(max-width: 1024px)').matches ||
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0
+    )
+    if (isTouchDevice) {
+      // On mobile/touch devices, use native hardware-accelerated momentum scrolling (120Hz/60Hz)
+      return
+    }
     const lenis = new Lenis({
       duration: 1.15,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      touchMultiplier: 1.15,
-      syncTouch: true,
-      syncTouchLerp: 0.075,
-      gestureOrientation: 'both',
-      touchInertiaMultiplier: 28,
+      syncTouch: false,
+      touchMultiplier: 0,
+      gestureOrientation: 'vertical',
     })
     // expose for Framer useScroll sync
     // @ts-ignore
