@@ -777,7 +777,7 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
           <span className="px-3 py-2 sm:py-1.5 rounded-full bg-[#CCFF00] text-black font-black tracking-widest text-[10px] min-h-[36px] flex items-center">1,500+ STUDENTS</span>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 sm:gap-8 items-start lg:items-center">
+        <div className="max-w-4xl">
           <div className="min-w-0">
             <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }} className="font-display font-[800] leading-[0.88] tracking-[-0.04em] text-[9.6vw] xs:text-[10vw] sm:text-[9vw] lg:text-[68px] xl:text-[80px]">
               <KineticLine delay={0.2} className="text-white">Architecting</KineticLine>
@@ -818,80 +818,6 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
               <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[#CCFF00] rounded-full" /> DEPT: <strong className="text-white">ECE</strong></span><span>•</span><span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[#FFB800] rounded-full" /> CAMPUS: <strong className="text-white">PIET</strong></span><span>•</span><span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[#7000FF] rounded-full" /> STUDENTS: <strong className="text-white">1,500+</strong></span>
             </div>
           </div>
-
-          {/* Silicon Core Card — REIMAGINED (matches reference: grid + chip + live telemetry) */}
-          <motion.div initial={{ opacity: 0, scale: 0.96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.8, ease: [0.76, 0, 0.24, 1] }} className="relative lg:h-[520px] flex items-center justify-center mt-2 lg:mt-0">
-            <TiltCard intensity={9} className={`conic-border relative w-full max-w-[420px] aspect-[4/3.15] sm:aspect-[4/3.05] rounded-[30px] sm:rounded-[32px] bg-[#0A0A0A] border border-white/[0.09] shadow-[0_24px_64px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)_inset] p-[1.5px] flex flex-col ${isMobile ? 'animate-float-slow' : ''}`}>
-              {/* Lime outer glow */}
-              <div className="absolute -top-28 -right-28 w-[420px] h-[420px] bg-[#CCFF00]/[0.09] rounded-full blur-[90px] pointer-events-none" aria-hidden />
-              <div className="absolute -bottom-28 -left-28 w-[520px] h-[520px] bg-[#7000FF]/[0.08] rounded-full blur-[110px] pointer-events-none" aria-hidden />
-              {/* Inner card */}
-              <div className="relative flex-1 rounded-[29px] sm:rounded-[31px] bg-gradient-to-br from-[#0E0E0E] via-[#0A0A0A] to-black overflow-hidden flex flex-col p-5 sm:p-6">
-                {/* Subtle green wash like reference */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1A1F0A]/40 via-transparent to-[#1A0E2E]/30 pointer-events-none" aria-hidden />
-                <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)`, backgroundSize: '28px 28px' }} aria-hidden />
-                <div className="relative flex justify-between items-center">
-                  <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.28em] text-white/35 font-medium">SILICON CORE // 01</span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CCFF00] text-black text-[10px] font-black tracking-widest shadow-[0_0_18px_rgba(204,255,0,0.45)]"><span className="w-[7px] h-[7px] rounded-full bg-black animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.4)]" aria-hidden /> LIVE</span>
-                </div>
-                {/* Center chip stage */}
-                <div className="relative mt-5 sm:mt-6 flex-1 grid place-items-center">
-                  {/* Corner brackets */}
-                  <div className="absolute top-2 left-2 w-4 h-4 border-t-[1.5px] border-l-[1.5px] border-white/10 rounded-tl-lg" aria-hidden />
-                  <div className="absolute top-2 right-2 w-4 h-4 border-t-[1.5px] border-r-[1.5px] border-white/10 rounded-tr-lg" aria-hidden />
-                  <div className="absolute bottom-2 left-2 w-4 h-4 border-b-[1.5px] border-l-[1.5px] border-white/10 rounded-bl-lg" aria-hidden />
-                  <div className="absolute bottom-2 right-2 w-4 h-4 border-b-[1.5px] border-r-[1.5px] border-white/10 rounded-br-lg" aria-hidden />
-                  <div className="relative w-[172px] h-[172px] sm:w-[184px] sm:h-[184px] rounded-[28px] bg-[#0A0A0A] border border-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_30px_rgba(0,0,0,0.5)] grid place-items-center overflow-hidden">
-                    {/* Lime grid */}
-                    <div className="absolute inset-[10px] rounded-[20px] overflow-hidden opacity-[0.95]">
-                      <div className="absolute inset-0 opacity-[0.9]" style={{ backgroundImage: `linear-gradient(#CCFF00 1px, transparent 1px), linear-gradient(90deg, #CCFF00 1px, transparent 1px)`, backgroundSize: '18px 18px' }} aria-hidden />
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20" aria-hidden />
-                      {/* Scanning line */}
-                      <motion.div animate={{ y: [0, 152, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }} className="absolute left-0 right-0 h-[2px] bg-[#CCFF00] shadow-[0_0_12px_#CCFF00,0_0_30px_rgba(204,255,0,0.5)] opacity-80" style={{ top: 0 }} aria-hidden />
-                    </div>
-                    {/* Chip */}
-                    <div className="relative z-10 w-[78px] h-[78px] sm:w-[84px] sm:h-[84px] grid place-items-center">
-                      {/* Outer glow */}
-                      <div className="absolute inset-0 bg-[#CCFF00]/15 rounded-[18px] blur-[18px]" aria-hidden />
-                      {/* Chip body */}
-                      <div className="relative w-full h-full rounded-[16px] bg-[#0F0F0F] border border-[#CCFF00]/20 shadow-[0_0_24px_rgba(204,255,0,0.18)] grid place-items-center overflow-hidden">
-                        {/* Pins */}
-                        <div className="absolute -left-[3px] top-1/2 -translate-y-1/2 flex flex-col gap-[7px]" aria-hidden>{[...Array(5)].map((_, i) => <span key={i} className="w-[6px] h-[3px] bg-[#CCFF00] rounded-r-sm shadow-[0_0_6px_#CCFF00]" />)}</div>
-                        <div className="absolute -right-[3px] top-1/2 -translate-y-1/2 flex flex-col gap-[7px]" aria-hidden>{[...Array(5)].map((_, i) => <span key={i} className="w-[6px] h-[3px] bg-[#CCFF00] rounded-l-sm shadow-[0_0_6px_#CCFF00]" />)}</div>
-                        <div className="absolute left-1/2 -translate-x-1/2 -top-[3px] flex gap-[7px]" aria-hidden>{[...Array(5)].map((_, i) => <span key={i} className="w-[3px] h-[6px] bg-[#CCFF00] rounded-b-sm shadow-[0_0_6px_#CCFF00]" />)}</div>
-                        <div className="absolute left-1/2 -translate-x-1/2 -bottom-[3px] flex gap-[7px]" aria-hidden>{[...Array(5)].map((_, i) => <span key={i} className="w-[3px] h-[6px] bg-[#CCFF00] rounded-t-sm shadow-[0_0_6px_#CCFF00]" />)}</div>
-                        {/* Inner square */}
-                        <div className="w-[52px] h-[52px] sm:w-[56px] sm:h-[56px] rounded-[10px] bg-[#CCFF00] grid place-items-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
-                          <div className="w-[32px] h-[32px] sm:w-[34px] sm:h-[34px] rounded-[7px] border-[3px] border-black/90 bg-transparent grid place-items-center">
-                            <div className="w-[12px] h-[12px] rounded-[3px] bg-black" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Bottom progress */}
-                    <div className="absolute bottom-[14px] left-[14px] right-[14px] h-[3px] rounded-full bg-white/10 overflow-hidden">
-                      <motion.div animate={{ x: ['-100%', '0%'] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.4 }} className="h-full w-full bg-[#CCFF00] shadow-[0_0_10px_#CCFF00]" />
-                    </div>
-                  </div>
-                  {/* Live dot */}
-                  <div className="absolute -top-1 right-2 sm:right-4 flex items-center gap-2">
-                    <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]" /></span>
-                  </div>
-                </div>
-                {/* Bottom stats */}
-                <div className="relative grid grid-cols-3 gap-2 sm:gap-2.5 mt-4">
-                  {[
-                    { k: 'CORES', v: 'RISC-V 32b' },
-                    { k: 'FAB', v: '45nm' },
-                    { k: 'CLOCK', v: '240 MHz' },
-                  ].map(i => <div key={i.k} className="rounded-2xl bg-[#141414] border border-white/[0.06] p-2.5 sm:p-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"><div className="text-[8px] sm:text-[9px] font-mono font-bold tracking-[0.18em] text-white/35">{i.k}</div><div className="text-[11px] sm:text-xs font-black tracking-tight truncate mt-0.5">{i.v}</div></div>)}
-                </div>
-                <div className="relative mt-3 flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-white/35 border-t border-white/[0.06] pt-3">
-                  <span className="flex items-center gap-2"><span className="w-[7px] h-[7px] rounded-full bg-[#00FF88] shadow-[0_0_8px_#00FF88] animate-pulse" aria-hidden /> SYSTEM NOMINAL • 03 LABS ACTIVE</span><span className="hidden xs:inline text-white/20">PIET ECE LAB</span>
-                </div>
-              </div>
-            </TiltCard>
-          </motion.div>
         </div>
         <div className="hidden lg:flex flex-col items-center mt-8 gap-2 text-white/30">
           <span className="text-[9px] font-mono tracking-[0.25em]">SCROLL TO EXPLORE ARCHITECTURE</span>
