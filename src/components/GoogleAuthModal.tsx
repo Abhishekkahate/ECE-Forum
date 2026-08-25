@@ -14,6 +14,15 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({ isOpen, onClos
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleGoogleSignIn = async () => {
@@ -38,10 +47,12 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({ isOpen, onClos
     <div
       data-lenis-prevent
       onWheel={(e) => e.stopPropagation()}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-midnight-deep/90 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-[90] flex items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-midnight-deep/90 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-200"
+      onClick={onClose}
     >
       <div
         data-lenis-prevent
+        onClick={(e) => e.stopPropagation()}
         className="bg-midnight-lighter border border-white/[0.12] rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain shadow-[0_0_80px_rgba(0,0,0,0.9)] relative my-auto overflow-x-hidden"
       >
         {/* Holographic Top Glow */}

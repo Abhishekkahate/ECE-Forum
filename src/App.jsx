@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useInView } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useInView, useVelocity } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, MeshDistortMaterial, Environment } from '@react-three/drei'
 import Lenis from 'lenis'
@@ -79,6 +79,113 @@ function ProcessDot({ progress, index }) {
   const opacity = useTransform(progress, [index*0.25, index*0.25+0.15], [0.25, 1])
   const scale = useTransform(progress, [index*0.25, index*0.25+0.15], [0.9, 1])
   return <motion.div style={{ opacity, scale }} className="w-11 h-11 rounded-full bg-[#111] border border-white/10 grid place-items-center"><span className="w-2.5 h-2.5 rounded-full bg-[#CCFF00] shadow-[0_0_10px_#CCFF00]" /></motion.div>
+}
+
+// --- SIGNATURE MOTION PRIMITIVES ---
+function useMarqueeSkew() {
+  const { scrollY } = useScroll()
+  const velocity = useVelocity(scrollY)
+  const smooth = useSpring(velocity, { stiffness: 140, damping: 42, mass: 0.6 })
+  return useTransform(smooth, [-1500, 0, 1500], [-7, 0, 7], { clamp: true })
+}
+
+function KineticLine({ children, delay = 0, className = '' }) {
+  return (
+    <span className={`block overflow-hidden ${className}`}>
+      <motion.span className="block will-change-transform" initial={{ y: '112%' }} animate={{ y: 0 }} transition={{ duration: 0.95, ease: [0.76, 0, 0.24, 1], delay }}>
+        {children}
+      </motion.span>
+    </span>
+  )
+}
+
+const SCRAMBLE_GLYPHS = '!<>-_[]{}=+*^?#01'
+function ScrambleText({ text, className = '', duration = 850 }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-30px' })
+  const reduced = usePrefersReducedMotion()
+  const [out, setOut] = useState(text)
+  useEffect(() => {
+    if (!inView || reduced) return
+    let raf
+    const start = performance.now()
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / duration)
+      const settled = Math.floor(p * text.length)
+      let s = ''
+      for (let i = 0; i < text.length; i++) {
+        s += (i < settled || text[i] === ' ') ? text[i] : SCRAMBLE_GLYPHS[(i * 7 + Math.floor(p * 26)) % SCRAMBLE_GLYPHS.length]
+      }
+      setOut(s)
+      if (p < 1) raf = requestAnimationFrame(tick)
+      else setOut(text)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [inView, reduced, text, duration])
+  return <span ref={ref} className={className}>{out}</span>
+}
+
+function FlipUnit({ k, value, hl = false }) {
+  return (
+    <div className="text-center">
+      <div className="text-[9px] font-mono tracking-widest text-white/40 mb-1">{k}</div>
+      <div className={`relative w-[50px] xs:w-14 sm:w-16 h-[50px] xs:h-14 sm:h-16 rounded-2xl border flex items-center justify-center overflow-hidden font-display font-black text-xl xs:text-2xl sm:text-3xl ${hl ? 'bg-[#CCFF00] text-black border-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.4)]' : 'bg-white/5 border-white/10 text-white backdrop-blur'}`}>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span key={value} initial={{ y: '-85%' }} animate={{ y: 0 }} exit={{ y: '85%' }} transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }} className="absolute inset-0 grid place-items-center">{value}</motion.span>
+        </AnimatePresence>
+      </div>
+    </div>
+  )
+}
+
+// --- MOBILE FLOATING DOCK NAV (app-like quick jump + haptics) ---
+function MobileDock() {
+  const [visible, setVisible] = useState(false)
+  const items = [
+    { id: '#hero', label: 'Home', icon: Hexagon },
+    { id: '#events', label: 'Events', icon: Calendar },
+    { id: '#gallery', label: 'Archive', icon: ImageIcon },
+    { id: '#team', label: 'Team', icon: Users },
+    { id: '#contact', label: 'Contact', icon: Send },
+  ]
+  const active = useActiveSection(items.map(i => i.id))
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 480)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  const go = (id) => {
+    try { navigator.vibrate && navigator.vibrate(8) } catch {}
+    document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' })
+  }
+  return (
+    <div className="fixed inset-x-0 z-40 lg:hidden flex justify-center pointer-events-none" style={{ bottom: 'max(14px, calc(env(safe-area-inset-bottom) + 10px))' }} aria-hidden={false}>
+      <motion.nav
+        initial={false}
+        animate={{ y: visible ? 0 : 110, opacity: visible ? 1 : 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+        className="pointer-events-auto flex items-center gap-0.5 p-1.5 rounded-full bg-[#0C0C0E]/85 backdrop-blur-2xl border border-white/12 shadow-[0_16px_50px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)]"
+        aria-label="Quick navigation"
+      >
+        {items.map(it => {
+          const Icon = it.icon
+          const isActive = active === it.id
+          return (
+            <button key={it.id} onClick={() => go(it.id)} aria-label={it.label} aria-current={isActive ? 'page' : undefined} className={`relative w-11 h-11 rounded-full grid place-items-center transition-colors ${isActive ? 'bg-[#CCFF00] text-black shadow-[0_0_18px_rgba(204,255,0,0.5)]' : 'text-white/55 active:bg-white/10'}`}>
+              <Icon className="w-[18px] h-[18px]" />
+              {isActive && <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-[#CCFF00]" aria-hidden />}
+            </button>
+          )
+        })}
+        <span className="w-px h-6 bg-white/10 mx-0.5" aria-hidden />
+        <button onClick={() => { try { navigator.vibrate && navigator.vibrate(8) } catch {} window.scrollTo({ top: 0, behavior: 'smooth' }) }} aria-label="Back to top" className="w-11 h-11 rounded-full grid place-items-center text-white/55 active:bg-white/10 transition-colors">
+          <ArrowUp className="w-[18px] h-[18px]" />
+        </button>
+      </motion.nav>
+    </div>
+  )
 }
 
 // --- SPOTLIGHT ---
@@ -378,7 +485,7 @@ function ScrollToTopFab() {
       initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0 }}
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       aria-label="Back to top"
-      className="fixed z-40 w-[52px] h-[52px] sm:w-14 sm:h-14 rounded-full bg-[#CCFF00] text-black grid place-items-center shadow-[0_10px_30px_rgba(204,255,0,0.35)] hover:scale-105 active:scale-95 transition-transform"
+      className="fixed z-40 w-[52px] h-[52px] sm:w-14 sm:h-14 rounded-full bg-[#CCFF00] text-black grid place-items-center shadow-[0_10px_30px_rgba(204,255,0,0.35)] hover:scale-105 active:scale-95 transition-transform max-lg:hidden glow-pulse"
       style={{ bottom: 'max(16px, env(safe-area-inset-bottom))', right: 'max(16px, env(safe-area-inset-right))' }}
     >
       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 44 44">
@@ -506,13 +613,14 @@ function Navbar({ onToast, onOpenGoogleAuth, onOpenMyPasses, onOpenAdmin, isAuth
     { label: 'Prestige', href: '#achievements', num: '04' },
     { label: 'Faculty', href: '#faculty', num: '05' },
     { label: 'Team', href: '#team', num: '06' },
+    { label: 'Contact', href: '#contact', num: '07' },
   ]
   const active = useActiveSection(links.map(l => l.href))
   useEffect(() => { const onScroll = () => setScrolled(window.scrollY > 40); window.addEventListener('scroll', onScroll, { passive: true }); return () => window.removeEventListener('scroll', onScroll) }, [])
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') setMenuOpen(false)
-      if (!e.ctrlKey && !e.metaKey && /^[0-6]$/.test(e.key)) {
+      if (!e.ctrlKey && !e.metaKey && /^[0-7]$/.test(e.key)) {
         const idx = parseInt(e.key); if (links[idx]) { e.preventDefault(); document.querySelector(links[idx].href)?.scrollIntoView({ behavior: 'smooth' }) }
       }
     }
@@ -543,13 +651,10 @@ function Navbar({ onToast, onOpenGoogleAuth, onOpenMyPasses, onOpenAdmin, isAuth
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { document.documentElement.classList.add('theme-transition'); const isLight = document.documentElement.classList.toggle('light'); document.documentElement.style.colorScheme = isLight ? 'light' : 'dark'; setTimeout(()=>document.documentElement.classList.remove('theme-transition'), 500) }} aria-label="Toggle theme" className="hidden xl:grid w-11 h-11 rounded-full bg-white/5 border border-white/10 place-items-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors">
-            <span className="w-5 h-5 rounded-full border-2 border-current grid place-items-center text-[10px]">◐</span>
-          </button>
-          <button onClick={onOpenMyPasses} className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/70 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors min-h-[44px]">
+          <button onClick={onOpenMyPasses} className="hidden lg:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/70 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors min-h-[44px]">
             <Ticket className="w-3.5 h-3.5 text-[#CCFF00]" /> MY PASSES
           </button>
-          <button onClick={onOpenAdmin} className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/60 hover:text-white hover:bg-white/10 transition-colors min-h-[44px]" title="Admin Console">
+          <button onClick={onOpenAdmin} className="hidden xl:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/60 hover:text-white hover:bg-white/10 transition-colors min-h-[44px]" title="Admin Console">
             <Shield className="w-3.5 h-3.5 text-[#FFB800]" /> ADMIN
           </button>
           {isAuthenticated && user ? (
@@ -643,6 +748,7 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
   }, [])
   const reduced = usePrefersReducedMotion()
   const isMobile = useIsMobile()
+  const marqueeSkew = useMarqueeSkew()
   return (
     <section ref={ref} id="hero" className="relative min-h-[88svh] sm:min-h-[92svh] overflow-hidden bg-[#08080A] flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* 3D BG - hidden on very small or reduced motion, dpr capped */}
@@ -673,11 +779,11 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
 
         <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 sm:gap-8 items-start lg:items-center">
           <div className="min-w-0">
-            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, ease: [0.76, 0, 0.24, 1], delay: 0.15 }} className="font-display font-[800] leading-[0.88] tracking-[-0.04em] text-[9.6vw] xs:text-[10vw] sm:text-[9vw] lg:text-[68px] xl:text-[80px]">
-              <span className="block text-white">Architecting</span>
-              <span className="block text-[#CCFF00] min-h-[1.1em]" aria-label="Tomorrow's">{typedLine}<span className="inline-block w-[3px] h-[0.85em] bg-[#CCFF00] ml-1 animate-pulse align-middle" aria-hidden /></span>
-              <span className="block text-stroke">Silicon &</span>
-              <span className="block text-white flex flex-wrap items-center gap-3 sm:gap-4">Systems. <span className="hidden sm:inline-flex w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#CCFF00]/40 items-center justify-center text-[8px] sm:text-[9px] font-mono text-white/50 shrink-0" aria-hidden>● SCROLL</span></span>
+            <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }} className="font-display font-[800] leading-[0.88] tracking-[-0.04em] text-[9.6vw] xs:text-[10vw] sm:text-[9vw] lg:text-[68px] xl:text-[80px]">
+              <KineticLine delay={0.2} className="text-white">Architecting</KineticLine>
+              <span className="block text-gradient-animate min-h-[1.1em]" aria-label="Tomorrow's">{typedLine}<span className="inline-block w-[3px] h-[0.85em] bg-[#CCFF00] ml-1 animate-pulse align-middle" aria-hidden /></span>
+              <KineticLine delay={0.34} className="text-stroke">Silicon &amp;</KineticLine>
+              <KineticLine delay={0.48} className="text-white"><span className="flex flex-wrap items-center gap-3 sm:gap-4">Systems. <span className="hidden sm:inline-flex w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#CCFF00]/40 items-center justify-center text-[8px] sm:text-[9px] font-mono text-white/50 shrink-0" aria-hidden>● SCROLL</span></span></KineticLine>
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mt-3 sm:mt-4 text-[15px] sm:text-[16px] md:text-[17px] leading-relaxed text-white/65 max-w-[560px] text-pretty">
               Advancing <span className="text-white font-semibold">hardware prototyping, autonomous robotics, VLSI design, and edge intelligence</span> at PIET — where SPACE & SINC build tomorrow&apos;s engineers.
@@ -701,7 +807,7 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }} className="flex flex-col sm:flex-row gap-3 mt-5 sm:mt-6">
-              <MagneticButton onClick={() => document.querySelector('#events')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex items-center justify-center gap-2 bg-[#CCFF00] text-black px-7 py-3.5 sm:py-3 rounded-full font-black text-[14px] sm:text-[13px] tracking-wide hover:bg-white transition-colors shadow-[0_0_30px_rgba(204,255,0,0.35)] min-h-[52px] sm:min-h-[48px] w-full sm:w-auto">
+              <MagneticButton onClick={() => document.querySelector('#events')?.scrollIntoView({ behavior: 'smooth' })} className="btn-sheen inline-flex items-center justify-center gap-2 bg-[#CCFF00] text-black px-7 py-3.5 sm:py-3 rounded-full font-black text-[14px] sm:text-[13px] tracking-wide hover:bg-white transition-colors shadow-[0_0_30px_rgba(204,255,0,0.35)] min-h-[52px] sm:min-h-[48px] w-full sm:w-auto">
                 <Zap className="w-4 h-4" aria-hidden /> Explore Events <ChevronRight className="w-4 h-4" aria-hidden />
               </MagneticButton>
               <a href="#about" className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur border border-white/15 text-white px-7 py-3.5 sm:py-3 rounded-full font-bold text-[14px] sm:text-[13px] hover:bg-white hover:text-black transition-colors min-h-[52px] sm:min-h-[48px] w-full sm:w-auto">
@@ -715,7 +821,7 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
 
           {/* Silicon Core Card — REIMAGINED (matches reference: grid + chip + live telemetry) */}
           <motion.div initial={{ opacity: 0, scale: 0.96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.8, ease: [0.76, 0, 0.24, 1] }} className="relative lg:h-[520px] flex items-center justify-center mt-2 lg:mt-0">
-            <TiltCard intensity={9} className="relative w-full max-w-[420px] aspect-[4/3.15] sm:aspect-[4/3.05] rounded-[30px] sm:rounded-[32px] bg-[#0A0A0A] border border-white/[0.09] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)_inset] p-[1px] flex flex-col">
+            <TiltCard intensity={9} className={`conic-border relative w-full max-w-[420px] aspect-[4/3.15] sm:aspect-[4/3.05] rounded-[30px] sm:rounded-[32px] bg-[#0A0A0A] border border-white/[0.09] shadow-[0_24px_64px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)_inset] p-[1.5px] flex flex-col ${isMobile ? 'animate-float-slow' : ''}`}>
               {/* Lime outer glow */}
               <div className="absolute -top-28 -right-28 w-[420px] h-[420px] bg-[#CCFF00]/[0.09] rounded-full blur-[90px] pointer-events-none" aria-hidden />
               <div className="absolute -bottom-28 -left-28 w-[520px] h-[520px] bg-[#7000FF]/[0.08] rounded-full blur-[110px] pointer-events-none" aria-hidden />
@@ -792,11 +898,16 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
           <div className="w-px h-10 bg-white/10 overflow-hidden relative"><div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#CCFF00] to-transparent animate-pulse" style={{ animationDuration: '1.5s' }} /></div>
           <ArrowDown className="w-3.5 h-3.5 text-[#CCFF00] animate-bounce" />
         </div>
+        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }} className="flex lg:hidden justify-center mt-7 text-white/40">
+          <span className="flex flex-col items-center gap-1"><span className="text-[9px] font-mono tracking-[0.3em]">SCROLL</span><ArrowDown className="w-4 h-4 text-[#CCFF00]" /></span>
+        </motion.div>
       </motion.div>
       <div className="relative z-10 border-y border-white/10 bg-[#CCFF00] text-black overflow-hidden py-2.5">
-        <div className="flex whitespace-nowrap animate-marquee" style={{ width: 'max-content' }}>
-          {[...Array(6)].map((_, i) => <span key={i} className="flex items-center gap-6 px-6 text-[13px] font-black tracking-widest"><span>◆</span> VLSI SILICON <span className="opacity-20">—</span> ROBOTICS <span className="opacity-20">—</span> IoT • LoRaWAN <span className="opacity-20">—</span> EDGE AI <span className="opacity-20">—</span> IEEE RESEARCH <span className="opacity-20">—</span> HARDWARE HACKATHONS</span>)}
-        </div>
+        <motion.div style={{ skewX: marqueeSkew }} className="will-change-transform">
+          <div className="flex whitespace-nowrap animate-marquee" style={{ width: 'max-content' }}>
+            {[...Array(6)].map((_, i) => <span key={i} className="flex items-center gap-6 px-6 text-[13px] font-black tracking-widest"><span>◆</span> VLSI SILICON <span className="opacity-20">—</span> ROBOTICS <span className="opacity-20">—</span> IoT • LoRaWAN <span className="opacity-20">—</span> EDGE AI <span className="opacity-20">—</span> IEEE RESEARCH <span className="opacity-20">—</span> HARDWARE HACKATHONS</span>)}
+          </div>
+        </motion.div>
       </div>
     </section>
   )
@@ -805,11 +916,14 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
 function MarqueeTicker({ announcement: propAnn }) {
   const fallback = '⚡ LIVE: Registrations open for SPACE & SINC Installation 2026 • TARANG 2K26 Freshers Gala • 1,500+ Engineers • PIET Nagpur'
   const announcement = propAnn && propAnn.trim() ? propAnn : fallback
+  const skew = useMarqueeSkew()
   return (
     <div className="bg-black border-y border-white/10 overflow-hidden py-3 relative z-20">
-      <div className="flex whitespace-nowrap animate-marquee marquee" style={{ width: 'max-content' }}>
-        {[...Array(4)].map((_, i) => <span key={i} className="flex items-center gap-4 px-6 text-xs font-mono tracking-widest text-white/70"><span className="px-2 py-1 rounded bg-[#CCFF00] text-black font-black text-[10px]">LIVE DISPATCH</span>{announcement}<span className="w-1.5 h-1.5 bg-[#FF3B30] rounded-full animate-pulse" /></span>)}
-      </div>
+      <motion.div style={{ skewX: skew }} className="will-change-transform">
+        <div className="flex whitespace-nowrap animate-marquee marquee" style={{ width: 'max-content' }}>
+          {[...Array(4)].map((_, i) => <span key={i} className="flex items-center gap-4 px-6 text-xs font-mono tracking-widest text-white/70"><span className="px-2 py-1 rounded bg-[#CCFF00] text-black font-black text-[10px]">LIVE DISPATCH</span>{announcement}<span className="w-1.5 h-1.5 bg-[#FF3B30] rounded-full animate-pulse" /></span>)}
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -908,7 +1022,7 @@ function StatsSection() {
       <div className="px-4 sm:px-6 md:px-8 max-w-[1600px] mx-auto relative">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-2 sm:py-1 rounded-full"><Sparkles className="w-3 h-3" aria-hidden /> 01 // DEPARTMENT TELEMETRY & SCALE</p>
+            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-2 sm:py-1 rounded-full"><Sparkles className="w-3 h-3" aria-hidden /> <ScrambleText text="01 // DEPARTMENT TELEMETRY & SCALE" /></p>
             <h2 className="font-display font-[800] leading-none tracking-tighter text-[8.5vw] sm:text-[7vw] md:text-[44px] mt-3 break-words"><span className="block text-white">Real-World Metrics &</span><span className="block text-stroke">Engineering Impact.</span></h2>
           </div>
           <div className="text-left md:text-right">
@@ -989,7 +1103,7 @@ function AboutSection() {
       <div className="px-4 md:px-8 max-w-[1600px] mx-auto relative">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="relative max-w-[720px]">
-            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] bg-black text-white px-3 py-1.5 rounded-full"><Compass className="w-3.5 h-3.5 text-[#CCFF00]" /> 01 // ABOUT THE COUNCILS</p>
+            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] bg-black text-white px-3 py-1.5 rounded-full"><Compass className="w-3.5 h-3.5 text-[#CCFF00]" /> <ScrambleText text="01 // ABOUT THE COUNCILS" /></p>
             <h2 className="font-display font-[800] leading-[0.9] tracking-tighter text-[9vw] md:text-[52px] mt-4"><span className="block">Dual-Council Ecosystem &</span><span className="block relative">Department Governance.<span className="absolute -right-4 -top-2 hidden lg:block w-3 h-3 bg-[#CCFF00] rounded-full animate-pulse shadow-[0_0_12px_#CCFF00]" /></span></h2>
             <p className="mt-4 text-[13px] leading-relaxed text-black/60 max-w-[560px]">Two councils, one mission — <span className="font-bold text-black">SPACE</span> drives research & academic excellence, <span className="font-bold text-black">SINC</span> ships hardware & products. Together they form PIET ECE’s student-led governance.</p>
           </div>
@@ -1173,11 +1287,11 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
   const filtered = liveEvents.filter(e => filter === 'All' ? true : filter === 'Upcoming' ? e.status === 'Upcoming' : e.category === filter)
   return (
     <section id="events" ref={ref} className="bg-[#08080A] py-16 md:py-24 relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/20 to-transparent" />
+      <div className="beam absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/20 to-transparent" />
       <div className="px-4 md:px-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Ticket className="w-3 h-3" /> 02 // EVENTS & WORKSHOPS</p>
+            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Ticket className="w-3 h-3" /> <ScrambleText text="02 // EVENTS & WORKSHOPS" /></p>
             <h2 className="font-display font-[800] leading-none tracking-tighter text-[9vw] md:text-[52px] mt-3 text-white"><span className="block">Event Calendar &</span><span className="block text-stroke">Live Registration.</span></h2>
           </div>
           <p className="text-xs font-mono text-white/40 max-w-[320px] md:text-right">Department ceremonies, hardware workshops, and hackathons.</p>
@@ -1191,7 +1305,7 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] text-[10px] font-black tracking-widest"><span className="w-2 h-2 bg-[#FFB800] rounded-full animate-ping" />{HERO_CONFIG.flagshipBadge}</span>
               <h3 className="font-display font-black text-2xl md:text-4xl leading-none text-white">{HERO_CONFIG.flagshipTitle}<br /><span className="text-[#FFB800]">{HERO_CONFIG.flagshipSubTitle}</span></h3>
               <p className="text-sm text-white/60 leading-relaxed max-w-[520px]">{HERO_CONFIG.flagshipDescription}</p>
-              <button onClick={()=> onRegister && liveEvents[0] && onRegister(liveEvents[0])} className="inline-flex items-center gap-2 bg-[#FFB800] text-black px-6 py-3 rounded-full font-black text-xs tracking-wide hover:bg-white transition-colors"><ShieldCheck className="w-4 h-4" /> {HERO_CONFIG.flagshipButtonText} <ChevronRight className="w-4 h-4" /></button>
+              <button onClick={()=> onRegister && liveEvents[0] && onRegister(liveEvents[0])} className="btn-sheen inline-flex items-center gap-2 bg-[#FFB800] text-black px-6 py-3 rounded-full font-black text-xs tracking-wide hover:bg-white transition-colors min-h-[44px]"><ShieldCheck className="w-4 h-4" /> {HERO_CONFIG.flagshipButtonText} <ChevronRight className="w-4 h-4" /></button>
             </div>
             <div className="lg:col-span-5 flex flex-col items-center lg:items-end justify-center">
               <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
@@ -1201,7 +1315,7 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
                   { k: 'MINS', v: pad(timeLeft.minutes) },
                   { k: 'SECS', v: pad(timeLeft.seconds), hl: true },
                 ].map((b, i) => <div key={b.k} className="flex items-center gap-1.5 sm:gap-2">
-                  <div className="text-center"><div className="text-[9px] font-mono tracking-widest text-white/40 mb-1">{b.k}</div><div className={`w-[50px] xs:w-14 sm:w-16 h-[50px] xs:h-14 sm:h-16 rounded-2xl border flex items-center justify-center text-xl xs:text-2xl sm:text-3xl font-display font-black ${b.hl ? 'bg-[#CCFF00] text-black border-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.4)]' : 'bg-white/5 border-white/10 text-white backdrop-blur'}`}>{b.v}</div></div>{i < 3 && <span className="text-[#FFB800] font-black text-lg sm:text-xl mt-5">:</span>}
+                  <FlipUnit k={b.k} value={b.v} hl={b.hl} />{i < 3 && <span className="text-[#FFB800] font-black text-lg sm:text-xl mt-5">:</span>}
                 </div>)}
               </div>
               <div className="mt-3 text-[11px] font-mono text-white/40 flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#FFB800]" /> TARGET: {HERO_CONFIG.flagshipTargetDate.replace('T', ' · ')} · {HERO_CONFIG.flagshipTargetVenue}</div>
@@ -1286,7 +1400,7 @@ function GallerySection({ galleryList: propGallery }) {
           </div>
           <div className="grid grid-cols-1 gap-4">
             {filtered.map((item, idx) => (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }} onClick={() => setLightbox(idx)} className="group cursor-pointer rounded-[20px] overflow-hidden bg-[#111] border border-white/10">
+              <motion.div key={item.id} initial={{ opacity: 0, y: 28, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-30px' }} transition={{ delay: (idx % 3) * 0.07, duration: 0.55, ease: [0.16, 1, 0.3, 1] }} onClick={() => setLightbox(idx)} className="group cursor-pointer rounded-[20px] overflow-hidden bg-[#111] border border-white/10">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img src={item.url} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
@@ -1301,12 +1415,12 @@ function GallerySection({ galleryList: propGallery }) {
       {/* Desktop: pinned horizontal — SAME AS ACHIEVEMENTS / LABS — NO BLANK GAP */}
       <div ref={pinGalRef} className="hidden md:block pin-wrap !h-[245vh]">
         <div className="pin-sticky">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7000FF]/20 to-transparent" />
+          <div className="beam absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7000FF]/20 to-transparent" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[480px] bg-[#7000FF]/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="h-full flex flex-col">
             <div className="px-6 md:px-8 pt-10 flex items-end justify-between gap-6 max-w-[1600px] mx-auto w-full">
               <div>
-                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">03 // VISUAL ARCHIVE — HORIZONTAL GALLERY</p>
+                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">03 // <ScrambleText text="VISUAL ARCHIVE — HORIZONTAL GALLERY" /></p>
                 <h2 className="font-display font-[800] leading-none tracking-tighter text-[44px] mt-3"><span className="text-white">Hardware Labs &</span> <span className="text-stroke">Hackathons.</span></h2>
               </div>
               <div className="hidden lg:flex items-center gap-3 text-xs font-mono text-white/40"><span>SCROLL TO EXPLORE</span><span className="w-28 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX: scaleGal }} className="block h-full bg-[#CCFF00] origin-left" /></span><span>{filtered.length.toString().padStart(2,'0')}</span></div>
@@ -1417,7 +1531,7 @@ function AchievementsSection() {
           <div className="h-full flex flex-col">
             <div className="px-6 md:px-8 pt-10 flex items-end justify-between gap-6 max-w-[1600px] mx-auto w-full">
               <div>
-                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">04 // PRESTIGE & ACHIEVEMENTS — HORIZONTAL WALL</p>
+                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">04 // <ScrambleText text="PRESTIGE & ACHIEVEMENTS — HORIZONTAL WALL" /></p>
                 <h2 className="font-display font-[800] leading-none tracking-tighter text-[44px] mt-3"><span className="text-white">Verified Engineering</span> <span className="text-stroke">Victories.</span></h2>
               </div>
               <div className="hidden lg:flex items-center gap-3 text-xs font-mono text-white/40"><span>DRAG → SCROLL TO EXPLORE</span><span className="w-28 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX: scaleAch }} className="block h-full bg-[#CCFF00] origin-left" /></span></div>
@@ -1481,7 +1595,7 @@ function FacultySection() {
       <div className="px-4 md:px-8 max-w-[1600px] mx-auto relative">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">05 // FACULTY ADVISORS</p>
+                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">05 // <ScrambleText text="FACULTY ADVISORS" /></p>
             <h2 className="font-display font-[800] leading-none tracking-tighter text-[9vw] md:text-[52px] mt-3 text-white"><span className="block">Faculty Leadership</span><span className="block text-stroke">& Laboratory Guidance.</span></h2>
           </div>
           <p className="text-xs font-mono text-white/40 max-w-[320px] md:text-right">Distinguished faculty directing labs, research, and academic excellence.</p>
@@ -1546,6 +1660,7 @@ function TeamSection() {
     return () => unsub()
   }, [teamProgress, featuredTeam.length])
   const copyEmail = (email, e) => { e?.stopPropagation(); navigator.clipboard?.writeText(email); setCopied(email); setTimeout(() => setCopied(null), 2200) }
+  const quoteSkew = useMarqueeSkew()
   return (
     <section id="team" ref={ref} className="bg-[#0A0A0A] py-16 md:py-24 relative">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
@@ -1559,15 +1674,17 @@ function TeamSection() {
         </div>
         {/* Team quote marquee — creative for ALL */}
         <div className="mb-6 rounded-[16px] bg-[#0F0F0F] border border-white/10 overflow-hidden py-2.5">
-          <div className="flex whitespace-nowrap animate-marquee marquee" style={{ width: 'max-content' }}>
-            {[...Array(2)].map((_, r) => (
-              <span key={r} className="flex items-center gap-6 px-4">
-                {TEAM.slice(0, 10).map(m => (
-                  <span key={m.name + r} className="inline-flex items-center gap-2 text-xs font-mono text-white/50"><span className="w-1 h-1 bg-[#CCFF00] rounded-full" /> “{m.quote.slice(0, 56)}…” <span className="text-white font-bold">— {m.name.split(' ')[0]}</span> <span className="opacity-20">•</span></span>
-                ))}
-              </span>
-            ))}
-          </div>
+          <motion.div style={{ skewX: quoteSkew }} className="will-change-transform">
+            <div className="flex whitespace-nowrap animate-marquee marquee" style={{ width: 'max-content' }}>
+              {[...Array(2)].map((_, r) => (
+                <span key={r} className="flex items-center gap-6 px-4">
+                  {TEAM.slice(0, 10).map(m => (
+                    <span key={m.name + r} className="inline-flex items-center gap-2 text-xs font-mono text-white/50"><span className="w-1 h-1 bg-[#CCFF00] rounded-full" /> “{m.quote.slice(0, 56)}…” <span className="text-white font-bold">— {m.name.split(' ')[0]}</span> <span className="opacity-20">•</span></span>
+                  ))}
+                </span>
+              ))}
+            </div>
+          </motion.div>
         </div>
 
         {/* Pinned scroll intro — each member appears as you scroll (desktop) */}
@@ -1794,6 +1911,7 @@ function Contact() {
 }
 
 function Footer() {
+  const skew = useMarqueeSkew()
   return (
     <footer className="bg-black border-t border-white/10 overflow-hidden">
       {/* Massive editorial typography - Awwwards impression */}
@@ -1828,20 +1946,51 @@ function Footer() {
             <p className="text-xs text-white/40 mt-3 max-w-[380px] leading-relaxed">Building tomorrow&apos;s engineers through silicon synthesis, IoT, and robotics innovation at PIET Nagpur.</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-xs">
-            <div><div className="font-mono text-[11px] tracking-widest text-white/30 mb-3 flex items-center gap-1.5"><Cpu className="w-3 h-3 text-[#CCFF00]" /> COMMAND INDEX</div><div className="space-y-2 font-mono text-white/50"><a href="#hero" className="block hover:text-white">00 Overview</a><a href="#about" className="block hover:text-white">01 Architecture</a><a href="#events" className="block hover:text-white">02 Calendar</a><a href="#gallery" className="block hover:text-white">03 Archive</a></div></div>
-            <div><div className="font-mono text-[11px] tracking-widest text-white/30 mb-3 flex items-center gap-1.5"><Globe className="w-3 h-3 text-[#FFB800]" /> COORDINATES</div><div className="space-y-2 text-white/50"><div className="flex gap-1.5"><MapPin className="w-3.5 h-3.5 text-[#CCFF00] shrink-0" /> PIET Campus, Nagpur</div><div className="flex gap-1.5"><Mail className="w-3.5 h-3.5 text-[#FFB800] shrink-0" /> ece.forum@piet.edu</div></div></div>
-            <div><div className="font-mono text-[11px] tracking-widest text-white/30 mb-3">LEGAL</div><div className="space-y-2 text-white/50"><a href="#" className="block hover:text-white">Privacy Charter</a><a href="#" className="block hover:text-white">Operations Manual</a><a href="#" className="block hover:text-white">IEEE Code</a></div></div>
+            <div>
+              <div className="font-mono text-[11px] tracking-widest text-white/30 mb-3 flex items-center gap-1.5"><Cpu className="w-3 h-3 text-[#CCFF00]" /> COMMAND INDEX</div>
+              <div className="space-y-2 font-mono text-white/50">
+                <a href="#hero" className="block hover:text-white">00 Overview</a>
+                <a href="#about" className="block hover:text-white">01 Architecture</a>
+                <a href="#events" className="block hover:text-white">02 Calendar</a>
+                <a href="#gallery" className="block hover:text-white">03 Archive</a>
+                <a href="#achievements" className="block hover:text-white">04 Prestige</a>
+                <a href="#faculty" className="block hover:text-white">05 Faculty</a>
+                <a href="#team" className="block hover:text-white">06 Team</a>
+                <a href="#contact" className="block hover:text-white">07 Dispatch</a>
+              </div>
+            </div>
+            <div>
+              <div className="font-mono text-[11px] tracking-widest text-white/30 mb-3 flex items-center gap-1.5"><Globe className="w-3 h-3 text-[#FFB800]" /> COORDINATES</div>
+              <div className="space-y-2 text-white/50">
+                <div className="flex gap-1.5"><MapPin className="w-3.5 h-3.5 text-[#CCFF00] shrink-0" /> PIET Campus, Nagpur</div>
+                <div className="flex gap-1.5"><Mail className="w-3.5 h-3.5 text-[#FFB800] shrink-0" /> ece.forum@piet.edu</div>
+              </div>
+            </div>
+            <div>
+              <div className="font-mono text-[11px] tracking-widest text-white/30 mb-3">DEPARTMENT</div>
+              <div className="space-y-2 text-white/50">
+                <div className="block">SPACE Forum (Estd. 2012)</div>
+                <div className="block">SINC Council (Estd. 2018)</div>
+                <div className="block">PIET Nagpur • ECE Dept.</div>
+              </div>
+            </div>
           </div>
         </div>
         <div className="border-t border-white/10 py-5 flex flex-col md:flex-row justify-between gap-3 text-[11px] font-mono tracking-widest text-white/30">
           <span className="flex items-center gap-2"><span className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" /> © 2026 SPACE & SINC ECE FORUM. ALL RIGHTS RESERVED.</span>
-          <span className="flex gap-4"><a href="#events" className="hover:text-[#CCFF00] flex items-center gap-1">Registration Portal <ArrowUpRight className="w-3 h-3" /></a><a href="#" className="hover:text-[#FFB800] flex items-center gap-1">Admin Console <ArrowUpRight className="w-3 h-3" /></a></span>
+          <span className="flex flex-wrap gap-4">
+            <Link to="/register" className="hover:text-[#CCFF00] flex items-center gap-1">Registration Portal <ArrowUpRight className="w-3 h-3" /></Link>
+            <Link to="/admin" className="hover:text-[#FFB800] flex items-center gap-1">Admin Console <ArrowUpRight className="w-3 h-3" /></Link>
+            <Link to="/developer" className="hover:text-[#00D9FF] flex items-center gap-1">Developer Dossier <ArrowUpRight className="w-3 h-3" /></Link>
+          </span>
         </div>
       </div>
       <div className="overflow-hidden border-t border-white/5 bg-[#CCFF00] py-2">
-        <div className="flex animate-marquee whitespace-nowrap text-black font-black tracking-[0.2em] text-xs" style={{ width: 'max-content' }}>
-          {[...Array(8)].map((_, i) => <span key={i} className="px-8">SPACE & SINC × PIET ECE FORUM — ARCHITECTING TOMORROW&apos;S SILICON — EST. 2012 • EST. 2018 — NAGPUR • INDIA —</span>)}
-        </div>
+        <motion.div style={{ skewX: skew }} className="will-change-transform">
+          <div className="flex animate-marquee whitespace-nowrap text-black font-black tracking-[0.2em] text-xs" style={{ width: 'max-content' }}>
+            {[...Array(8)].map((_, i) => <span key={i} className="px-8">SPACE & SINC × PIET ECE FORUM — ARCHITECTING TOMORROW&apos;S SILICON — EST. 2012 • EST. 2018 — NAGPUR • INDIA —</span>)}
+          </div>
+        </motion.div>
       </div>
     </footer>
   )
@@ -2161,6 +2310,8 @@ export default function App() {
             </div>
           )}
           <Footer />
+          {/* App-like quick-jump dock (mobile only) */}
+          <MobileDock />
             </motion.div>
           } />
           <Route path="/register" element={<RegisterPage eventsList={eventsList} />} />
