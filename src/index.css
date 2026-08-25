@@ -250,13 +250,23 @@ body {
 }
 .glare-card:hover::after { transform: translateX(120%); }
 
-/* Horizontal pin (tablet & desktop; below md falls back to normal block flow) */
-.pin-wrap { height: auto; }
-.pin-sticky { position: relative; height: auto; overflow: visible; }
-
-@media (min-width: 768px) {
-  .pin-wrap { height: 280vh; }
-  .pin-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+/* Pinned Horizontal & Storytelling Scroll (Mobile + Tablet + Desktop) */
+.pin-wrap {
+  position: relative;
+  height: 250vh;
+}
+.pin-sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 10;
 }
 
 /* Command palette */

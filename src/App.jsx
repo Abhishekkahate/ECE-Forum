@@ -870,79 +870,59 @@ function MarqueeTicker({ announcement: propAnn }) {
 function LabsPin() {
   const wrapRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: wrapRef, offset: ["start start", "end end"] })
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-72%"])
-  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
   const isMobile = useIsMobile(1024)
+  const xRaw = useTransform(scrollYProgress, [0, 1], ["0%", isMobile ? "-76%" : "-72%"])
+  const x = useSpring(xRaw, { stiffness: 90, damping: 28, mass: 0.5 })
+  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
   const labs = [
     { icon: Cpu, title: 'VLSI SILICON', sub: '45nm • RISC-V • FPGA', desc: 'Custom 32-bit cores on Artix-7, synthesis to tape-out mindset.', color: '#CCFF00', img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=80', stats: '120+ PROTOTYPES' },
     { icon: Bot, title: 'ROBOTICS ARENA', sub: 'ROS 2 • LiDAR • ROVER', desc: 'Autonomous rovers, obstacle avoidance, search & rescue demos.', color: '#7000FF', img: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=900&q=80', stats: '24H HACKATHON' },
     { icon: Radio, title: 'IoT MESH', sub: 'LoRaWAN • EDGE • MESH', desc: 'Low-power mesh nodes, patented 492026/IN, field telemetry.', color: '#FFB800', img: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=900&q=80', stats: 'PATENT GRANTED' },
     { icon: Brain, title: 'EDGE AI LAB', sub: 'TinyML • SENSORS • VISION', desc: 'On-device inference, smart grids, sensor fusion at edge.', color: '#00D9FF', img: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=900&q=80', stats: '45+ WORKSHOPS' },
   ]
-  if (isMobile) {
-    return (
-      <section className="bg-[#08080A] py-12 sm:py-16 relative overflow-hidden">
-        <div className="px-4 sm:px-6">
-          <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] mb-3"><Waves className="w-3.5 h-3.5" /> LABS — SWIPE TO EXPLORE</div>
-          <h2 className="font-display font-[800] text-[32px] sm:text-[40px] leading-none tracking-tighter"><span className="text-white">FOUR LABS.</span> <span className="text-stroke">ONE MISSION.</span></h2>
-        </div>
-        <div className="mt-6 flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 sm:px-6 pb-4 touch-pan-x">
-          {labs.map(l => {
-            const Icon = l.icon
-            return (
-              <div key={l.title} className="snap-center shrink-0 w-[84vw] max-w-[360px] rounded-[24px] overflow-hidden bg-[#111] border border-white/10 shadow-lg">
-                <div className="h-44 relative overflow-hidden"><img src={l.img} alt={l.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" /><div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" /><span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{l.sub}</span><span className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-white text-black grid place-items-center"><Icon className="w-4 h-4" /></span></div>
-                <div className="p-5"><div className="text-[11px] font-mono tracking-widest" style={{ color: l.color }}>{l.stats}</div><h3 className="font-display font-black text-xl leading-none mt-1">{l.title}</h3><p className="text-sm text-white/60 mt-2 leading-relaxed">{l.desc}</p></div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-    )
-  }
   return (
-    <section ref={wrapRef} className="pin-wrap bg-[#08080A] relative">
+    <section ref={wrapRef} className="pin-wrap !h-[260vh] bg-[#08080A] relative">
       <div className="pin-sticky">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        <div className="h-full flex flex-col">
-          <div className="px-6 md:px-8 pt-8 flex items-end justify-between gap-6 max-w-[1600px] mx-auto w-full">
+        <div className="h-full flex flex-col justify-between py-6 sm:py-8">
+          <div className="px-4 sm:px-8 flex items-end justify-between gap-4 max-w-[1600px] mx-auto w-full">
             <div>
               <div className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Waves className="w-3 h-3" /> LABS — HORIZONTAL SCROLL</div>
-              <h2 className="font-display font-[800] leading-none tracking-tighter text-[44px] mt-3"><span className="text-white">FOUR LABS.</span> <span className="text-stroke">ONE MISSION.</span></h2>
+              <h2 className="font-display font-[800] leading-none tracking-tighter text-[28px] sm:text-[44px] mt-2 sm:mt-3"><span className="text-white">FOUR LABS.</span> <span className="text-stroke">ONE MISSION.</span></h2>
             </div>
-            <div className="hidden md:flex items-center gap-3 text-xs font-mono text-white/40"><span>SCROLL TO DRIVE</span><span className="w-32 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX }} className="block h-full bg-[#CCFF00] origin-left" /></span><span>04</span></div>
+            <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-white/40"><span>SCROLL</span><span className="w-20 sm:w-32 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX }} className="block h-full bg-[#CCFF00] origin-left" /></span><span>04</span></div>
           </div>
-          <div className="flex-1 flex items-center overflow-hidden">
-            <motion.div style={{ x }} className="flex gap-6 pl-[6vw] pr-[6vw] will-change-transform">
+          <div className="flex-1 flex items-center overflow-hidden my-auto">
+            <motion.div style={{ x }} className="flex gap-4 sm:gap-6 pl-[4vw] pr-[8vw] will-change-transform">
               {labs.map(l => {
                 const Icon = l.icon
                 return (
-                  <GlareCard key={l.title} className="shrink-0 w-[560px] h-[380px] rounded-[32px] overflow-hidden bg-[#111] border border-white/10 flex">
-                    <div className="w-[52%] relative overflow-hidden">
+                  <GlareCard key={l.title} className="shrink-0 w-[84vw] sm:w-[560px] h-[340px] sm:h-[380px] rounded-[24px] sm:rounded-[32px] overflow-hidden bg-[#111] border border-white/10 flex flex-col sm:flex-row">
+                    <div className="w-full sm:w-[50%] h-[44%] sm:h-full relative overflow-hidden">
                       <img src={l.img} alt={l.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/20" />
-                      <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{l.sub}</span>
+                      <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-transparent via-transparent to-black/30" />
+                      <span className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{l.sub}</span>
                     </div>
-                    <div className="flex-1 p-7 flex flex-col justify-between">
+                    <div className="flex-1 p-5 sm:p-7 flex flex-col justify-between">
                       <div>
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-black tracking-widest px-2.5 py-1 rounded-full border" style={{ color: l.color, borderColor: l.color + '30', background: l.color + '15' }}>{l.stats}</span>
-                        <h3 className="font-display font-black text-[28px] leading-none tracking-tight mt-3">{l.title}</h3>
-                        <p className="text-sm text-white/60 leading-relaxed mt-3">{l.desc}</p>
+                        <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono font-black tracking-widest px-2.5 py-1 rounded-full border" style={{ color: l.color, borderColor: l.color + '30', background: l.color + '15' }}>{l.stats}</span>
+                        <h3 className="font-display font-black text-xl sm:text-[28px] leading-none tracking-tight mt-2 sm:mt-3">{l.title}</h3>
+                        <p className="text-xs sm:text-sm text-white/60 leading-relaxed mt-2 sm:mt-3 line-clamp-2 sm:line-clamp-3">{l.desc}</p>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="w-10 h-10 rounded-full border border-white/10 grid place-items-center"><Icon className="w-4 h-4" style={{ color: l.color }} /></span>
+                      <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                        <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 grid place-items-center"><Icon className="w-4 h-4" style={{ color: l.color }} /></span>
                         <span className="text-xs font-mono tracking-widest text-white/30">0{labs.indexOf(l) + 1} / 04</span>
                       </div>
                     </div>
                   </GlareCard>
                 )
               })}
-              <div className="shrink-0 w-[360px] h-[380px] rounded-[32px] border-2 border-dashed border-white/15 bg-white/[0.02] grid place-items-center p-8 text-center">
-                <div><div className="w-14 h-14 rounded-full bg-[#CCFF00] text-black grid place-items-center mx-auto"><ArrowRight className="w-6 h-6" /></div><h4 className="font-display font-black text-xl mt-4">EXPLORE ALL LABS</h4><p className="text-sm text-white/50 mt-2">Book a lab tour — PIET Nagpur</p><a href="#contact" className="inline-block mt-4 px-6 py-3 rounded-full bg-white text-black font-black text-sm">GET ACCESS →</a></div>
+              <div className="shrink-0 w-[260px] sm:w-[360px] h-[340px] sm:h-[380px] rounded-[24px] sm:rounded-[32px] border-2 border-dashed border-white/15 bg-white/[0.02] grid place-items-center p-6 sm:p-8 text-center">
+                <div><div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#CCFF00] text-black grid place-items-center mx-auto"><ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" /></div><h4 className="font-display font-black text-lg sm:text-xl mt-3 sm:mt-4">EXPLORE ALL LABS</h4><p className="text-xs sm:text-sm text-white/50 mt-1 sm:mt-2">Book a lab tour — PIET Nagpur</p><a href="#contact" className="inline-block mt-3 sm:mt-4 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white text-black font-black text-xs sm:text-sm">GET ACCESS →</a></div>
               </div>
             </motion.div>
           </div>
-          <div className="px-6 md:px-8 pb-6 flex justify-center gap-2">
+          <div className="px-4 sm:px-8 flex justify-center gap-2">
             {[0, 1, 2, 3].map(i => <ScrollDot key={i} progress={scrollYProgress} index={i} total={4} />)}
           </div>
         </div>
@@ -1305,11 +1285,10 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
 function GallerySection({ galleryList: propGallery }) {
   const [activeCat, setActiveCat] = useState('All'), [lightbox, setLightbox] = useState(null)
   const isMobileGal = useIsMobile(1024)
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobileGal ? "0px" : "-40px" })
   const pinGalRef = useRef(null)
-  const { scrollYProgress: galProgress } = useScroll({ target: isMobileGal ? ref : pinGalRef, offset: ["start start", "end end"] })
-  const xGalRaw = useTransform(galProgress, [0, 1], ["0%", "-49%"])
-  const xGal = useSpring(xGalRaw, { stiffness: 90, damping: 30, mass: 0.6 })
+  const { scrollYProgress: galProgress } = useScroll({ target: pinGalRef, offset: ["start start", "end end"] })
+  const xGalRaw = useTransform(galProgress, [0, 1], ["0%", isMobileGal ? "-80%" : "-49%"])
+  const xGal = useSpring(xGalRaw, { stiffness: 90, damping: 28, mass: 0.5 })
   const scaleGal = useSpring(useTransform(galProgress, [0, 1], [0, 1]), { stiffness: 80, damping: 25 })
   const sourceGallery = Array.isArray(propGallery) && propGallery.length ? propGallery : GALLERY
   const filtered = sourceGallery.filter(i => activeCat === 'All' || i.category === activeCat)
@@ -1323,87 +1302,57 @@ function GallerySection({ galleryList: propGallery }) {
     window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey)
   }, [lightbox, filtered.length])
   return (
-    <section id="gallery" ref={ref} className="bg-[#08080A] relative">
-      {/* Mobile: bento grid */}
-      <div className="md:hidden py-16 relative">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7000FF]/20 to-transparent" />
-        <div className="px-4 max-w-[1600px] mx-auto">
-          <div className="flex flex-col gap-6 mb-8">
-            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full w-fit">03 // VISUAL ARCHIVE & LAB MEMORIES</p>
-            <h2 className="font-display font-[800] leading-none tracking-tighter text-[9vw] text-white"><span className="block">Hardware Labs &</span><span className="block text-stroke">Hackathons in Action.</span></h2>
-            <p className="text-xs font-mono text-white/40">Swipe the archive →</p>
-          </div>
-          <div className="flex gap-2 mb-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 -mx-4 px-4">
-            {['All', 'Hackathon', 'Workshop', 'Project Expo', 'Industrial Visit'].map(cat => {
-              const count = cat === 'All' ? sourceGallery.length : sourceGallery.filter(i => i.category === cat).length
-              return <button key={cat} role="tab" aria-selected={activeCat === cat} onClick={() => setActiveCat(cat)} className={`snap-start shrink-0 px-4 py-2.5 rounded-full text-xs font-mono font-bold border flex items-center gap-2 min-h-[44px] whitespace-nowrap ${activeCat === cat ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white/60'}`}>{cat} <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeCat === cat ? 'bg-black text-white' : 'bg-white/10'}`}>{count}</span></button>
-            })}
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {filtered.map((item, idx) => (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 28, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '0px' }} transition={{ delay: (idx % 3) * 0.07, duration: 0.55, ease: [0.16, 1, 0.3, 1] }} onClick={() => setLightbox(idx)} className="group cursor-pointer rounded-[20px] overflow-hidden bg-[#111] border border-white/10">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img src={item.url} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{item.category}</span>
-                  <div className="absolute bottom-0 left-0 right-0 p-4"><div className="text-[10px] font-mono tracking-widest text-[#CCFF00]">{item.id}</div><h3 className="font-display font-black text-[15px] leading-tight text-white">{item.title}</h3></div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* Desktop: pinned horizontal — SAME AS ACHIEVEMENTS / LABS — NO BLANK GAP */}
-      <div ref={pinGalRef} className="hidden md:block pin-wrap !h-[245vh]">
-        <div className="pin-sticky">
-          <div className="beam absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7000FF]/20 to-transparent" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[480px] bg-[#7000FF]/5 rounded-full blur-[120px] pointer-events-none" />
-          <div className="h-full flex flex-col">
-            <div className="px-6 md:px-8 pt-10 flex items-end justify-between gap-6 max-w-[1600px] mx-auto w-full">
+    <section id="gallery" ref={pinGalRef} className="pin-wrap !h-[260vh] bg-[#08080A] relative">
+      <div className="pin-sticky">
+        <div className="beam absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7000FF]/20 to-transparent" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[480px] bg-[#7000FF]/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="h-full flex flex-col justify-between py-6 sm:py-8">
+          <div className="px-4 sm:px-8 max-w-[1600px] mx-auto w-full">
+            <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">03 // <ScrambleText text="VISUAL ARCHIVE — HORIZONTAL GALLERY" /></p>
-                <h2 className="font-display font-[800] leading-none tracking-tighter text-[44px] mt-3"><span className="text-white">Hardware Labs &</span> <span className="text-stroke">Hackathons.</span></h2>
+                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Sparkles className="w-3 h-3" /> <ScrambleText text="03 // VISUAL ARCHIVE — HORIZONTAL GALLERY" /></p>
+                <h2 className="font-display font-[800] leading-none tracking-tighter text-[28px] sm:text-[44px] mt-2 sm:mt-3"><span className="text-white">Hardware Labs &</span> <span className="text-stroke">Hackathons.</span></h2>
               </div>
-              <div className="hidden lg:flex items-center gap-3 text-xs font-mono text-white/40"><span>SCROLL TO EXPLORE</span><span className="w-28 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX: scaleGal }} className="block h-full bg-[#CCFF00] origin-left" /></span><span>{filtered.length.toString().padStart(2,'0')}</span></div>
+              <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-white/40"><span>SCROLL</span><span className="w-20 sm:w-28 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX: scaleGal }} className="block h-full bg-[#CCFF00] origin-left" /></span><span>{filtered.length.toString().padStart(2,'0')}</span></div>
             </div>
             {/* Filters inside pin */}
-            <div className="px-6 md:px-8 mt-4 flex gap-2 justify-center">
+            <div className="mt-3 sm:mt-4 flex gap-1.5 sm:gap-2 overflow-x-auto hide-scrollbar snap-x pb-1 -mx-2 px-2 sm:mx-0 sm:px-0">
               {['All', 'Hackathon', 'Workshop', 'Project Expo', 'Industrial Visit'].map(cat => {
                 const count = cat === 'All' ? sourceGallery.length : sourceGallery.filter(i => i.category === cat).length
-                return <button key={cat} onClick={() => setActiveCat(cat)} className={`px-3.5 py-2 rounded-full text-xs font-mono font-bold border flex items-center gap-1.5 ${activeCat === cat ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>{cat} <span className={`text-[10px] px-1 py-0.5 rounded-full ${activeCat === cat ? 'bg-black text-white' : 'bg-white/10'}`}>{count}</span></button>
+                return <button key={cat} onClick={() => setActiveCat(cat)} className={`snap-start shrink-0 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-mono font-bold border flex items-center gap-1.5 transition-colors ${activeCat === cat ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}>{cat} <span className={`text-[10px] px-1 py-0.5 rounded-full ${activeCat === cat ? 'bg-black text-white' : 'bg-white/10'}`}>{count}</span></button>
               })}
             </div>
-            <div className="flex-1 flex items-center overflow-hidden">
-              <motion.div style={{ x: xGal }} className="flex gap-5 pl-[4vw] pr-[8vw] will-change-transform">
-                {filtered.map((item, idx) => {
-                  const featured = idx === 0
-                  return (
-                    <GlareCard key={item.id} className={`shrink-0 rounded-[28px] overflow-hidden bg-[#111] border border-white/10 ${featured ? 'w-[560px] h-[380px]' : 'w-[440px] h-[360px]'}`}>
-                    <div onClick={() => setLightbox(idx)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && setLightbox(idx)} className="glare-card group cursor-pointer w-full h-full relative overflow-hidden">
-                      <img src={item.url} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-                      {featured && <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#CCFF00] text-black text-[10px] font-black tracking-widest">★ FEATURED</span>}
-                      <span className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white text-black grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"><Maximize2 className="w-4 h-4" /></span>
-                      <div className="absolute top-4 left-4 right-16 hidden sm:flex gap-2">
-                        <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{item.category}</span>
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-5">
-                        <div className="text-[10px] font-mono tracking-widest text-[#CCFF00]">{item.id} • {item.category}</div>
-                        <h3 className={`font-display font-black leading-tight text-white ${featured ? 'text-xl' : 'text-lg'}`}>{item.title}</h3>
-                        <p className="text-xs text-white/60 line-clamp-2 mt-1">{item.caption}</p>
-                      </div>
+          </div>
+          <div className="flex-1 flex items-center overflow-hidden my-auto">
+            <motion.div style={{ x: xGal }} className="flex gap-4 sm:gap-5 pl-[4vw] pr-[8vw] will-change-transform">
+              {filtered.map((item, idx) => {
+                const featured = idx === 0
+                return (
+                  <GlareCard key={item.id} className={`shrink-0 rounded-[24px] sm:rounded-[28px] overflow-hidden bg-[#111] border border-white/10 ${featured ? 'w-[84vw] sm:w-[560px] h-[340px] sm:h-[380px]' : 'w-[78vw] sm:w-[440px] h-[340px] sm:h-[360px]'}`}>
+                  <div onClick={() => setLightbox(idx)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && setLightbox(idx)} className="glare-card group cursor-pointer w-full h-full relative overflow-hidden">
+                    <img src={item.url} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                    {featured && <span className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 sm:px-3 py-1 rounded-full bg-[#CCFF00] text-black text-[10px] font-black tracking-widest">★ FEATURED</span>}
+                    <span className="absolute top-3 right-3 sm:top-4 sm:right-4 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-black grid place-items-center opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></span>
+                    <div className="absolute top-3 left-3 right-12 sm:top-4 sm:left-4 sm:right-16 hidden sm:flex gap-2">
+                      <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{item.category}</span>
                     </div>
-                    </GlareCard>
-                  )
-                })}
-                <div className="shrink-0 w-[360px] h-[360px] rounded-[28px] border-2 border-dashed border-white/15 bg-white/[0.02] grid place-items-center p-8 text-center">
-                  <div><div className="w-12 h-12 rounded-full bg-[#CCFF00] text-black grid place-items-center mx-auto"><ImageIcon className="w-6 h-6" /></div><h4 className="font-display font-black text-lg mt-3">ARCHIVE COMPLETE</h4><p className="text-xs text-white/50 mt-1">{sourceGallery.length} labs • workshops • expos</p></div>
-                </div>
-              </motion.div>
-            </div>
-            <div className="px-6 md:px-8 pb-6 flex justify-center gap-2">
-              {[0,1,2,3,4,5].slice(0, Math.min(6, filtered.length)).map(i => <ScrollDot key={i} progress={galProgress} index={i} total={filtered.length} />)}
-            </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+                      <div className="text-[10px] font-mono tracking-widest text-[#CCFF00]">{item.id} • {item.category}</div>
+                      <h3 className={`font-display font-black leading-tight text-white ${featured ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'}`}>{item.title}</h3>
+                      <p className="text-xs text-white/60 line-clamp-2 mt-1">{item.caption}</p>
+                    </div>
+                  </div>
+                  </GlareCard>
+                )
+              })}
+              <div className="shrink-0 w-[260px] sm:w-[360px] h-[340px] sm:h-[360px] rounded-[24px] sm:rounded-[28px] border-2 border-dashed border-white/15 bg-white/[0.02] grid place-items-center p-6 sm:p-8 text-center">
+                <div><div className="w-12 h-12 rounded-full bg-[#CCFF00] text-black grid place-items-center mx-auto"><ImageIcon className="w-6 h-6" /></div><h4 className="font-display font-black text-base sm:text-lg mt-3">ARCHIVE COMPLETE</h4><p className="text-xs text-white/50 mt-1">{sourceGallery.length} labs • workshops • expos</p></div>
+              </div>
+            </motion.div>
+          </div>
+          <div className="px-4 sm:px-8 flex justify-center gap-2">
+            {[0,1,2,3,4,5].slice(0, Math.min(6, filtered.length)).map(i => <ScrollDot key={i} progress={galProgress} index={i} total={filtered.length} />)}
           </div>
         </div>
       </div>
@@ -1428,81 +1377,53 @@ function GallerySection({ galleryList: propGallery }) {
   )
 }
 
-// --- ACHIEVEMENTS — NOW WITH HORIZONTAL PINNED SCROLL (like Labs) ---
+// --- ACHIEVEMENTS — HORIZONTAL PINNED SCROLL ---
 function AchievementsSection() {
   const isMobileAch = useIsMobile(1024)
-  const [patentOpen, setPatentOpen] = useState(false), ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobileAch ? "0px" : "-40px" })
+  const [patentOpen, setPatentOpen] = useState(false)
   const pinRef = useRef(null)
-  const { scrollYProgress: achProgress } = useScroll({ target: isMobileAch ? ref : pinRef, offset: ["start start", "end end"] })
-  const xAchRaw = useTransform(achProgress, [0, 1], ["0%", "-36%"])
-  const xAch = useSpring(xAchRaw, { stiffness: 90, damping: 30, mass: 0.6 })
+  const { scrollYProgress: achProgress } = useScroll({ target: pinRef, offset: ["start start", "end end"] })
+  const xAchRaw = useTransform(achProgress, [0, 1], ["0%", isMobileAch ? "-76%" : "-36%"])
+  const xAch = useSpring(xAchRaw, { stiffness: 90, damping: 28, mass: 0.5 })
   const scaleAch = useSpring(useTransform(achProgress, [0, 1], [0, 1]), { stiffness: 80, damping: 25 })
   return (
-    <section id="achievements" ref={ref} className="bg-[#0A0A0A] relative">
-      {/* Mobile: classic grid */}
-      <div className="md:hidden py-16 relative">
+    <section id="achievements" ref={pinRef} className="pin-wrap !h-[250vh] bg-[#0A0A0A] relative">
+      <div className="pin-sticky">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/20 to-transparent" />
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-[#FFB800]/5 rounded-full blur-[100px] pointer-events-none" />
-        <div className="px-4 max-w-[1600px] mx-auto relative">
-          <div className="flex flex-col gap-6 mb-8">
-            <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full w-fit">04 // PRESTIGE & ACHIEVEMENTS</p>
-            <h2 className="font-display font-[800] leading-none tracking-tighter text-[9vw] text-white"><span className="block">Verified Engineering</span><span className="block text-stroke">Victories & Honours.</span></h2>
-            <p className="text-xs font-mono text-white/40">Swipe the prestige wall →</p>
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[#FFB800]/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="h-full flex flex-col justify-between py-6 sm:py-8">
+          <div className="px-4 sm:px-8 flex items-end justify-between gap-4 max-w-[1600px] mx-auto w-full">
+            <div>
+              <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Trophy className="w-3 h-3" /> <ScrambleText text="04 // PRESTIGE & ACHIEVEMENTS — HORIZONTAL WALL" /></p>
+              <h2 className="font-display font-[800] leading-none tracking-tighter text-[28px] sm:text-[44px] mt-2 sm:mt-3"><span className="text-white">Verified Engineering</span> <span className="text-stroke">Victories.</span></h2>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-white/40"><span>SCROLL</span><span className="w-20 sm:w-28 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX: scaleAch }} className="block h-full bg-[#CCFF00] origin-left" /></span></div>
           </div>
-          <div className="flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-4 -mx-4 px-4">
-            {ACHIEVEMENTS.map((a, idx) => {
-              const Icon = a.icon, isPatent = a.index === '02'
-              return (
-                <div key={a.index} onClick={() => isPatent && setPatentOpen(true)} className={`snap-center shrink-0 w-[84vw] max-w-[360px] rounded-[24px] bg-[#111] border border-white/10 p-6 flex flex-col gap-5 ${isPatent ? 'border-[#CCFF00]/20' : ''}`}>
-                  <div className="flex justify-between items-start gap-2"><span className="text-[10px] font-black tracking-widest px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/60">{a.type}</span><span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-full bg-white text-black"><Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />{a.metric}</span></div>
-                  <div className="flex gap-3"><div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 grid place-items-center shrink-0"><Icon className="w-6 h-6" style={{ color: a.color }} /></div><div><h3 className="font-display font-black text-[15px] leading-tight">{a.title}</h3><p className="text-xs font-mono font-bold text-[#CCFF00] mt-1">{a.team}</p></div></div>
-                  <p className="text-xs text-white/60 leading-relaxed flex-1">{a.desc}</p>
-                  <div className="pt-3 border-t border-white/10 flex justify-between text-[11px] font-mono text-white/30"><span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[#00FF88] rounded-full animate-pulse" /> VERIFIED</span><ExternalLink className="w-3.5 h-3.5" /></div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-      {/* Desktop: pinned horizontal — like Four Labs — FIXED GAP */}
-      <div ref={pinRef} className="hidden md:block pin-wrap !h-[195vh]">
-        <div className="pin-sticky">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/20 to-transparent" />
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[#FFB800]/5 rounded-full blur-[120px] pointer-events-none" />
-          <div className="h-full flex flex-col">
-            <div className="px-6 md:px-8 pt-10 flex items-end justify-between gap-6 max-w-[1600px] mx-auto w-full">
-              <div>
-                <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">04 // <ScrambleText text="PRESTIGE & ACHIEVEMENTS — HORIZONTAL WALL" /></p>
-                <h2 className="font-display font-[800] leading-none tracking-tighter text-[44px] mt-3"><span className="text-white">Verified Engineering</span> <span className="text-stroke">Victories.</span></h2>
+          <div className="flex-1 flex items-center overflow-hidden my-auto">
+            <motion.div style={{ x: xAch }} className="flex gap-4 sm:gap-6 pl-[4vw] pr-[8vw] will-change-transform">
+              {ACHIEVEMENTS.map((a) => {
+                const Icon = a.icon, isPatent = a.index === '02'
+                return (
+                  <TiltCard key={a.index} intensity={6} className="shrink-0">
+                  <GlareCard className="shrink-0 w-[82vw] sm:w-[480px] h-[340px] sm:h-[360px] rounded-[24px] sm:rounded-[32px]">
+                  <div onClick={() => isPatent && setPatentOpen(true)} className={`glare-card group relative w-full h-full rounded-[24px] sm:rounded-[32px] bg-[#111] border p-5 sm:p-7 flex flex-col justify-between overflow-hidden cursor-pointer ${isPatent ? 'border-[#CCFF00]/30 hover:border-[#CCFF00]/50' : 'border-white/10 hover:border-white/20'}`}>
+                    <div className="absolute bottom-0 right-3 text-[90px] sm:text-[110px] font-display font-black leading-none text-white/[0.03] group-hover:text-white/[0.06] select-none">{a.index}</div>
+                    <div className="flex justify-between items-start gap-2"><span className="text-[10px] font-black tracking-widest px-2.5 sm:px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60">{a.type}</span><span className="inline-flex items-center gap-1.5 text-xs font-black px-2.5 sm:px-3 py-1 rounded-full bg-white text-black"><Star className="w-3.5 h-3.5 text-[#FFB800] fill-[#FFB800]" />{a.metric}</span></div>
+                    <div className="flex gap-3 sm:gap-4"><div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/5 border border-white/10 grid place-items-center shrink-0 group-hover:bg-[#CCFF00] group-hover:border-[#CCFF00] transition-colors"><Icon className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: a.color }} /></div><div><h3 className="font-display font-black text-base sm:text-[18px] leading-tight">{a.title}</h3><p className="text-xs font-mono font-bold text-[#CCFF00] mt-1">{a.team}</p></div></div>
+                    <p className="text-xs sm:text-sm text-white/60 leading-relaxed line-clamp-3">{a.desc}</p>
+                    <div className="pt-3 sm:pt-4 border-t border-white/10 flex justify-between text-xs font-mono text-white/30"><span className="flex items-center gap-2"><span className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" /> VERIFIED {isPatent && '• TAP FOR RECORD'}</span><ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></div>
+                  </div>
+                  </GlareCard>
+                  </TiltCard>
+                )
+              })}
+              <div className="shrink-0 w-[260px] sm:w-[360px] h-[340px] sm:h-[360px] rounded-[24px] sm:rounded-[32px] border-2 border-dashed border-white/15 bg-white/[0.02] grid place-items-center p-6 sm:p-8 text-center">
+                <div><div className="w-12 h-12 rounded-full bg-[#CCFF00] text-black grid place-items-center mx-auto"><Trophy className="w-6 h-6" /></div><h4 className="font-display font-black text-base sm:text-lg mt-3">MORE HONOURS</h4><p className="text-xs text-white/50 mt-1">12+ championships & counting</p><div className="mt-4 h-1 w-20 bg-[#CCFF00] rounded-full mx-auto" /></div>
               </div>
-              <div className="hidden lg:flex items-center gap-3 text-xs font-mono text-white/40"><span>DRAG → SCROLL TO EXPLORE</span><span className="w-28 h-[2px] bg-white/10 rounded-full overflow-hidden"><motion.span style={{ scaleX: scaleAch }} className="block h-full bg-[#CCFF00] origin-left" /></span></div>
-            </div>
-            <div className="flex-1 flex items-center overflow-hidden">
-              <motion.div style={{ x: xAch }} className="flex gap-6 pl-[4vw] pr-[8vw] will-change-transform">
-                {ACHIEVEMENTS.map((a, idx) => {
-                  const Icon = a.icon, isPatent = a.index === '02'
-                  return (
-                    <TiltCard key={a.index} intensity={6} className="shrink-0">
-                    <GlareCard className="shrink-0 w-[480px] h-[360px] rounded-[32px]">
-                    <div onClick={() => isPatent && setPatentOpen(true)} className={`glare-card group relative w-full h-full rounded-[32px] bg-[#111] border p-7 flex flex-col gap-5 overflow-hidden cursor-pointer ${isPatent ? 'border-[#CCFF00]/30 hover:border-[#CCFF00]/50' : 'border-white/10 hover:border-white/20'}`}>
-                      <div className="absolute bottom-0 right-3 text-[110px] font-display font-black leading-none text-white/[0.03] group-hover:text-white/[0.06] select-none">{a.index}</div>
-                      <div className="flex justify-between items-start gap-2"><span className="text-[10px] font-black tracking-widest px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60">{a.type}</span><span className="inline-flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full bg-white text-black"><Star className="w-3.5 h-3.5 text-[#FFB800] fill-[#FFB800]" />{a.metric}</span></div>
-                      <div className="flex gap-4"><div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 grid place-items-center shrink-0 group-hover:bg-[#CCFF00] group-hover:border-[#CCFF00] transition-colors"><Icon className="w-7 h-7" style={{ color: a.color }} /></div><div><h3 className="font-display font-black text-[18px] leading-tight">{a.title}</h3><p className="text-xs font-mono font-bold text-[#CCFF00] mt-1">{a.team}</p></div></div>
-                      <p className="text-sm text-white/60 leading-relaxed flex-1">{a.desc}</p>
-                      <div className="pt-4 border-t border-white/10 flex justify-between text-xs font-mono text-white/30"><span className="flex items-center gap-2"><span className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" /> VERIFIED MILESTONE {isPatent && '• CLICK TO STAMP'}</span><ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></div>
-                    </div>
-                    </GlareCard>
-                    </TiltCard>
-                  )
-                })}
-                <div className="shrink-0 w-[360px] h-[360px] rounded-[32px] border-2 border-dashed border-white/15 bg-white/[0.02] grid place-items-center p-8 text-center">
-                  <div><div className="w-12 h-12 rounded-full bg-[#CCFF00] text-black grid place-items-center mx-auto"><Trophy className="w-6 h-6" /></div><h4 className="font-display font-black text-lg mt-3">MORE HONOURS</h4><p className="text-xs text-white/50 mt-1">12+ championships & counting</p><div className="mt-4 h-1 w-20 bg-[#CCFF00] rounded-full mx-auto" /></div>
-                </div>
-              </motion.div>
-            </div>
-            <div className="px-6 md:px-8 pb-6 flex justify-center gap-2">
-              {[0,1,2,3].map(i => <ScrollDot key={i} progress={achProgress} index={i} total={4} />)}
-            </div>
+            </motion.div>
+          </div>
+          <div className="px-4 sm:px-8 flex justify-center gap-2">
+            {[0,1,2,3].map(i => <ScrollDot key={i} progress={achProgress} index={i} total={4} />)}
           </div>
         </div>
       </div>
@@ -1593,30 +1514,29 @@ function TeamSection() {
   }), [activeTab, search])
   const featuredTeam = useMemo(() => TEAM.slice(0, 6), [])
   const pinTeamRef = useRef(null)
-  const { scrollYProgress: teamProgress } = useScroll({ target: isMobileTeam ? ref : pinTeamRef, offset: ["start start", "end end"] })
+  const { scrollYProgress: teamProgress } = useScroll({ target: pinTeamRef, offset: ["start start", "end end"] })
   const [activeTeamIdx, setActiveTeamIdx] = useState(0)
   useEffect(() => {
-    if (isMobileTeam) return
     const unsub = teamProgress.on("change", (v) => {
       const idx = Math.min(featuredTeam.length - 1, Math.max(0, Math.floor(v * featuredTeam.length + 0.0001)))
       setActiveTeamIdx(idx)
     })
     return () => unsub()
-  }, [teamProgress, featuredTeam.length, isMobileTeam])
+  }, [teamProgress, featuredTeam.length])
   const copyEmail = (email, e) => { e?.stopPropagation(); navigator.clipboard?.writeText(email); setCopied(email); setTimeout(() => setCopied(null), 2200) }
   const quoteSkew = useMarqueeSkew()
   return (
-    <section id="team" ref={ref} className="bg-[#0A0A0A] py-16 md:py-24 relative">
+    <section id="team" ref={ref} className="bg-[#0A0A0A] py-12 md:py-24 relative">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="px-4 md:px-8 max-w-[1600px] mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-6">
           <div>
             <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Shield className="w-3.5 h-3.5" /> 06 // STUDENT LEADERSHIP — 30 CREATIVES</p>
-            <h2 className="font-display font-[800] leading-none tracking-tighter text-[9vw] md:text-[52px] mt-3 text-white"><span className="block">Student Leadership</span><span className="block text-stroke">Command Council.</span></h2>
+            <h2 className="font-display font-[800] leading-none tracking-tighter text-[28px] sm:text-[44px] md:text-[52px] mt-2 sm:mt-3 text-white"><span className="block">Student Leadership</span><span className="block text-stroke">Command Council.</span></h2>
           </div>
-          <p className="text-xs font-mono text-white/40 max-w-[320px] md:text-right">Every leader equal — hover to reveal quote, click for dossier. 30 distinct voices.</p>
+          <p className="text-xs font-mono text-white/40 max-w-[320px] md:text-right">Every leader equal — scroll to reveal quote, tap for dossier. 30 distinct voices.</p>
         </div>
-        {/* Team quote marquee — creative for ALL */}
+        {/* Team quote marquee */}
         <div className="mb-6 rounded-[16px] bg-[#0F0F0F] border border-white/10 overflow-hidden py-2.5">
           <motion.div style={{ skewX: quoteSkew }} className="will-change-transform">
             <div className="flex whitespace-nowrap animate-marquee marquee" style={{ width: 'max-content' }}>
@@ -1631,39 +1551,39 @@ function TeamSection() {
           </motion.div>
         </div>
 
-        {/* Pinned scroll intro — each member appears as you scroll (desktop) */}
-        <div ref={pinTeamRef} className="hidden lg:block pin-wrap !h-[320vh] -mx-4 md:-mx-8">
+        {/* Pinned scroll intro — each member appears as you scroll (Mobile & Desktop) */}
+        <div ref={pinTeamRef} className="pin-wrap !h-[300vh] -mx-4 md:-mx-8 my-4">
           <div className="pin-sticky bg-[#0A0A0A] border-y border-white/5">
-            <div className="h-full max-w-[1600px] mx-auto px-4 md:px-8 flex items-center py-8">
-              <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-8 w-full items-center">
-                <div className="relative h-[440px] rounded-[32px] overflow-hidden bg-[#0F0F0F] border border-white/10">
+            <div className="h-full max-w-[1600px] mx-auto px-4 md:px-8 flex items-center py-4 sm:py-8">
+              <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 sm:gap-8 w-full items-center">
+                <div className="relative h-[480px] sm:h-[440px] rounded-[24px] sm:rounded-[32px] overflow-hidden bg-[#0F0F0F] border border-white/10">
                   <AnimatePresence mode="wait">
-                    <motion.div key={activeTeamIdx} initial={{ opacity: 0, y: 28, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -28, scale: 0.97 }} transition={{ duration: 0.5, ease: [0.16,1,0.3,1] }} className="absolute inset-0 p-1">
-                      <div className="h-full rounded-[28px] overflow-hidden bg-gradient-to-br from-[#111] to-black border border-white/10 flex shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
-                        <div className="w-[46%] relative overflow-hidden">
+                    <motion.div key={activeTeamIdx} initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -24, scale: 0.97 }} transition={{ duration: 0.45, ease: [0.16,1,0.3,1] }} className="absolute inset-0 p-1">
+                      <div className="h-full rounded-[22px] sm:rounded-[28px] overflow-hidden bg-gradient-to-br from-[#111] to-black border border-white/10 flex flex-col sm:flex-row shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
+                        <div className="w-full sm:w-[46%] h-[46%] sm:h-full relative overflow-hidden">
                           <img src={featuredTeam[activeTeamIdx].image} alt={featuredTeam[activeTeamIdx].name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/20" />
-                          <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{featuredTeam[activeTeamIdx].council} • {featuredTeam[activeTeamIdx].year}</span>
-                          <span className="absolute bottom-4 left-4 px-2.5 py-1 rounded-full text-[10px] font-black tracking-widest border backdrop-blur" style={{ background: (featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00')+'18', borderColor: (featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00')+'35', color: featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00' }}>{featuredTeam[activeTeamIdx].role}</span>
+                          <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-transparent via-transparent to-black/30" />
+                          <span className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 sm:px-3 py-1 rounded-full bg-black/60 backdrop-blur border border-white/15 text-[10px] font-black tracking-widest text-white">{featuredTeam[activeTeamIdx].council} • {featuredTeam[activeTeamIdx].year}</span>
+                          <span className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 px-2.5 py-1 rounded-full text-[10px] font-black tracking-widest border backdrop-blur" style={{ background: (featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00')+'18', borderColor: (featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00')+'35', color: featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00' }}>{featuredTeam[activeTeamIdx].role}</span>
                         </div>
-                        <div className="flex-1 p-6 sm:p-7 flex flex-col justify-between min-w-0">
+                        <div className="flex-1 p-5 sm:p-7 flex flex-col justify-between min-w-0">
                           <div>
-                            <h3 className="font-display font-black text-[26px] leading-none tracking-tight">{featuredTeam[activeTeamIdx].name}</h3>
+                            <h3 className="font-display font-black text-xl sm:text-[26px] leading-none tracking-tight">{featuredTeam[activeTeamIdx].name}</h3>
                             <p className="text-xs font-mono font-bold mt-1" style={{ color: featuredTeam[activeTeamIdx].council==='SPACE'?'#FFB800':'#CCFF00' }}>{featuredTeam[activeTeamIdx].specialty}</p>
-                            <p className="text-[13px] leading-relaxed text-white/60 mt-4 line-clamp-4">“{featuredTeam[activeTeamIdx].quote}”</p>
+                            <p className="text-xs sm:text-[13px] leading-relaxed text-white/60 mt-3 sm:mt-4 line-clamp-3 sm:line-clamp-4">“{featuredTeam[activeTeamIdx].quote}”</p>
                           </div>
-                          <div className="flex items-center gap-2 text-xs font-mono text-white/40">
-                            <span className="w-8 h-px bg-white/15" /> {String(activeTeamIdx+1).padStart(2,'0')} / {String(featuredTeam.length).padStart(2,'0')} — SCROLL TO MEET NEXT
+                          <div className="flex items-center gap-2 text-xs font-mono text-white/40 pt-2">
+                            <span className="w-6 sm:w-8 h-px bg-white/15" /> {String(activeTeamIdx+1).padStart(2,'0')} / {String(featuredTeam.length).padStart(2,'0')} — SCROLL TO MEET NEXT
                           </div>
                         </div>
                       </div>
                     </motion.div>
                   </AnimatePresence>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {featuredTeam.map((_, i) => <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i===activeTeamIdx ? 'w-8 bg-[#CCFF00]' : i < activeTeamIdx ? 'w-6 bg-[#CCFF00]/40' : 'w-6 bg-white/15'}`} />)}
+                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                    {featuredTeam.map((_, i) => <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i===activeTeamIdx ? 'w-6 sm:w-8 bg-[#CCFF00]' : i < activeTeamIdx ? 'w-4 sm:w-6 bg-[#CCFF00]/40' : 'w-4 sm:w-6 bg-white/15'}`} />)}
                   </div>
                 </div>
-                <div className="py-2">
+                <div className="py-2 hidden lg:block">
                   <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full">TEAM SCROLL — 30 LEADERS</p>
                   <h3 className="font-display font-[800] text-[38px] leading-none tracking-tighter mt-3"><span className="text-white">Scroll to</span> <span className="text-stroke">meet each</span> <span className="text-white">leader.</span></h3>
                   <p className="text-sm text-white/50 mt-3 leading-relaxed">Pinned storytelling — photo + role + quote appear as you scroll. 30 distinct voices, one council.</p>
