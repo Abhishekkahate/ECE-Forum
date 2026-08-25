@@ -309,15 +309,9 @@ body {
   body {
     background-color: var(--bg-primary);
     color: #F8FAFC;
-    font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
-    overflow-x: clip;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
     letter-spacing: -0.015em;
-    background-image: 
-      radial-gradient(ellipse at 50% 0%, rgba(0, 242, 254, 0.04) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
-      radial-gradient(ellipse at 20% 80%, rgba(255, 184, 0, 0.03) 0%, transparent 50%);
-    background-attachment: fixed;
+    touch-action: pan-y;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -325,57 +319,10 @@ body {
     letter-spacing: -0.035em;
     font-weight: 700;
   }
-}
 
-/* â”€â”€â”€ Ultra-Smooth Futuristic Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-::-webkit-scrollbar { 
-  width: 6px; 
-  height: 6px;
-}
-::-webkit-scrollbar-track { 
-  background: #020306; 
-}
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(0, 242, 254, 0.4), rgba(139, 92, 246, 0.5));
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb:hover { 
-  background: linear-gradient(180deg, #00F2FE, #8B5CF6);
-  box-shadow: 0 0 10px rgba(0, 242, 254, 0.6);
-}
-
-/* â”€â”€â”€ Glassmorphism & Cyber Panels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.glass-cyber {
-  background: rgba(8, 12, 22, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  transform: translateZ(0);
-}
-
-.glass-cyber-interactive {
-  background: rgba(8, 12, 22, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-.glass-cyber-interactive:hover {
-  background: rgba(12, 18, 34, 0.88);
-  border-color: rgba(0, 242, 254, 0.4);
-  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px -5px rgba(0, 242, 254, 0.18);
-  transform: translateY(-4px) translateZ(0);
-}
-
-.glass-cyber-amber:hover {
-  border-color: rgba(255, 184, 0, 0.45);
-  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px -5px rgba(255, 184, 0, 0.2);
+  section[id] {
+    scroll-margin-top: 80px;
+  }
 }
 
 /* â”€â”€â”€ HUD Corner Brackets & Reticles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

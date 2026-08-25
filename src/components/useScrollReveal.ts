@@ -6,7 +6,7 @@ import { useEffect, useRef, useCallback } from 'react';
  * or .reveal-scale classes when the section enters the viewport.
  * Also uses MutationObserver to immediately reveal newly mounted children when the section is in view.
  */
-export function useScrollReveal(threshold = 0.12) {
+export function useScrollReveal(threshold = 0.05) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   const observe = useCallback(() => {
@@ -32,7 +32,7 @@ export function useScrollReveal(threshold = 0.12) {
           }
         });
       },
-      { threshold, rootMargin: '0px 0px -20px 0px' }
+      { threshold, rootMargin: '0px' }
     );
 
     targets.forEach((target) => observer.observe(target));
@@ -67,7 +67,7 @@ export function useScrollReveal(threshold = 0.12) {
  * useElementReveal — attaches IntersectionObserver to a single element.
  * Returns [ref, inView] tuple.
  */
-export function useElementReveal(threshold = 0.2) {
+export function useElementReveal(threshold = 0.05) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

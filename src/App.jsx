@@ -82,11 +82,23 @@ function ProcessDot({ progress, index }) {
 }
 
 // --- SIGNATURE MOTION PRIMITIVES ---
+function GlobalScrollIndicator() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30, restDelta: 0.001 })
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-[2.5px] bg-[#CCFF00] z-[60] origin-left shadow-[0_0_12px_#CCFF00]"
+      style={{ scaleX }}
+    />
+  )
+}
+
 function useMarqueeSkew() {
   const { scrollY } = useScroll()
   const velocity = useVelocity(scrollY)
+  const isMobile = useIsMobile(1024)
   const smooth = useSpring(velocity, { stiffness: 140, damping: 42, mass: 0.6 })
-  return useTransform(smooth, [-1500, 0, 1500], [-7, 0, 7], { clamp: true })
+  return useTransform(smooth, [-1500, 0, 1500], isMobile ? [-2, 0, 2] : [-7, 0, 7], { clamp: true })
 }
 
 function KineticLine({ children, delay = 0, className = '' }) {
@@ -102,7 +114,7 @@ function KineticLine({ children, delay = 0, className = '' }) {
 const SCRAMBLE_GLYPHS = '!<>-_[]{}=+*^?#01'
 function ScrambleText({ text, className = '', duration = 850 }) {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-30px' })
+  const inView = useInView(ref, { once: true, margin: '0px' })
   const reduced = usePrefersReducedMotion()
   const [out, setOut] = useState(text)
   useEffect(() => {
@@ -941,7 +953,8 @@ function LabsPin() {
 
 // --- STATS (mobile-optimized + tilt + a11y) ---
 function StatsSection() {
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-80px" })
+  const isMobile = useIsMobile(1024)
+  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobile ? "0px" : "-40px" })
   return (
     <section id="stats" ref={ref} className="bg-[#08080A] py-12 sm:py-16 md:py-20 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"><div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-[#7000FF]/[0.05] rounded-full blur-[120px]" aria-hidden /></div>
@@ -970,7 +983,7 @@ function StatsSection() {
           {STATS.map((s, idx) => {
             const Icon = s.icon
             return (
-              <GlareCard className="h-full rounded-[24px]"><motion.div key={s.index} initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: idx * 0.05, duration: 0.5, ease: [0.76, 0, 0.24, 1] }} className="glare-card group relative h-full rounded-[24px] bg-[#0F0F0F] border border-white/10 p-6 md:p-7 overflow-hidden hover:border-white/15 hover:bg-[#141414] transition-colors">
+              <GlareCard key={s.index} className="h-full rounded-[24px]"><motion.div initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: idx * 0.05, duration: 0.5, ease: [0.76, 0, 0.24, 1] }} className="glare-card group relative h-full rounded-[24px] bg-[#0F0F0F] border border-white/10 p-6 md:p-7 overflow-hidden hover:border-white/15 hover:bg-[#141414] transition-colors">
                 <div className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(90deg, transparent, ${s.color}, transparent)` }} />
                 <div className="flex justify-between items-start mb-6">
                   <span className="text-[10px] font-mono tracking-widest text-white/30">// SYS_METRIC.{s.index}</span>
@@ -1009,7 +1022,8 @@ function CountUp({ value, inView }) {
 
 // --- ABOUT — REIMAGINED v2 (premium, editorial, interactive, with image collage) ---
 function AboutSection() {
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-80px" })
+  const isMobile = useIsMobile(1024)
+  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobile ? "0px" : "-40px" })
   const { scrollYProgress: aboutProgress } = useScroll({ target: ref, offset: ["start end", "end start"] })
   const xWatermark = useTransform(aboutProgress, [0, 1], ["-6%", "6%"])
   const [hovered, setHovered] = useState(null)
@@ -1176,7 +1190,7 @@ function ProcessSection() {
               const Icon = s.icon
               return (
                 <GlareCard key={s.n} className="rounded-[24px]">
-                <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ delay: idx*0.08, duration: 0.5, ease: [0.16,1,0.3,1] }} className="glare-card group relative rounded-[24px] bg-[#111] border border-white/10 p-6 md:p-7 flex flex-col gap-4 hover:border-white/15 hover:bg-[#141414] transition-colors overflow-hidden">
+                <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px" }} transition={{ delay: idx*0.08, duration: 0.5, ease: [0.16,1,0.3,1] }} className="glare-card group relative rounded-[24px] bg-[#111] border border-white/10 p-6 md:p-7 flex flex-col gap-4 hover:border-white/15 hover:bg-[#141414] transition-colors overflow-hidden">
                   <div className="flex justify-between items-start">
                     <span className="text-[11px] font-mono font-black tracking-widest px-3 py-1 rounded-full border" style={{ background: s.color+'15', borderColor: s.color+'30', color: s.color }}>{s.n} • STEP</span>
                     <span className="w-10 h-10 rounded-xl bg-white text-black grid place-items-center group-hover:bg-[#CCFF00] transition-colors"><Icon className="w-5 h-5" /></span>
@@ -1197,8 +1211,9 @@ function ProcessSection() {
 
 // --- EVENTS (backend wired) ---
 function EventsSection({ eventsList: propEvents, onRegister }) {
+  const isMobile = useIsMobile(1024)
   const [filter, setFilter] = useState('All'), [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-60px" })
+  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobile ? "0px" : "-40px" })
   const liveEvents = Array.isArray(propEvents) && propEvents.length ? propEvents : EVENTS
   const targetDate = useMemo(() => new Date(HERO_CONFIG.flagshipTargetDate).getTime(), [])
   useEffect(() => {
@@ -1289,10 +1304,10 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
 // --- GALLERY ---
 function GallerySection({ galleryList: propGallery }) {
   const [activeCat, setActiveCat] = useState('All'), [lightbox, setLightbox] = useState(null)
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-60px" })
-  const isMobileGal = useIsMobile(768)
+  const isMobileGal = useIsMobile(1024)
+  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobileGal ? "0px" : "-40px" })
   const pinGalRef = useRef(null)
-  const { scrollYProgress: galProgress } = useScroll({ target: pinGalRef, offset: ["start start", "end end"] })
+  const { scrollYProgress: galProgress } = useScroll({ target: isMobileGal ? ref : pinGalRef, offset: ["start start", "end end"] })
   const xGalRaw = useTransform(galProgress, [0, 1], ["0%", "-49%"])
   const xGal = useSpring(xGalRaw, { stiffness: 90, damping: 30, mass: 0.6 })
   const scaleGal = useSpring(useTransform(galProgress, [0, 1], [0, 1]), { stiffness: 80, damping: 25 })
@@ -1326,7 +1341,7 @@ function GallerySection({ galleryList: propGallery }) {
           </div>
           <div className="grid grid-cols-1 gap-4">
             {filtered.map((item, idx) => (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 28, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-30px' }} transition={{ delay: (idx % 3) * 0.07, duration: 0.55, ease: [0.16, 1, 0.3, 1] }} onClick={() => setLightbox(idx)} className="group cursor-pointer rounded-[20px] overflow-hidden bg-[#111] border border-white/10">
+              <motion.div key={item.id} initial={{ opacity: 0, y: 28, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '0px' }} transition={{ delay: (idx % 3) * 0.07, duration: 0.55, ease: [0.16, 1, 0.3, 1] }} onClick={() => setLightbox(idx)} className="group cursor-pointer rounded-[20px] overflow-hidden bg-[#111] border border-white/10">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img src={item.url} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
@@ -1415,10 +1430,10 @@ function GallerySection({ galleryList: propGallery }) {
 
 // --- ACHIEVEMENTS — NOW WITH HORIZONTAL PINNED SCROLL (like Labs) ---
 function AchievementsSection() {
-  const [patentOpen, setPatentOpen] = useState(false), ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-60px" })
-  const isMobileAch = useIsMobile(768)
+  const isMobileAch = useIsMobile(1024)
+  const [patentOpen, setPatentOpen] = useState(false), ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobileAch ? "0px" : "-40px" })
   const pinRef = useRef(null)
-  const { scrollYProgress: achProgress } = useScroll({ target: pinRef, offset: ["start start", "end end"] })
+  const { scrollYProgress: achProgress } = useScroll({ target: isMobileAch ? ref : pinRef, offset: ["start start", "end end"] })
   const xAchRaw = useTransform(achProgress, [0, 1], ["0%", "-36%"])
   const xAch = useSpring(xAchRaw, { stiffness: 90, damping: 30, mass: 0.6 })
   const scaleAch = useSpring(useTransform(achProgress, [0, 1], [0, 1]), { stiffness: 80, damping: 25 })
@@ -1514,7 +1529,8 @@ function AchievementsSection() {
 
 // --- FACULTY ---
 function FacultySection() {
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-60px" })
+  const isMobile = useIsMobile(1024)
+  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobile ? "0px" : "-40px" })
   return (
     <section id="faculty" ref={ref} className="bg-[#08080A] py-16 md:py-24 relative overflow-hidden">
       <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-[#7000FF]/5 rounded-full blur-[100px] pointer-events-none" />
@@ -1565,8 +1581,9 @@ function FacultySection() {
 
 // --- TEAM ---
 function TeamSection() {
+  const isMobileTeam = useIsMobile(1024)
   const [activeTab, setActiveTab] = useState('All'), [search, setSearch] = useState(''), [selected, setSelected] = useState(null), [copied, setCopied] = useState(null)
-  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: "-40px" })
+  const ref = useRef(null), isInView = useInView(ref, { once: true, margin: isMobileTeam ? "0px" : "-40px" })
   const tabs = ['All', 'Executive Council', 'Technical Leads', 'Design & Media', 'Event Management']
   const filtered = useMemo(() => TEAM.filter(m => {
     const matchTab = activeTab === 'All' || m.cat === activeTab
@@ -1576,15 +1593,16 @@ function TeamSection() {
   }), [activeTab, search])
   const featuredTeam = useMemo(() => TEAM.slice(0, 6), [])
   const pinTeamRef = useRef(null)
-  const { scrollYProgress: teamProgress } = useScroll({ target: pinTeamRef, offset: ["start start", "end end"] })
+  const { scrollYProgress: teamProgress } = useScroll({ target: isMobileTeam ? ref : pinTeamRef, offset: ["start start", "end end"] })
   const [activeTeamIdx, setActiveTeamIdx] = useState(0)
   useEffect(() => {
+    if (isMobileTeam) return
     const unsub = teamProgress.on("change", (v) => {
       const idx = Math.min(featuredTeam.length - 1, Math.max(0, Math.floor(v * featuredTeam.length + 0.0001)))
       setActiveTeamIdx(idx)
     })
     return () => unsub()
-  }, [teamProgress, featuredTeam.length])
+  }, [teamProgress, featuredTeam.length, isMobileTeam])
   const copyEmail = (email, e) => { e?.stopPropagation(); navigator.clipboard?.writeText(email); setCopied(email); setTimeout(() => setCopied(null), 2200) }
   const quoteSkew = useMarqueeSkew()
   return (
@@ -2191,9 +2209,11 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [cmdOpen])
   return (
-    <div className="relative bg-[#08080A] selection:bg-[#CCFF00] selection:text-black">
-      <a href="#hero" className="skip-link">Skip to content</a>
+    <div className="relative min-h-screen bg-[#08080A] text-white selection:bg-[#CCFF00] selection:text-black overflow-x-clip">
+      <GlobalScrollIndicator />
       <div className="grain" aria-hidden />
+      <GlobalToast toasts={toasts} />
+      <a href="#hero" className="skip-link">Skip to content</a>
       <ScrollProgressBar />
       <Spotlight />
       <CustomCursor />
