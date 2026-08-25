@@ -14,12 +14,45 @@ html.lenis, html.lenis body { height: auto; }
 *:focus-visible { outline: 2px solid #CCFF00; outline-offset: 2px; border-radius: 6px; }
 *:focus:not(:focus-visible) { outline: none; }
 
-html { scrollbar-gutter: stable; scroll-padding-top: 88px; }
+/* ─── Cross-Device Foundation (mobile / tablet / desktop parity) ─── */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+* { -webkit-tap-highlight-color: transparent; }
+a, button, [role='button'], input, select, textarea, summary { touch-action: manipulation; }
+
+/* Prevent iOS Safari auto-zoom when focusing compact form controls */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: max(16px, 1em) !important; }
+}
+
+/* Notch / home-indicator safe-area utilities */
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.px-safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.bottom-safe { bottom: env(safe-area-inset-bottom); }
+
+/* Consistent minimum touch targets on coarse pointers */
+@media (pointer: coarse) {
+  button, a[href], [role='button'] { min-height: 44px; min-width: 44px; }
+}
+
+html {
+  scrollbar-gutter: stable;
+  scroll-padding-top: 88px;
+  /* Kill any horizontal pan/pinch-drift on every device (iOS Safari included).
+     `clip` avoids creating a scroll container so position:sticky keeps working;
+     `hidden` is the fallback for older engines. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
 body {
   background: #08080A;
   color: #fff;
   font-family: 'Space Grotesk', sans-serif;
   overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -142,11 +175,11 @@ body {
 }
 .glare-card:hover::after { transform: translateX(120%); }
 
-/* Horizontal pin (Desktop only; on mobile default to normal block flow) */
+/* Horizontal pin (tablet & desktop; below md falls back to normal block flow) */
 .pin-wrap { height: auto; }
 .pin-sticky { position: relative; height: auto; overflow: visible; }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .pin-wrap { height: 280vh; }
   .pin-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
 }
@@ -216,6 +249,7 @@ html.theme-transition *, html.theme-transition *::before, html.theme-transition 
     color: #F8FAFC;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
+    overflow-x: clip;
     letter-spacing: -0.015em;
     background-image: 
       radial-gradient(ellipse at 50% 0%, rgba(0, 242, 254, 0.04) 0%, transparent 60%),

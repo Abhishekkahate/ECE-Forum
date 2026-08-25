@@ -433,7 +433,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#03060C] text-slate-100 relative selection:bg-lime selection:text-midnight font-sans overflow-x-hidden pb-16">
+    <div className="min-h-screen bg-[#03060C] text-slate-100 relative selection:bg-lime selection:text-midnight font-sans overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))]">
       
       {/* Suggestions Datalists */}
       <datalist id="department-suggestions">
@@ -468,17 +468,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
       <div className="absolute inset-0 cyber-grid-pattern opacity-30 pointer-events-none" />
 
       {/* ── Top Navigation Bar ────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-[#040711]/90 backdrop-blur-2xl border-b border-white/10 py-3.5 px-4 sm:px-8">
+      <header className="sticky top-0 z-40 bg-[#040711]/90 backdrop-blur-2xl border-b border-white/10 py-3 px-4 sm:px-8 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
           {/* Return Home Button */}
           <Link
             to="/"
             onClick={() => soundFx.playClick()}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-midnight border border-white/10 hover:border-lime/50 text-slate-300 hover:text-white transition-all text-xs font-mono group cursor-pointer shadow-sm"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-midnight border border-white/10 hover:border-lime/50 text-slate-300 hover:text-white transition-all text-xs font-mono group cursor-pointer shadow-sm min-h-[44px]"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-lime" />
-            <span>Return to Home</span>
+            <span className="hidden xs:inline">Return to Home</span>
           </Link>
 
           {/* Department Branding */}
@@ -500,7 +500,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                 soundFx.playClick();
                 setIsMyPassesOpen(true);
               }}
-              className="px-3 py-1.5 rounded-xl bg-midnight-lighter border border-white/10 hover:border-amber/50 text-slate-300 hover:text-amber text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+              className="px-3 py-2 rounded-xl bg-midnight-lighter border border-white/10 hover:border-amber/50 text-slate-300 hover:text-amber text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm min-h-[44px]"
             >
               <Ticket className="w-3.5 h-3.5 text-amber" />
               <span className="hidden sm:inline">My Passes</span>
@@ -520,7 +520,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
             ) : (
               <button
                 onClick={handleGoogleSignInClick}
-                className="px-3 py-1.5 rounded-xl bg-lime text-midnight font-space font-bold text-xs shadow-lime hover:opacity-95 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-lime text-midnight font-space font-bold text-xs shadow-lime hover:opacity-95 cursor-pointer min-h-[44px]"
               >
                 Sign In
               </button>
@@ -559,7 +559,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                 <button
                   key={evt.id}
                   onClick={() => handleSelectEvent(evt.id)}
-                  className={`px-4 py-2.5 rounded-2xl text-xs font-mono transition-all flex items-center gap-2 cursor-pointer border ${
+                  className={`px-4 py-3 sm:py-2.5 rounded-2xl text-xs font-mono transition-all flex items-center gap-2 cursor-pointer border min-h-[44px] ${
                     isCurrent
                       ? 'bg-gradient-to-r from-lime/20 to-blue-600/20 border-lime text-white font-bold shadow-[0_0_20px_rgba(0,242,254,0.25)]'
                       : 'bg-midnight/90 border-white/10 text-slate-400 hover:text-white hover:border-white/25'
@@ -582,7 +582,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
             
             {/* LEFT COLUMN: Event Spotlight Card (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="rounded-3xl bg-gradient-to-br from-[#080D1A] to-[#04060C] border border-white/15 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] sticky top-24">
+              <div className="rounded-3xl bg-gradient-to-br from-[#080D1A] to-[#04060C] border border-white/15 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] lg:sticky lg:top-24">
                 
                 {/* Event Image Banner */}
                 <div className="relative aspect-[16/9] bg-midnight overflow-hidden">
@@ -616,28 +616,28 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
 
                   {/* Metadata Matrix */}
                   <div className="space-y-2.5 pt-2 border-t border-white/10 text-xs font-mono">
-                    <div className="p-3 bg-midnight rounded-xl border border-white/5 flex items-center justify-between">
-                      <span className="text-slate-400 flex items-center gap-2">
+                    <div className="p-3 bg-midnight rounded-xl border border-white/5 flex items-center justify-between gap-3">
+                      <span className="text-slate-400 flex items-center gap-2 shrink-0">
                         <Calendar className="w-4 h-4 text-lime" />
                         <span>Date</span>
                       </span>
-                      <strong className="text-white">{selectedEvent.date}</strong>
+                      <strong className="text-white text-right break-words min-w-0">{selectedEvent.date}</strong>
                     </div>
 
-                    <div className="p-3 bg-midnight rounded-xl border border-white/5 flex items-center justify-between">
-                      <span className="text-slate-400 flex items-center gap-2">
+                    <div className="p-3 bg-midnight rounded-xl border border-white/5 flex items-center justify-between gap-3">
+                      <span className="text-slate-400 flex items-center gap-2 shrink-0">
                         <Clock className="w-4 h-4 text-amber" />
                         <span>Time</span>
                       </span>
-                      <strong className="text-white">{selectedEvent.time}</strong>
+                      <strong className="text-white text-right break-words min-w-0">{selectedEvent.time}</strong>
                     </div>
 
-                    <div className="p-3 bg-midnight rounded-xl border border-white/5 flex items-center justify-between">
-                      <span className="text-slate-400 flex items-center gap-2">
+                    <div className="p-3 bg-midnight rounded-xl border border-white/5 flex items-center justify-between gap-3">
+                      <span className="text-slate-400 flex items-center gap-2 shrink-0">
                         <MapPin className="w-4 h-4 text-cyber-purple" />
                         <span>Venue</span>
                       </span>
-                      <strong className="text-white">{selectedEvent.venue}</strong>
+                      <strong className="text-white text-right break-words min-w-0">{selectedEvent.venue}</strong>
                     </div>
                   </div>
 
@@ -798,7 +798,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                       </div>
                     ) : (
                       /* Both Individual & Team Allowed (Default) */
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                         {/* Individual Button */}
                         <button
                           type="button"
@@ -1008,7 +1008,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                             <button
                               type="button"
                               onClick={handleAddTeamMember}
-                              className="px-3 py-1 rounded-xl bg-amber/20 hover:bg-amber/30 text-amber border border-amber/40 text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                              className="px-3.5 py-2 min-h-[44px] rounded-xl bg-amber/20 hover:bg-amber/30 text-amber border border-amber/40 text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0"
                             >
                               <UserPlus className="w-3.5 h-3.5" />
                               <span>+ Add Member</span>
@@ -1028,10 +1028,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveTeamMember(idx)}
-                                className="p-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-colors"
+                                className="w-11 h-11 grid place-items-center -m-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-colors"
                                 title="Remove Member"
+                                aria-label="Remove member"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
 
@@ -1141,29 +1142,29 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                       </div>
 
                       {!appliedCoupon ? (
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <input
                             type="text"
                             value={couponInput}
                             onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                            placeholder="Enter Promo Code (e.g. ECE2026, TARANG100)"
-                            className="flex-1 bg-midnight-lighter border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-lime text-xs font-mono uppercase tracking-wider"
+                            placeholder="Enter Promo Code (e.g. ECE2026)"
+                            className="flex-1 w-full bg-midnight-lighter border border-white/10 rounded-xl px-3.5 py-3 sm:py-2.5 text-white focus:outline-none focus:border-lime text-xs font-mono uppercase tracking-wider min-h-[48px]"
                           />
                           <button
                             type="button"
                             onClick={() => handleApplyCoupon()}
                             disabled={!couponInput.trim()}
-                            className="px-5 py-2.5 rounded-xl bg-lime text-midnight font-space font-bold text-xs shadow-lime hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            className="px-5 py-3 sm:py-2.5 rounded-xl bg-lime text-midnight font-space font-bold text-xs shadow-lime hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer min-h-[48px]"
                           >
                             Apply
                           </button>
                         </div>
                       ) : (
-                        <div className="p-3 rounded-xl bg-cyber-emerald/15 border border-cyber-emerald/40 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                        <div className="p-3 rounded-xl bg-cyber-emerald/15 border border-cyber-emerald/40 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <Check className="w-4 h-4 text-cyber-emerald shrink-0" />
-                            <div>
-                              <div className="flex items-center gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-mono font-black text-xs text-white bg-cyber-emerald/20 px-2 py-0.5 rounded border border-cyber-emerald/50">
                                   {appliedCoupon.code}
                                 </span>
@@ -1171,7 +1172,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                                   -₹{discountAmount} OFF Applied!
                                 </span>
                               </div>
-                              <span className="text-[10px] text-slate-300 font-sans block mt-0.5">
+                              <span className="text-[10px] text-slate-300 font-sans block mt-0.5 truncate">
                                 {appliedCoupon.description}
                               </span>
                             </div>
@@ -1180,8 +1181,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                           <button
                             type="button"
                             onClick={handleRemoveCoupon}
-                            className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                            className="w-11 h-11 shrink-0 grid place-items-center -m-1 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                             title="Remove Coupon"
+                            aria-label="Remove coupon"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -1320,23 +1322,23 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                 /* ── STEP 6: Pass Generation Success Showcase ── */
                 <div className="space-y-6 animate-in fade-in zoom-in duration-300">
                   
-                  <div className="p-4 rounded-2xl bg-cyber-emerald/15 border border-cyber-emerald/40 text-cyber-emerald flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-5 h-5 text-cyber-emerald" />
-                      <div>
-                        <strong className="font-space font-bold block text-sm">
+                  <div className="p-4 rounded-2xl bg-cyber-emerald/15 border border-cyber-emerald/40 text-cyber-emerald flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <CheckCircle2 className="w-5 h-5 text-cyber-emerald shrink-0" />
+                      <div className="min-w-0">
+                        <strong className="font-space font-bold block text-sm truncate">
                           {generatedPass.registrationType === 'team'
                             ? `Team "${generatedPass.teamName}" Registered Successfully!`
                             : 'Registration Confirmed!'}
                         </strong>
-                        <span className="text-[11px] font-mono">
+                        <span className="text-[11px] font-mono break-words">
                           {generatedPass.registrationType === 'team'
                             ? `Admitting ${1 + (generatedPass.teamMembers?.length || 0)} team members under Pass ${generatedPass.passId}`
                             : 'Your unique digital QR pass has been issued.'}
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-cyber-emerald text-midnight">
+                    <span className="shrink-0 text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-cyber-emerald text-midnight">
                       PASS ACTIVE
                     </span>
                   </div>

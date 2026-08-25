@@ -38,11 +38,11 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({ isOpen, onClos
     <div
       data-lenis-prevent
       onWheel={(e) => e.stopPropagation()}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-deep/90 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-midnight-deep/90 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-200"
     >
       <div
         data-lenis-prevent
-        className="bg-midnight-lighter border border-white/[0.12] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[0_0_80px_rgba(0,0,0,0.9)] relative my-8 overflow-hidden"
+        className="bg-midnight-lighter border border-white/[0.12] rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain shadow-[0_0_80px_rgba(0,0,0,0.9)] relative my-auto overflow-x-hidden"
       >
         {/* Holographic Top Glow */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-lime via-amber to-lime animate-pulse" />
@@ -50,7 +50,8 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({ isOpen, onClos
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-xl bg-midnight border border-white/10 text-slate-400 hover:text-white hover:border-white/25 flex items-center justify-center transition-all cursor-pointer z-10"
+          aria-label="Close sign-in dialog"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-xl bg-midnight border border-white/10 text-slate-400 hover:text-white hover:border-white/25 flex items-center justify-center transition-all cursor-pointer z-10"
         >
           <X className="w-4 h-4" />
         </button>

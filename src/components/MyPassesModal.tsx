@@ -99,11 +99,11 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
     <div
       data-lenis-prevent
       onWheel={(e) => e.stopPropagation()}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-midnight-deep/90 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-midnight-deep/90 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-200"
     >
       <div
         data-lenis-prevent
-        className="bg-midnight-lighter border border-white/[0.12] rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-[0_0_80px_rgba(0,0,0,0.9)] relative my-8 overflow-hidden"
+        className="bg-midnight-lighter border border-white/[0.12] rounded-3xl p-6 sm:p-8 max-w-2xl w-full max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain shadow-[0_0_80px_rgba(0,0,0,0.9)] relative my-auto"
       >
         {/* Top cyan accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-lime to-transparent" />
@@ -111,7 +111,8 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-xl bg-midnight border border-white/10 text-slate-400 hover:text-white hover:border-white/25 flex items-center justify-center transition-all cursor-pointer z-10"
+          aria-label="Close passes dialog"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-xl bg-midnight border border-white/10 text-slate-400 hover:text-white hover:border-white/25 flex items-center justify-center transition-all cursor-pointer z-10"
         >
           <X className="w-4 h-4" />
         </button>
@@ -121,7 +122,7 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
           <div className="space-y-4">
             <button
               onClick={() => setSelectedPass(null)}
-              className="text-xs font-mono text-lime hover:underline flex items-center gap-1 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-2.5 -ml-2 rounded-lg text-xs font-mono text-lime hover:underline hover:bg-white/5 cursor-pointer min-h-[44px]"
             >
               ← Back to All Passes
             </button>
@@ -133,15 +134,15 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
             {/* Header */}
             <div className="border-b border-white/10 pb-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-2xl bg-lime/10 border border-lime/30 flex items-center justify-center text-lime">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-2xl bg-lime/10 border border-lime/30 flex items-center justify-center text-lime shrink-0">
                     <Ticket className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="font-space font-extrabold text-xl text-white">
+                  <div className="min-w-0">
+                    <h3 className="font-space font-extrabold text-base sm:text-xl text-white truncate">
                       My Registered Event Passes
                     </h3>
-                    <p className="text-xs font-mono text-slate-400">
+                    <p className="text-xs font-mono text-slate-400 truncate">
                       {isAuthenticated
                         ? `Logged in as ${user?.name} (${user?.email})`
                         : 'Explore and download your forum event passes'}
@@ -155,7 +156,7 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                       soundFx.playClick();
                       onOpenGoogleAuth();
                     }}
-                    className="shrink-0 px-3 py-1.5 rounded-xl bg-white text-slate-900 font-mono text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    className="shrink-0 px-3 py-2.5 rounded-xl bg-white text-slate-900 font-mono text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                   >
                     <span>Google Login</span>
                   </button>
@@ -171,14 +172,14 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by event or Pass ID..."
-                    className="w-full bg-midnight border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-lime"
+                    className="w-full bg-midnight border border-white/10 rounded-xl pl-9 pr-3 py-3 sm:py-2 text-sm sm:text-xs text-white placeholder-slate-500 focus:outline-none focus:border-lime"
                   />
                 </div>
 
                 <div className="sm:col-span-6 flex gap-1.5 bg-midnight p-1 rounded-xl border border-white/10">
                   <button
                     onClick={() => setActiveFilter('all')}
-                    className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                    className={`flex-1 py-2.5 px-2 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
                       activeFilter === 'all'
                         ? 'bg-lime/20 text-lime font-bold'
                         : 'text-slate-400 hover:text-white'
@@ -188,7 +189,7 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                   </button>
                   <button
                     onClick={() => setActiveFilter('upcoming')}
-                    className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                    className={`flex-1 py-2.5 px-2 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
                       activeFilter === 'upcoming'
                         ? 'bg-lime/20 text-lime font-bold'
                         : 'text-slate-400 hover:text-white'
@@ -198,7 +199,7 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                   </button>
                   <button
                     onClick={() => setActiveFilter('checked_in')}
-                    className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                    className={`flex-1 py-2.5 px-2 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
                       activeFilter === 'checked_in'
                         ? 'bg-emerald-500/20 text-emerald-400 font-bold'
                         : 'text-slate-400 hover:text-white'
@@ -212,16 +213,16 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
 
             {/* Passes List Container */}
             {filteredPasses.length > 0 ? (
-              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              <div data-lenis-prevent className="space-y-3 max-h-[min(420px,52dvh)] overflow-y-auto overscroll-contain pr-1">
                 {filteredPasses.map((pass) => (
                   <div
                     key={pass.passId}
                     className="p-4 rounded-2xl bg-midnight border border-white/10 hover:border-lime/40 transition-all space-y-3 group relative overflow-hidden"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-lime/10 border border-lime/30 text-lime font-bold">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-lime/10 border border-lime/30 text-lime font-bold truncate max-w-[150px]" title={pass.passId}>
                             {pass.passId}
                           </span>
                           <span
@@ -260,8 +261,8 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                     </div>
 
                     {/* Action Row */}
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] font-mono text-slate-500">
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span className="text-[10px] font-mono text-slate-500 truncate min-w-0" title={pass.paymentId}>
                         TXN: {pass.paymentId}
                       </span>
                       <button
@@ -269,7 +270,7 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                           soundFx.playClick();
                           setSelectedPass(pass);
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-lime/15 hover:bg-lime/25 border border-lime/40 text-lime text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="shrink-0 px-3 py-2.5 rounded-xl bg-lime/15 hover:bg-lime/25 border border-lime/40 text-lime text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                       >
                         <QrCode className="w-3.5 h-3.5" />
                         <span>View &amp; Download Pass</span>
@@ -299,7 +300,7 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
                       onClose();
                       onExploreEvents();
                     }}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-lime to-blue-600 font-space font-bold text-xs text-midnight shadow-lime transition-all cursor-pointer"
+                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-lime to-blue-600 font-space font-bold text-xs text-midnight shadow-lime transition-all cursor-pointer"
                   >
                     Explore Upcoming Events
                   </button>

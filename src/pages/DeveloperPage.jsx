@@ -8,7 +8,14 @@ import { ArrowLeft, ArrowUpRight, Mail, Zap, Sparkles, Code2, Palette, Rocket, H
 /* ============ 3D PARTICLE FIELD ============ */
 function ParticleUniverse() {
   const ref = useRef()
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)')
+    const onChange = () => setIsMobile(mql.matches)
+    onChange()
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
   const count = isMobile ? 400 : 2000
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
@@ -240,20 +247,20 @@ export default function DeveloperPage() {
         <div className="fixed inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
 
         {/* NAV */}
-        <div className="sticky top-0 z-40 backdrop-blur-2xl bg-[#08080A]/70 border-b border-white/10">
+        <div className="sticky top-0 z-40 backdrop-blur-2xl bg-[#08080A]/70 border-b border-white/10 pt-[env(safe-area-inset-top)]">
           <div className="max-w-[1600px] mx-auto px-4 md:px-8 h-[64px] flex items-center justify-between gap-4">
-            <Link to="/" className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-colors text-xs font-mono">
+            <Link to="/" className="inline-flex items-center gap-2 px-3 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-colors text-xs font-mono min-h-[44px]">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Forum
             </Link>
-            <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono tracking-widest text-white/40">
+            <div className="hidden md:flex items-center gap-2 text-[11px] font-mono tracking-widest text-white/40">
               <span className="w-2 h-2 bg-[#CCFF00] rounded-full animate-pulse" /> PROFILE ONLINE — SYS.2026
             </div>
-            <a href="mailto:abhishek.k@ece-elevate.org" className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#CCFF00] text-black font-black text-xs hover:bg-white transition-colors">HIRE ME <ArrowUpRight className="w-3.5 h-3.5" /></a>
+            <a href="mailto:abhishek.k@ece-elevate.org" aria-label="Hire me — send email" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#CCFF00] text-black font-black text-xs hover:bg-white transition-colors min-h-[44px]">HIRE ME <ArrowUpRight className="w-3.5 h-3.5" /></a>
           </div>
         </div>
 
         {/* HERO */}
-        <section className="relative min-h-[100vh] flex items-center overflow-hidden">
+        <section className="relative min-h-[100svh] flex items-center overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
             <Canvas camera={{ position: [0, 0, 7], fov: 50 }} dpr={[1, 1.4]} className="!absolute inset-0 pointer-events-none">
               <ambientLight intensity={0.5} />
@@ -294,9 +301,9 @@ export default function DeveloperPage() {
                 <Link to="/" className="inline-flex items-center gap-2 bg-white/10 border border-white/15 backdrop-blur text-white px-6 py-3.5 rounded-full font-bold text-sm hover:bg-white hover:text-black transition-colors"><Users className="w-4 h-4" /> Meet Team</Link>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0 }} animate={booted ? { opacity: 1 } : {}} transition={{ delay: 1.5 }} className="mt-8 grid grid-cols-3 gap-3 max-w-[440px]">
+              <motion.div initial={{ opacity: 0 }} animate={booted ? { opacity: 1 } : {}} transition={{ delay: 1.5 }} className="mt-8 grid grid-cols-3 gap-2 sm:gap-3 max-w-[440px]">
                 {[{ k: 'SHIPPED', v: '24+' }, { k: 'CORE', v: 'R3F' }, { k: 'A11Y', v: 'WCAG' }].map(b => (
-                  <div key={b.k} className="rounded-2xl bg-white/[0.04] border border-white/10 p-3.5 text-center backdrop-blur">
+                  <div key={b.k} className="rounded-2xl bg-white/[0.04] border border-white/10 p-2.5 sm:p-3.5 text-center backdrop-blur">
                     <div className="text-[10px] font-mono tracking-widest text-white/40">{b.k}</div>
                     <div className="font-black text-lg">{b.v}</div>
                   </div>
@@ -324,7 +331,7 @@ export default function DeveloperPage() {
             </motion.div>
           </motion.div>
 
-          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-white/30">
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-white/30" style={{ bottom: 'calc(2rem + env(safe-area-inset-bottom))' }}>
             <span className="text-[9px] font-mono tracking-[0.3em]">SCROLL</span>
             <ChevronRight className="w-4 h-4 rotate-90 text-[#CCFF00]" />
           </motion.div>
@@ -375,7 +382,7 @@ export default function DeveloperPage() {
             <p className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.2em] text-[#CCFF00] border border-[#CCFF00]/20 bg-[#CCFF00]/5 px-3 py-1 rounded-full"><Layers className="w-3 h-3" /> SELECTED BUILDS</p>
             <h2 className="font-display font-[800] text-[36px] md:text-[52px] leading-none tracking-tighter mt-3"><span className="text-white">Things I've</span> <span className="text-stroke">shipped.</span></h2>
           </div>
-          <div className="flex gap-5 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 md:px-8 pb-6 max-w-[1600px] mx-auto">
+          <div className="flex gap-5 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 md:px-8 pb-6 max-w-[1600px] mx-auto scroll-pl-4 md:scroll-pl-8">
             {projects.map((p, i) => (
               <motion.div key={p.t} initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="snap-start shrink-0 w-[86vw] sm:w-[480px] rounded-[28px] overflow-hidden bg-[#0F0F0F] border border-white/10 hover:border-white/20 transition-colors group">
                 <div className="relative h-[240px] overflow-hidden">
@@ -412,7 +419,7 @@ export default function DeveloperPage() {
           </div>
         </section>
 
-        <footer className="border-t border-white/10 py-6">
+        <footer className="border-t border-white/10 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           <div className="max-w-[1600px] mx-auto px-4 md:px-8 flex flex-col sm:flex-row justify-between gap-3 text-[11px] font-mono tracking-widest text-white/30">
             <span>© 2026 ABHISHEK KAHATE — CRAFTED WITH OBSESSION</span>
             <span className="flex items-center gap-2"><span className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" /> OPEN TO WORK</span>

@@ -157,7 +157,7 @@ function CommandPalette({ open, setOpen }) {
   if (!open) return null
   return (
     <AnimatePresence>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-start justify-center pt-[18vh] p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-start justify-center pt-[10vh] sm:pt-[18vh] p-4">
         <div className="absolute inset-0 bg-[#04060A]/70 cmd-backdrop" onClick={() => setOpen(false)} aria-hidden />
         <motion.div initial={{ y: 16, scale: 0.98, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 8, scale: 0.98, opacity: 0 }} transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }} className="relative w-full max-w-[640px] rounded-[24px] bg-[#0F0F0F] border border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.6)] overflow-hidden">
           <div className="flex items-center gap-3 px-4 sm:px-5 h-[56px] border-b border-white/10">
@@ -165,7 +165,7 @@ function CommandPalette({ open, setOpen }) {
             <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} placeholder="Jump to section…  (try 'patent' or 'team')" className="flex-1 bg-transparent outline-none text-[15px] sm:text-[14px] placeholder:text-white/30 text-white" aria-label="Command palette search" />
             <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono text-white/30 border border-white/10 rounded-full px-2.5 py-1">ESC</span>
           </div>
-          <div className="p-2 max-h-[42vh] overflow-y-auto overscroll-contain">
+          <div data-lenis-prevent className="p-2 max-h-[50dvh] overflow-y-auto overscroll-contain">
             {filtered.length ? filtered.map((it, idx) => {
               const Icon = it.icon
               const active = idx === sel
@@ -543,28 +543,28 @@ function Navbar({ onToast, onOpenGoogleAuth, onOpenMyPasses, onOpenAdmin, isAuth
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { document.documentElement.classList.add('theme-transition'); const isLight = document.documentElement.classList.toggle('light'); document.documentElement.style.colorScheme = isLight ? 'light' : 'dark'; setTimeout(()=>document.documentElement.classList.remove('theme-transition'), 500) }} aria-label="Toggle theme" className="hidden sm:grid w-11 h-11 rounded-full bg-white/5 border border-white/10 place-items-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors">
+          <button onClick={() => { document.documentElement.classList.add('theme-transition'); const isLight = document.documentElement.classList.toggle('light'); document.documentElement.style.colorScheme = isLight ? 'light' : 'dark'; setTimeout(()=>document.documentElement.classList.remove('theme-transition'), 500) }} aria-label="Toggle theme" className="hidden xl:grid w-11 h-11 rounded-full bg-white/5 border border-white/10 place-items-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors">
             <span className="w-5 h-5 rounded-full border-2 border-current grid place-items-center text-[10px]">◐</span>
           </button>
-          <button onClick={onOpenMyPasses} className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/70 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors min-h-[44px]">
+          <button onClick={onOpenMyPasses} className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/70 hover:text-white hover:bg-white/10 hover:border-white/15 transition-colors min-h-[44px]">
             <Ticket className="w-3.5 h-3.5 text-[#CCFF00]" /> MY PASSES
           </button>
-          <button onClick={onOpenAdmin} className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/60 hover:text-white hover:bg-white/10 transition-colors min-h-[44px]" title="Admin Console">
+          <button onClick={onOpenAdmin} className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono font-bold text-white/60 hover:text-white hover:bg-white/10 transition-colors min-h-[44px]" title="Admin Console">
             <Shield className="w-3.5 h-3.5 text-[#FFB800]" /> ADMIN
           </button>
           {isAuthenticated && user ? (
-            <div className="hidden sm:flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-white/5 border border-white/10">
+            <div className="hidden md:flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-white/5 border border-white/10">
               <img src={user.photoURL || `https://i.pravatar.cc/100?u=${encodeURIComponent(user.email)}`} alt={user.name} className="w-7 h-7 rounded-full object-cover border border-white/10" />
               <span className="text-xs font-bold max-w-[90px] truncate hidden lg:inline">{user.name.split(' ')[0]}</span>
               <button onClick={onLogout} className="w-7 h-7 rounded-full bg-white/10 grid place-items-center hover:bg-white hover:text-black transition-colors" title="Sign out"><X className="w-3 h-3" /></button>
             </div>
           ) : (
-            <button onClick={onOpenGoogleAuth} className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-full bg-white text-black font-black text-xs hover:bg-[#CCFF00] transition-colors min-h-[44px]">
+            <button onClick={onOpenGoogleAuth} className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full bg-white text-black font-black text-xs hover:bg-[#CCFF00] transition-colors min-h-[44px]">
               <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
               GOOGLE LOGIN
             </button>
           )}
-          <MagneticButton className="hidden md:inline-flex items-center gap-2 bg-[#CCFF00] text-black px-5 py-2.5 rounded-full text-[12px] font-black tracking-wide hover:bg-white transition-colors min-h-[44px]" onClick={() => document.querySelector('#events')?.scrollIntoView({ behavior: 'smooth' })} aria-label="Register for events">
+          <MagneticButton className="hidden xl:inline-flex items-center gap-2 bg-[#CCFF00] text-black px-5 py-2.5 rounded-full text-[12px] font-black tracking-wide hover:bg-white transition-colors min-h-[44px]" onClick={() => document.querySelector('#events')?.scrollIntoView({ behavior: 'smooth' })} aria-label="Register for events">
             REGISTER NOW <span className="w-6 h-6 rounded-full bg-black text-white grid place-items-center text-xs" aria-hidden>↗</span>
           </MagneticButton>
           <button onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="mobile-menu" className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/10 backdrop-blur border border-white/10 grid place-items-center xl:hidden active:scale-95 transition-transform">
@@ -644,7 +644,7 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
   const reduced = usePrefersReducedMotion()
   const isMobile = useIsMobile()
   return (
-    <section ref={ref} id="hero" className="relative min-h-[88vh] sm:min-h-[92vh] overflow-hidden bg-[#08080A] flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <section ref={ref} id="hero" className="relative min-h-[88svh] sm:min-h-[92svh] overflow-hidden bg-[#08080A] flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* 3D BG - hidden on very small or reduced motion, dpr capped */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <Canvas camera={{ position: [0, 0, 6], fov: 45 }} dpr={[1, isMobile ? 1 : 1.75]} gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }} className="!absolute inset-0 pointer-events-none">
@@ -673,7 +673,7 @@ function Hero({ onToast, heroConfig: propHero, announcement: propAnn }) {
 
         <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 sm:gap-8 items-start lg:items-center">
           <div className="min-w-0">
-            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, ease: [0.76, 0, 0.24, 1], delay: 0.15 }} className="font-display font-[800] leading-[0.88] tracking-[-0.04em] text-[11.5vw] xs:text-[10vw] sm:text-[9vw] lg:text-[68px] xl:text-[80px] break-words">
+            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, ease: [0.76, 0, 0.24, 1], delay: 0.15 }} className="font-display font-[800] leading-[0.88] tracking-[-0.04em] text-[9.6vw] xs:text-[10vw] sm:text-[9vw] lg:text-[68px] xl:text-[80px]">
               <span className="block text-white">Architecting</span>
               <span className="block text-[#CCFF00] min-h-[1.1em]" aria-label="Tomorrow's">{typedLine}<span className="inline-block w-[3px] h-[0.85em] bg-[#CCFF00] ml-1 animate-pulse align-middle" aria-hidden /></span>
               <span className="block text-stroke">Silicon &</span>
@@ -1194,14 +1194,14 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
               <button onClick={()=> onRegister && liveEvents[0] && onRegister(liveEvents[0])} className="inline-flex items-center gap-2 bg-[#FFB800] text-black px-6 py-3 rounded-full font-black text-xs tracking-wide hover:bg-white transition-colors"><ShieldCheck className="w-4 h-4" /> {HERO_CONFIG.flagshipButtonText} <ChevronRight className="w-4 h-4" /></button>
             </div>
             <div className="lg:col-span-5 flex flex-col items-center lg:items-end justify-center">
-              <div className="flex gap-2 sm:gap-3">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                 {[
                   { k: 'DAYS', v: pad(timeLeft.days) },
                   { k: 'HOURS', v: pad(timeLeft.hours) },
                   { k: 'MINS', v: pad(timeLeft.minutes) },
                   { k: 'SECS', v: pad(timeLeft.seconds), hl: true },
-                ].map((b, i) => <div key={b.k} className="flex items-center gap-2">
-                  <div className="text-center"><div className="text-[9px] font-mono tracking-widest text-white/40 mb-1">{b.k}</div><div className={`w-14 sm:w-16 h-14 sm:h-16 rounded-2xl border flex items-center justify-center text-2xl sm:text-3xl font-display font-black ${b.hl ? 'bg-[#CCFF00] text-black border-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.4)]' : 'bg-white/5 border-white/10 text-white backdrop-blur'}`}>{b.v}</div></div>{i < 3 && <span className="text-[#FFB800] font-black text-xl mt-5">:</span>}
+                ].map((b, i) => <div key={b.k} className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="text-center"><div className="text-[9px] font-mono tracking-widest text-white/40 mb-1">{b.k}</div><div className={`w-[50px] xs:w-14 sm:w-16 h-[50px] xs:h-14 sm:h-16 rounded-2xl border flex items-center justify-center text-xl xs:text-2xl sm:text-3xl font-display font-black ${b.hl ? 'bg-[#CCFF00] text-black border-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.4)]' : 'bg-white/5 border-white/10 text-white backdrop-blur'}`}>{b.v}</div></div>{i < 3 && <span className="text-[#FFB800] font-black text-lg sm:text-xl mt-5">:</span>}
                 </div>)}
               </div>
               <div className="mt-3 text-[11px] font-mono text-white/40 flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#FFB800]" /> TARGET: {HERO_CONFIG.flagshipTargetDate.replace('T', ' · ')} · {HERO_CONFIG.flagshipTargetVenue}</div>
@@ -1235,7 +1235,7 @@ function EventsSection({ eventsList: propEvents, onRegister }) {
                 <p className="text-xs text-white/50 leading-relaxed line-clamp-2">{evt.description}</p>
                 <div className="mt-auto pt-4 border-t border-white/10 flex justify-between items-center">
                   <div><div className="text-[10px] font-mono tracking-widest text-white/30">FEE</div><div className="font-mono font-black text-white">₹{evt.price} INR</div></div>
-                  <button onClick={()=> onRegister && onRegister(evt)} className="px-5 py-2.5 rounded-full bg-white text-black font-black text-xs flex items-center gap-1 hover:bg-[#CCFF00] active:scale-95 transition-all">Register <ChevronRight className="w-4 h-4" /></button>
+                  <button onClick={()=> onRegister && onRegister(evt)} className="px-5 py-2.5 rounded-full bg-white text-black font-black text-xs flex items-center gap-1 hover:bg-[#CCFF00] active:scale-95 transition-all min-h-[44px]">Register <ChevronRight className="w-4 h-4" /></button>
                 </div>
               </div>
             </motion.div>
@@ -1354,13 +1354,13 @@ function GallerySection({ galleryList: propGallery }) {
       </div>
       <AnimatePresence>
         {lightbox !== null && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setLightbox(null)} onTouchStart={e => e.currentTarget.dataset.sx = e.touches[0].clientX} onTouchEnd={e => { const sx = parseFloat(e.currentTarget.dataset.sx || '0'); const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 60) { if (dx < 0) setLightbox((lightbox + 1) % filtered.length); else setLightbox((lightbox - 1 + filtered.length) % filtered.length) } }} role="dialog" aria-modal="true" aria-label="Gallery lightbox">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }} className="relative max-w-4xl w-full rounded-[24px] overflow-hidden bg-[#0F0F0F] border border-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 backdrop-blur border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-10"><X className="w-5 h-5" /></button>
-              <button onClick={() => setLightbox((lightbox - 1 + filtered.length) % filtered.length)} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-10"><ChevronLeft className="w-5 h-5" /></button>
-              <button onClick={() => setLightbox((lightbox + 1) % filtered.length)} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-10"><ChevronRight className="w-5 h-5" /></button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4" onClick={() => setLightbox(null)} onTouchStart={e => e.currentTarget.dataset.sx = e.touches[0].clientX} onTouchEnd={e => { const sx = parseFloat(e.currentTarget.dataset.sx || '0'); const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 60) { if (dx < 0) setLightbox((lightbox + 1) % filtered.length); else setLightbox((lightbox - 1 + filtered.length) % filtered.length) } }} role="dialog" aria-modal="true" aria-label="Gallery lightbox">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }} data-lenis-prevent className="relative max-w-4xl w-full rounded-[24px] overflow-hidden bg-[#0F0F0F] border border-white/10 max-h-[90dvh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setLightbox(null)} aria-label="Close lightbox" className="absolute top-3 right-3 sm:top-4 sm:right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full bg-black/60 backdrop-blur border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-10"><X className="w-5 h-5" /></button>
+              <button onClick={() => setLightbox((lightbox - 1 + filtered.length) % filtered.length)} aria-label="Previous image" className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-black/60 backdrop-blur border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-10"><ChevronLeft className="w-5 h-5" /></button>
+              <button onClick={() => setLightbox((lightbox + 1) % filtered.length)} aria-label="Next image" className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-black/60 backdrop-blur border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-10"><ChevronRight className="w-5 h-5" /></button>
               <img src={filtered[lightbox].url} alt={filtered[lightbox].title} className="w-full aspect-video object-cover" />
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex justify-between text-xs font-mono"><span className="text-[#CCFF00] font-black tracking-widest">{filtered[lightbox].category} / {filtered[lightbox].id}</span><span className="text-white/40">{lightbox + 1} / {filtered.length}</span></div>
                 <h3 className="font-display font-black text-xl mt-2">{filtered[lightbox].title}</h3>
                 <p className="text-sm text-white/60 mt-1">{filtered[lightbox].caption}</p>
@@ -1453,7 +1453,7 @@ function AchievementsSection() {
       </div>
       <AnimatePresence>
         {patentOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setPatentOpen(false)}>
-          <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="w-full max-w-md rounded-[24px] bg-[#0F0F0F] border-2 border-[#CCFF00]/30 p-7 space-y-5" onClick={e => e.stopPropagation()}>
+          <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} data-lenis-prevent className="w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-[24px] bg-[#0F0F0F] border-2 border-[#CCFF00]/30 p-5 sm:p-7 space-y-5" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2 text-[#CCFF00] text-xs font-black tracking-widest"><ShieldCheck className="w-4 h-4" /> OFFICIAL PATENT RECORD</div>
               <button onClick={() => setPatentOpen(false)} className="w-8 h-8 rounded-full bg-white/10 grid place-items-center hover:bg-white hover:text-black transition-colors"><X className="w-4 h-4" /></button>
@@ -1687,28 +1687,28 @@ function TeamSection() {
           })}
         </div>
         {filtered.length === 0 && <div className="text-center py-16 text-white/30 font-mono text-xs">NO LEADERS FOUND FOR &quot;{search.toUpperCase()}&quot;</div>}
-        {copied && <div className="fixed bottom-6 right-6 z-50 bg-[#111] border border-[#CCFF00] text-white text-xs font-mono px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2"><Check className="w-4 h-4 text-[#00FF88]" /> COPIED: <strong className="text-[#CCFF00]">{copied}</strong></div>}
+        {copied && <div className="fixed z-50 left-4 right-4 sm:left-auto sm:right-6 bg-[#111] border border-[#CCFF00] text-white text-xs font-mono px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2" style={{ bottom: 'max(24px, calc(env(safe-area-inset-bottom) + 16px))' }}><Check className="w-4 h-4 text-[#00FF88] shrink-0" /> <span className="truncate">COPIED: <strong className="text-[#CCFF00]">{copied}</strong></span></div>}
       </div>
 
       <AnimatePresence>
         {selected && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <motion.div initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }} className="w-full max-w-lg rounded-[32px] bg-[#0F0F0F] border-2 border-[#CCFF00]/20 p-7 md:p-8 space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-2 text-[#CCFF00] text-[11px] font-black tracking-widest"><Sparkles className="w-3.5 h-3.5" /> OFFICIAL DOSSIER // 2026-27</div>
-              <button onClick={() => setSelected(null)} className="w-8 h-8 rounded-full bg-white/10 grid place-items-center hover:bg-white hover:text-black transition-colors"><X className="w-4 h-4" /></button>
+          <motion.div initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }} data-lenis-prevent className="w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain rounded-[32px] bg-[#0F0F0F] border-2 border-[#CCFF00]/20 p-6 sm:p-7 md:p-8 space-y-5" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start gap-3">
+              <div className="flex items-center gap-2 text-[#CCFF00] text-[11px] font-black tracking-widest"><Sparkles className="w-3.5 h-3.5 shrink-0" /> OFFICIAL DOSSIER // 2026-27</div>
+              <button onClick={() => setSelected(null)} aria-label="Close dossier" className="w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-white/10 grid place-items-center hover:bg-white hover:text-black transition-colors shrink-0"><X className="w-4 h-4" /></button>
             </div>
-            <div className="flex gap-5">
-              <img src={selected.image} alt={selected.name} className="w-24 h-24 rounded-2xl object-cover border-2 border-[#CCFF00] shrink-0" />
-              <div><span className={`text-[11px] font-black tracking-widest px-3 py-1 rounded-full border ${selected.council === 'SPACE' ? 'text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10' : 'text-[#CCFF00] border-[#CCFF00]/30 bg-[#CCFF00]/10'}`}>{selected.role}</span><h3 className="font-display font-black text-2xl mt-1.5 leading-none">{selected.name}</h3><p className="text-xs font-mono text-white/40 mt-1">{selected.year} · Dept of ECE</p></div>
+            <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+              <img src={selected.image} alt={selected.name} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#CCFF00] shrink-0" />
+              <div className="min-w-0 flex-1"><span className={`text-[11px] font-black tracking-widest px-3 py-1 rounded-full border ${selected.council === 'SPACE' ? 'text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10' : 'text-[#CCFF00] border-[#CCFF00]/30 bg-[#CCFF00]/10'}`}>{selected.role}</span><h3 className="font-display font-black text-xl sm:text-2xl mt-1.5 leading-none break-words">{selected.name}</h3><p className="text-xs font-mono text-white/40 mt-1">{selected.year} · Dept of ECE</p></div>
             </div>
             <div className="rounded-2xl bg-white/5 border border-white/5 p-4">
               <div className="text-[10px] font-black tracking-widest text-white/30 flex items-center gap-1.5"><Award className="w-3.5 h-3.5 text-[#FFB800]" /> KEY DOMAIN SPECIALTY</div>
               <div className="font-display font-bold mt-1">{selected.specialty}</div>
             </div>
             <div className="rounded-2xl bg-black border border-white/5 p-4"><div className="text-[10px] font-black tracking-widest text-white/30">ENGINEERING STATEMENT</div><p className="text-sm text-white/70 italic leading-relaxed mt-1">&quot;{selected.quote}&quot;</p></div>
-            <div className="flex gap-3">
-              <button onClick={() => copyEmail(selected.email)} className="flex-1 py-3 rounded-full bg-[#CCFF00] text-black font-black text-xs flex items-center justify-center gap-2 hover:bg-white transition-colors"><Mail className="w-4 h-4" /> Copy Email</button>
-              <a href={`mailto:${selected.email}`} className="px-6 py-3 rounded-full bg-white/10 border border-white/10 text-white font-mono font-bold text-xs flex items-center gap-1.5 hover:bg-white hover:text-black transition-colors">Email <ExternalLink className="w-3.5 h-3.5" /></a>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={() => copyEmail(selected.email)} className="flex-1 py-3 rounded-full bg-[#CCFF00] text-black font-black text-xs flex items-center justify-center gap-2 hover:bg-white transition-colors min-h-[48px]"><Mail className="w-4 h-4" /> Copy Email</button>
+              <a href={`mailto:${selected.email}`} className="px-6 py-3 rounded-full bg-white/10 border border-white/10 text-white font-mono font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-white hover:text-black transition-colors min-h-[48px]">Email <ExternalLink className="w-3.5 h-3.5" /></a>
             </div>
           </motion.div>
         </motion.div>}
@@ -1805,7 +1805,7 @@ function Footer() {
             <span className="hidden sm:inline">SPACE × SINC • ARCHITECTING TOMORROW&apos;S SILICON</span>
             <span className="ml-auto hidden md:inline-flex items-center gap-2"><span className="w-2 h-2 bg-[#00FF88] rounded-full animate-pulse" /> SYSTEM NOMINAL — ALL LABS ONLINE</span>
           </div>
-          <h2 className="massive-text text-[18vw] sm:text-[15vw] md:text-[13vw] lg:text-[11.5vw] whitespace-nowrap leading-none -mx-2 sm:mx-0">
+          <h2 className="massive-text text-[min(10vw,170px)] whitespace-nowrap leading-none -mx-2 sm:mx-0">
             PIET<span className="text-stroke"> — </span>ECE<span className="text-[#CCFF00]" style={{ WebkitTextFillColor: '#CCFF00' }}>•</span>FORUM
           </h2>
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-white/30">
@@ -1878,7 +1878,7 @@ function PremiumRegistrationModal({ event, open, onClose, onSuccess }) {
     return (
       <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-[#04060A]/80 backdrop-blur-xl" onClick={onClose} aria-hidden />
-        <motion.div initial={{ y: 16, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} className="relative w-full max-w-[420px] rounded-[28px] bg-[#0F0F0F] border border-white/10 p-6 sm:p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
+        <motion.div initial={{ y: 16, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} className="relative w-full max-w-[420px] max-h-[90dvh] overflow-y-auto overscroll-contain rounded-[28px] bg-[#0F0F0F] border border-white/10 p-6 sm:p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.6)]" data-lenis-prevent>
           <div className="w-12 h-12 rounded-2xl bg-white text-black grid place-items-center mx-auto"><ShieldCheck className="w-6 h-6" /></div>
           <h3 className="font-display font-black text-xl mt-4">Google Sign-In Required</h3>
           <p className="text-sm text-white/60 mt-2 leading-relaxed">You must sign in with your Google account before registering for <span className="text-white font-bold">{event.title}</span>. Your pass will be linked to your Google identity.</p>
@@ -1959,7 +1959,7 @@ function PremiumRegistrationModal({ event, open, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#04060A]/80 backdrop-blur-xl" onClick={onClose} aria-hidden />
-      <motion.div initial={{ y: 16, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 8, opacity: 0 }} className="relative w-full max-w-[560px] max-h-[92vh] overflow-y-auto rounded-[28px] bg-[#0F0F0F] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
+      <motion.div initial={{ y: 16, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 8, opacity: 0 }} data-lenis-prevent className="relative w-full max-w-[560px] max-h-[92dvh] overflow-y-auto overscroll-contain rounded-[28px] bg-[#0F0F0F] border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
         <div className="sticky top-0 z-10 bg-[#0F0F0F] border-b border-white/10 p-5 flex items-start justify-between gap-4">
           <div className="flex gap-3">
             <div className="w-12 h-12 rounded-2xl bg-[#CCFF00] text-black grid place-items-center font-black text-lg">◈</div>
