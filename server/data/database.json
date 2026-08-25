@@ -1,0 +1,48 @@
+{
+  "events": [
+    {
+      "id": "evt-1",
+      "title": "SPACE & SINC Forum Installation Ceremony",
+      "category": "Installation",
+      "status": "Upcoming",
+      "date": "July 30, 2026",
+      "time": "10:00 AM IST",
+      "venue": "PIET Auditorium",
+      "description": "Official installation ceremony for SPACE & SINC departmental councils for session 2026-27.",
+      "badge": "FLAGSHIP CEREMONY",
+      "image": "/event_images/inst.webp",
+      "price": 150,
+      "totalSeats": 250
+    },
+    {
+      "id": "evt-2",
+      "title": "TARANG 2K26 Freshers Gala & Tech Fiesta",
+      "category": "Workshop",
+      "status": "Upcoming",
+      "date": "July 30, 2026",
+      "time": "10:30 AM IST",
+      "venue": "PIET Auditorium",
+      "description": "Annual welcoming fiesta and hardware ice-breaker for 2nd year electronics students.",
+      "badge": "FRESHERS CELEBRATION",
+      "image": "/event_images/tarang.webp",
+      "price": 200,
+      "totalSeats": 300
+    },
+    {
+      "id": "evt-3",
+      "title": "KiCAD 8 PCB Design & Fabrication Bootcamp",
+      "category": "Workshop",
+      "status": "Upcoming",
+      "date": "Aug 12, 2026",
+      "time": "09:30 AM IST",
+      "venue": "ECE Simulation Lab 304",
+      "description": "Hands-on schematic capture, routing, Gerber generation and CNC milling for custom 2-layer PCBs.",
+      "badge": "HANDS-ON BOOTCAMP",
+      "image": "/event_images/tarang.webp",
+      "price": 100,
+      "totalSeats": 60
+    }
+  ],
+  "passes": [],
+  "announcement": "Registration Open for SPACE & SINC Forum Installation & TARANG 2K26 Fiesta!"
+}
