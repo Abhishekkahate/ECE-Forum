@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Calendar, Clock, MapPin, Ticket, ChevronRight, ShieldCheck, 
-  Sparkles, Timer, Share2, Check 
-} from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, MapPin, ChevronRight, ShieldCheck, Timer, Share2, Check, Sparkles, ArrowUpRight, Search, Hash, Layers } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { useScrollReveal } from './useScrollReveal';
 import { OptimizedImage } from './OptimizedImage';
+import { type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
 
 export interface EventItem {
   id: string;
@@ -25,8 +23,6 @@ export interface EventItem {
   participationType?: 'individual_only' | 'team_only' | 'both';
 }
 
-import { type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
-
 interface EventsSectionProps {
   eventsList?: EventItem[];
   onRegisterClick?: (event: EventItem) => void;
@@ -39,10 +35,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   heroConfig = DEFAULT_HERO_CONFIG,
 }) => {
   const [filter, setFilter] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [shareToast, setShareToast] = useState<string | null>(null);
   const revealRef = useScrollReveal(0.06);
 
-  // Robust Target Flagship Countdown Date Parser
   const parseTargetDate = (str?: string) => {
     if (!str) return Date.now() + 14 * 24 * 60 * 60 * 1000;
     try {
@@ -57,378 +53,396 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   };
 
   const targetDate = parseTargetDate(heroConfig.flagshipTargetDate);
-
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const difference = targetDate - now;
-
-      if (difference > 0) {
+    const calc = () => {
+      const diff = targetDate - Date.now();
+      if (diff > 0) {
         setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / (1000 * 60 * 60)) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
+          days: Math.floor(diff / 86400000),
+          hours: Math.floor((diff / 3600000) % 24),
+          minutes: Math.floor((diff / 60000) % 60),
+          seconds: Math.floor((diff / 1000) % 60),
         });
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     };
-
-    calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 1000);
-    return () => clearInterval(interval);
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
   }, [targetDate]);
 
-  const activeEvents = eventsList !== undefined ? eventsList : [];
-
+  const activeEvents = eventsList ?? [];
   const filteredEvents = activeEvents.filter((evt) => {
-    if (filter === 'All') return true;
-    if (filter === 'Upcoming') return evt.status === 'Upcoming';
-    if (filter === 'Past') return evt.status === 'Past';
-    return evt.category.toLowerCase() === filter.toLowerCase();
+    const matchesFilter =
+      filter === 'All'
+        ? true
+        : filter === 'Upcoming'
+        ? evt.status === 'Upcoming'
+        : filter === 'Past'
+        ? evt.status === 'Past'
+        : evt.category.toLowerCase() === filter.toLowerCase();
+    
+    const matchesSearch =
+      searchQuery.trim() === '' ||
+      evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      evt.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      evt.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesFilter && matchesSearch;
   });
 
-  const countdownPads = (n: number) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, '0');
 
-  const handleShareEvent = (evt: EventItem, e: React.MouseEvent) => {
+  const handleShare = (evt: EventItem, e: React.MouseEvent) => {
     e.stopPropagation();
     soundFx.playClick();
-    const shareText = `Join ${evt.title} on ${evt.date} at ${evt.venue}! Register: ${window.location.origin}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareText);
-      setShareToast(`Copied invitation for "${evt.title}"`);
-      setTimeout(() => setShareToast(null), 2500);
-    }
+    const text = `Join ${evt.title} on ${evt.date} at ${evt.venue}! ${window.location.origin}`;
+    navigator.clipboard?.writeText(text);
+    setShareToast(`Link copied — "${evt.title}"`);
+    setTimeout(() => setShareToast(null), 2500);
   };
 
-  return (
-    <section
-      id="events"
-      ref={revealRef}
-      className="relative py-28 bg-transparent overflow-hidden"
-    >
-      {/* Laser Gradient Dividers */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lime/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
+  const categories = ['All', 'Upcoming', 'Workshop', 'Competition', 'Seminar', 'Past'] as const;
 
-      {/* Share Toast Notification */}
+  return (
+    <section id="events" ref={revealRef} className="relative py-20 lg:py-28 bg-[#08080A] text-[#F5F3EF] overflow-hidden">
+      <div className="absolute inset-0 editorial-grid opacity-[0.04] pointer-events-none" />
+      <div className="mesh-blob mesh-blob-signal w-[640px] h-[480px] -top-28 -right-36 opacity-[0.22]" />
+      <div className="section-divider absolute top-0 left-0 right-0 opacity-40" />
+
       {shareToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-midnight-deep border border-amber text-white text-xs font-mono px-4 py-2.5 rounded-2xl shadow-[0_0_30px_rgba(255,184,0,0.4)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <Check className="w-4 h-4 text-cyber-emerald" />
-          <span>{shareToast}</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-[rgba(16,16,18,0.96)] border border-white/[0.10] text-white text-xs font-mono px-4 py-3 rounded-2xl shadow-glass-xl backdrop-blur-3xl">
+          <span className="w-7 h-7 rounded-full bg-[#FF4A15] text-white grid place-items-center shrink-0"><Check className="w-3.5 h-3.5" /></span>
+          {shareToast}
         </div>
       )}
 
-      {/* Atmospheric Glow */}
-      <div className="absolute top-0 right-0 w-[650px] h-[550px] bg-gradient-radial from-amber/[0.04] to-transparent rounded-full blur-[150px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-14 gap-6">
-          <div className="space-y-3 reveal">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header — lighter, more whitespace */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 lg:gap-10 mb-10">
+          <div className="reveal max-w-[640px]">
             <div className="section-eyebrow-hud">
-              <Ticket className="w-3 h-3" />
-              <span>02 // EVENTS &amp; WORKSHOPS</span>
+              <Layers className="w-3.5 h-3.5" /> 03 — EVENTS & REGISTRATION
             </div>
-            <h2 className="font-space text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Event Calendar &amp;
-              <br className="hidden sm:block" />
-              Live Registration.
+            <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.045em] leading-[0.88] text-[34px] sm:text-[42px] lg:text-[46px] text-[#F5F3EF]">
+              Calendar & <span className="font-[Instrument_Serif] italic font-[400] text-[#FF4A15]">live registration.</span>
             </h2>
+            <div className="mt-3 inline-flex items-center gap-2 text-[11px] font-mono">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/[0.07] px-3 py-1 text-white/55"><Hash className="w-3 h-3 text-white/30" /> {activeEvents.length} CATALOGUED</span>
+            </div>
           </div>
-          <p className="text-xs font-mono text-slate-400 max-w-xs sm:text-right leading-relaxed reveal stagger-2">
-            Department ceremonies, hardware workshops, and hackathons.
+          <p className="text-[13.5px] leading-[1.7] font-mono text-white/40 max-w-[360px] reveal stagger-2 border-l border-white/[0.07] pl-4">
+            Ceremonies, workshops &amp; hackathons — each entry filed as a dossier with clear specs and secure enrollment.
           </p>
         </div>
 
-        {/* ── High-Tech Countdown Terminal Banner ─────────────── */}
-        <div className="mb-14 reveal stagger-2">
-          <div className="relative rounded-3xl bg-gradient-to-r from-[#0C1224]/95 via-[#080D1A]/98 to-[#050812] border border-amber/40 overflow-hidden shadow-[0_20px_60px_-15px_rgba(255,184,0,0.2)]">
-            
-            {/* Top Laser Shimmer */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber to-transparent" />
+        {/* Flagship — compact, cleaner header */}
+        <div className="reveal stagger-1 mb-10 rounded-[24px] overflow-hidden bg-[rgba(16,16,18,0.72)] border border-white/[0.07] backdrop-blur-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+            <div className="lg:col-span-7 p-6 sm:p-7 lg:p-8 flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-2 text-[10.5px] font-mono">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FF4A15] text-white px-3 py-1 font-bold tracking-[0.06em]"><span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {heroConfig.flagshipBadge || 'FLAGSHIP DOSSIER'}</span>
+                <span className="text-white/30 tracking-[0.08em] hidden sm:inline">FILE REF — TARANG-2K26</span>
+              </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-8 sm:p-12 relative z-10">
-              
-              {/* Left: Text Details & Trigger (7 cols) */}
-              <div className="lg:col-span-7 space-y-5">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/40 text-amber text-[10px] font-mono font-bold uppercase tracking-widest shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-amber animate-ping shrink-0" />
-                  <span>{heroConfig.flagshipBadge || 'Flagship Event'}</span>
-                </div>
-
-                <h3 className="font-space text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              <div>
+                <h3 className="font-[Syne] font-[800] tracking-[-0.035em] leading-[0.92] text-[26px] sm:text-[32px] text-[#F5F3EF]">
                   {heroConfig.flagshipTitle || 'SPACE & SINC Installation'}
                   <br />
-                  <span className="text-gradient-amber">{heroConfig.flagshipSubTitle || '& TARANG 2K26'}</span>
+                  <span className="font-[Instrument_Serif] italic font-[400] text-[#FF4A15]">
+                    {heroConfig.flagshipSubTitle || '& TARANG 2K26'}
+                  </span>
                 </h3>
-
-                <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
-                  {heroConfig.flagshipDescription ||
-                    'Grand induction of the 2026-27 executive council followed by the freshers tech gala. Join faculty advisors and student engineers.'}
+                <p className="mt-2.5 text-[13px] leading-[1.6] text-white/50 max-w-[540px]">
+                  {heroConfig.flagshipDescription || 'Grand induction of the 2026—27 council followed by freshers welcome gala and technical showcase.'}
                 </p>
+              </div>
 
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {[
+                  { k: 'DATE', v: (heroConfig.flagshipTargetDate || '2026-07-30').slice(0,10), sub: '09:45 AM IST' },
+                  { k: 'VENUE', v: heroConfig.flagshipTargetVenue || 'AUDITORIUM', sub: 'PIET CAMPUS' },
+                  { k: 'EDITION', v: '14TH', sub: 'ESTD 2012' },
+                ].map((s) => (
+                  <div key={s.k} className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-3">
+                    <div className="text-[10px] font-mono tracking-[0.12em] text-white/30">{s.k}</div>
+                    <div className="mt-1 font-mono font-bold text-[12.5px] text-white leading-none truncate">{s.v}</div>
+                    <div className="text-[10.5px] font-mono text-white/35 mt-1 leading-none truncate">{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 {onRegisterClick && activeEvents.length > 0 && (
                   <button
                     onClick={() => { soundFx.playLaser(); onRegisterClick(activeEvents[0]); }}
-                    id="flagship-register-btn"
-                    className="btn-amber cursor-pointer group shadow-[0_0_25px_rgba(255,184,0,0.3)] text-xs"
+                    className="btn-signal !px-6 !py-2.5 !text-[12px]"
                   >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>{heroConfig.flagshipButtonText || 'Register Now'}</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <ShieldCheck className="w-4 h-4 relative z-10" />
+                    <span className="relative z-10">{heroConfig.flagshipButtonText || 'Register for Flagship'}</span>
+                    <ChevronRight className="w-4 h-4 opacity-80 relative z-10" />
                   </button>
                 )}
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-white/30"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> SECURE ENROLLMENT</span>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 relative bg-[#0A0A0C] lg:border-l border-white/[0.06] p-6 sm:p-7 lg:p-8 flex flex-col justify-center gap-4">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF4A15]/[0.03] via-transparent to-transparent pointer-events-none" />
+              <div className="relative flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.12em] text-white/35"><Timer className="w-3.5 h-3.5 text-white/30" /> T-MINUS</span>
+                <span className="text-[10px] font-mono tracking-[0.10em] px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/[0.06] text-white/40">LIVE</span>
               </div>
 
-              {/* Right: Digital LED Segment Countdown Blocks (5 cols) */}
-              <div className="lg:col-span-5">
-                <div className="flex items-center justify-center lg:justify-end gap-2 sm:gap-3.5">
-                  {/* Days */}
-                  <div className="text-center flex flex-col items-center gap-1.5">
-                    <span className="font-mono text-[10px] text-slate-400 font-bold tracking-widest">DAYS</span>
-                    <div className="stat-number text-4xl sm:text-5xl text-white bg-midnight-deep border border-white/15 rounded-2xl w-16 sm:w-20 h-16 sm:h-20 flex items-center justify-center shadow-inner">
-                      {countdownPads(timeLeft.days)}
+              <div className="relative grid grid-cols-4 gap-2">
+                {[
+                  { k: 'DAYS', v: pad(timeLeft.days) },
+                  { k: 'HOURS', v: pad(timeLeft.hours) },
+                  { k: 'MINS', v: pad(timeLeft.minutes) },
+                  { k: 'SECS', v: pad(timeLeft.seconds), accent: true },
+                ].map((b) => (
+                  <div key={b.k} className="text-center">
+                    <div className="text-[10px] font-mono tracking-[0.12em] text-white/30">{b.k}</div>
+                    <div
+                      className={`mt-1.5 h-12 sm:h-[52px] rounded-xl grid place-items-center font-mono font-[800] text-[20px] sm:text-[22px] tracking-[-0.03em] border ${
+                        b.accent
+                          ? 'bg-[#FF4A15] text-white border-[#FF4A15] shadow-[0_0_18px_rgba(255,74,21,0.35)]'
+                          : 'bg-white/[0.04] border-white/[0.07] text-white'
+                      }`}
+                    >
+                      {b.v}
                     </div>
                   </div>
-
-                  <span className="text-amber font-mono text-2xl font-bold mt-5 animate-pulse">:</span>
-
-                  {/* Hours */}
-                  <div className="text-center flex flex-col items-center gap-1.5">
-                    <span className="font-mono text-[10px] text-slate-400 font-bold tracking-widest">HOURS</span>
-                    <div className="stat-number text-4xl sm:text-5xl text-white bg-midnight-deep border border-white/15 rounded-2xl w-16 sm:w-20 h-16 sm:h-20 flex items-center justify-center shadow-inner">
-                      {countdownPads(timeLeft.hours)}
-                    </div>
-                  </div>
-
-                  <span className="text-amber font-mono text-2xl font-bold mt-5 animate-pulse">:</span>
-
-                  {/* Minutes */}
-                  <div className="text-center flex flex-col items-center gap-1.5">
-                    <span className="font-mono text-[10px] text-slate-400 font-bold tracking-widest">MINS</span>
-                    <div className="stat-number text-4xl sm:text-5xl text-white bg-midnight-deep border border-white/15 rounded-2xl w-16 sm:w-20 h-16 sm:h-20 flex items-center justify-center shadow-inner">
-                      {countdownPads(timeLeft.minutes)}
-                    </div>
-                  </div>
-
-                  <span className="text-amber font-mono text-2xl font-bold mt-5 animate-pulse">:</span>
-
-                  {/* Seconds */}
-                  <div className="text-center flex flex-col items-center gap-1.5">
-                    <span className="font-mono text-[10px] text-lime font-bold tracking-widest">SECS</span>
-                    <div className="stat-number text-4xl sm:text-5xl text-lime bg-midnight-deep border border-lime/40 rounded-2xl w-16 sm:w-20 h-16 sm:h-20 flex items-center justify-center shadow-[0_0_15px_rgba(0,242,254,0.3)]">
-                      {countdownPads(timeLeft.seconds)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 text-center lg:text-right">
-                  <span className="text-[10px] font-mono text-slate-400 tracking-wider flex items-center justify-center lg:justify-end gap-1.5">
-                    <Timer className="w-3.5 h-3.5 text-amber" />
-                    TARGET: {(heroConfig.flagshipTargetDate || 'JULY 30, 2026 10:00 AM IST').replace('T', ' · ')} · {heroConfig.flagshipTargetVenue || 'AUDITORIUM'}
-                  </span>
-                </div>
+                ))}
               </div>
 
+              <div className="relative rounded-xl bg-white/[0.04] border border-white/[0.06] px-3.5 py-2.5 flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-[11px] font-mono text-white/55 truncate">
+                  <Calendar className="w-3.5 h-3.5 text-white/30 shrink-0" />
+                  <span className="truncate">{(heroConfig.flagshipTargetDate || '2026-07-30T09:45:00').replace('T', ' · ')}</span>
+                </span>
+                <span className="shrink-0 text-[10.5px] font-mono px-2.5 py-1 rounded-full bg-white text-[#08080A] font-bold">{heroConfig.flagshipTargetVenue || 'AUDITORIUM'}</span>
+              </div>
+              <div className="relative text-[11px] font-mono text-white/25 border-t border-white/[0.05] pt-3 leading-relaxed">
+                Clock synced to IST · updates stream via portal.
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Filter Pills Navigation */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 reveal">
-          {(['All', 'Upcoming', 'Past', 'Workshop', 'Competition', 'Seminar', 'Installation'] as const).map((cat) => {
-            const count = cat === 'All' 
-              ? activeEvents.length 
-              : activeEvents.filter(e => e.category === cat || e.status === cat).length;
-            if (count === 0 && cat !== 'All' && cat !== 'Upcoming' && cat !== 'Workshop') return null;
+        {/* Filter & Search — editorial controls */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-7 reveal stagger-2">
+          <div className="flex flex-wrap items-center gap-1 p-1 rounded-full bg-[#0F0F11] border border-white/[0.06] w-fit max-w-full">
+            {categories.map((cat) => {
+              const count =
+                cat === 'All'
+                  ? activeEvents.length
+                  : activeEvents.filter((e) => e.category === cat || e.status === cat).length;
+              const isActive = filter === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => { soundFx.playClick(); setFilter(cat); }}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-mono border transition-all duration-300 ${
+                    isActive
+                      ? 'bg-[#FF4A15] text-white border-[#FF4A15] font-bold shadow-[0_6px_18px_rgba(255,74,21,0.28)]'
+                      : 'bg-transparent border-transparent text-white/45 hover:text-white hover:bg-white/[0.05]'
+                  }`}
+                >
+                  {cat}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none ${isActive ? 'bg-white text-[#FF4A15]' : 'bg-white/10 text-white/50'}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
 
-            return (
-              <button
-                key={cat}
-                onClick={() => { soundFx.playClick(); setFilter(cat); }}
-                id={`event-filter-${cat.toLowerCase()}`}
-                className={`filter-pill flex items-center gap-1.5 ${filter === cat ? 'active' : ''}`}
-              >
-                <span>{cat}</span>
-                <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${filter === cat ? 'bg-midnight text-white font-bold' : 'bg-white/10 text-slate-400'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+          <div className="relative w-full lg:w-[320px] shrink-0">
+            <Search className="w-4 h-4 text-white/25 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search dossiers, venue, brief…"
+              className="w-full pl-10 pr-4 py-3 rounded-full glass-input text-xs font-mono text-white placeholder:text-white/25 focus:outline-none"
+            />
+          </div>
         </div>
 
-        {/* Event Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.length > 0 ? (
-            filteredEvents.map((evt) => (
-              <EventCard
-                key={evt.id}
-                evt={evt}
-                onRegisterClick={onRegisterClick}
-                onShareClick={(e) => handleShareEvent(evt, e)}
-                className="animate-in fade-in duration-300"
-              />
-            ))
+        {/* RUNWAY — editorial, larger gap, soft edge fades */}
+        <div className="reveal">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 text-[11px] font-mono tracking-[0.10em] text-white/30">
+              <span className="hidden sm:inline-flex items-center gap-2"><span className="w-5 h-px bg-white/10" /> RUNWAY</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/[0.07] px-3 py-1 text-white/45"><Hash className="w-3 h-3 text-white/30" /> {filteredEvents.length} DOSSIERS</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono tracking-[0.12em] text-white/20">
+              <span>DRAG TO SCAN</span> <ArrowUpRight className="w-3 h-3 rotate-45" />
+            </div>
+          </div>
+
+          {filteredEvents.length ? (
+            <div className="relative -mx-4 sm:mx-0">
+              <div className="flex gap-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 sm:px-0 pb-4 scroll-px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {filteredEvents.map((evt, i) => (
+                  <div key={evt.id} className="snap-start shrink-0 w-[86vw] sm:w-[360px] lg:w-[380px] reveal" style={{ transitionDelay: `${(i % 4) * 60}ms` } as React.CSSProperties}>
+                    <EventCard evt={evt} index={i} onRegisterClick={onRegisterClick} onShare={(e) => handleShare(evt, e as any)} />
+                  </div>
+                ))}
+                <div className="shrink-0 w-4 sm:w-2" aria-hidden />
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#08080A] to-transparent hidden sm:block" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#08080A] to-transparent hidden sm:block" />
+            </div>
           ) : (
-            <div className="col-span-full py-16 text-center border border-dashed border-white/10 rounded-3xl bg-midnight/50 p-8 space-y-2.5">
-              <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
-              <h4 className="font-space font-bold text-white text-base">No Scheduled Events</h4>
-              <p className="text-xs font-mono text-slate-400 max-w-sm mx-auto">
-                No active events in this category. Check back soon for upcoming hackathons, workshops, and ceremonies!
-              </p>
+            <div className="py-16 text-center rounded-[24px] bg-white/[0.02] border border-dashed border-white/[0.07]">
+              <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.06] grid place-items-center mx-auto"><Calendar className="w-6 h-6 text-white/25" /></div>
+              <div className="mt-4 font-[Syne] font-[700] tracking-tight text-white">No dossiers in this runway</div>
+              <div className="text-xs font-mono text-white/35 mt-1">Adjust filters — catalog contains {activeEvents.length} filed entries.</div>
             </div>
           )}
         </div>
-
       </div>
     </section>
   );
 };
 
-interface EventCardProps {
+const EventCard: React.FC<{
   evt: EventItem;
-  onRegisterClick?: (event: EventItem) => void;
-  onShareClick?: (e: React.MouseEvent) => void;
-  className?: string;
-}
-
-const EventCard: React.FC<EventCardProps> = ({ evt, onRegisterClick, onShareClick, className = '' }) => {
+  index: number;
+  onRegisterClick?: (e: EventItem) => void;
+  onShare?: (e: React.MouseEvent) => void;
+}> = ({ evt, index, onRegisterClick, onShare }) => {
+  const fileRef = `EV-${String(index + 1).padStart(2, '0')}`;
   const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(evt.title)}&dates=20260730T043000Z/20260730T103000Z&details=${encodeURIComponent(evt.description)}&location=${encodeURIComponent(evt.venue)}`;
+  const pctRemaining = evt.seatsRemaining !== undefined && evt.totalSeats ? Math.max(0, Math.min(100, (1 - evt.seatsRemaining / evt.totalSeats) * 100)) : null;
+  const isSoldOut = evt.seatsRemaining === 0;
 
   return (
-    <div
-      onMouseEnter={() => soundFx.playHover()}
-      className={`glass-cyber-interactive rounded-3xl overflow-hidden flex flex-col justify-between group shadow-xl ${className}`}
-    >
-      {/* Top Banner Image with Badges */}
-      <div className="relative aspect-[16/9] overflow-hidden bg-midnight-deep">
+    <div className="group relative rounded-[24px] overflow-hidden flex flex-col h-full bg-[rgba(16,16,18,0.72)] border border-white/[0.07] backdrop-blur-xl hover:border-white/10 hover:bg-[rgba(20,20,22,0.8)] transition-colors">
+      {/* cover */}
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#0A0A0C]">
         <OptimizedImage
           src={evt.image}
           alt={evt.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700 ease-out"
           wrapperClassName="w-full h-full"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#04060A] via-[#04060A]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
-        {/* Badge */}
-        <div className="absolute top-3.5 left-3.5 bg-midnight-deep/90 border border-white/20 backdrop-blur-md px-3 py-1 rounded-xl shadow-md">
-          <span className="text-[9px] font-mono font-extrabold text-white tracking-widest">{evt.badge}</span>
+        <div className="absolute top-3 left-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-[#08080A] px-3 py-1 text-[11px] font-mono font-bold tracking-[0.04em]">
+            <Sparkles className="w-3 h-3 text-[#FF4A15]" /> {evt.badge || evt.category.toUpperCase()}
+          </span>
         </div>
 
-        {/* Share & Calendar Icons */}
-        <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5">
+        <div className="absolute top-3 right-3 hidden sm:flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <a
             href={googleCalUrl}
             target="_blank"
             rel="noreferrer"
             title="Add to Google Calendar"
-            className="p-2 rounded-xl bg-midnight-deep/90 border border-white/15 text-slate-300 hover:text-white hover:border-lime/50 backdrop-blur-md transition-colors"
+            onClick={(e) => e.stopPropagation()}
+            className="w-8 h-8 rounded-full bg-black/55 backdrop-blur-xl border border-white/15 text-white grid place-items-center hover:bg-white hover:text-[#08080A] transition-colors"
           >
             <Calendar className="w-3.5 h-3.5" />
           </a>
-          {onShareClick && (
+          {onShare && (
             <button
-              onClick={onShareClick}
-              title="Share Invitation"
-              className="p-2 rounded-xl bg-midnight-deep/90 border border-white/15 text-slate-300 hover:text-amber hover:border-amber-400/50 backdrop-blur-md transition-colors cursor-pointer"
+              onClick={onShare}
+              title="Share dossier link"
+              className="w-8 h-8 rounded-full bg-black/55 backdrop-blur-xl border border-white/15 text-white grid place-items-center hover:bg-white hover:text-[#08080A] transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Date Chip */}
-        <div className="absolute bottom-3.5 right-3.5 bg-midnight-deep/90 backdrop-blur-md px-3 py-1 rounded-xl border border-white/15 flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-amber" />
-          <span className="text-[10px] font-mono text-slate-200 font-semibold">{evt.date}</span>
+        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 text-[11px] font-mono">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-[#08080A] px-3 py-1.5 font-bold leading-none">
+            <Calendar className="w-3 h-3" /> {evt.date}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FF4A15] text-white px-3 py-1.5 font-bold leading-none">
+            <Clock className="w-3 h-3" /> {evt.time}
+          </span>
+          <span className="ml-auto hidden sm:inline-flex text-[10px] font-mono px-2 py-1 rounded-full bg-black/55 backdrop-blur border border-white/10 text-white/60">{fileRef}</span>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="p-6 flex flex-col flex-1 space-y-4">
-        <div className="space-y-2.5 flex-1">
-          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span className="flex items-center gap-1 text-lime">
-              <Clock className="w-3.5 h-3.5" />
-              {evt.time}
-            </span>
-            {evt.participationType === 'individual_only' ? (
-              <span className="text-[9px] font-mono text-blue-300 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-md font-bold">
-                👤 Solo Only
-              </span>
-            ) : evt.participationType === 'team_only' ? (
-              <span className="text-[9px] font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md font-bold">
-                👥 Team (2-5)
-              </span>
-            ) : (
-              <span className="text-[9px] font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                👥 Solo / Team
-              </span>
-            )}
-            <span className="flex items-center gap-1 text-amber">
-              <MapPin className="w-3.5 h-3.5" />
-              {evt.venue}
-            </span>
-          </div>
-
-          <h3 className="font-space font-extrabold text-lg text-white leading-snug line-clamp-2 group-hover:text-lime transition-colors">
-            {evt.title}
-          </h3>
-
-          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed font-sans">
-            {evt.description}
-          </p>
+      {/* body — airy, 2-pill spec only */}
+      <div className="p-5 flex flex-col gap-3 flex-1">
+        <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
+          <span className="inline-flex items-center gap-1.5 text-white/45 truncate">
+            <MapPin className="w-3 h-3 text-white/30 shrink-0" /> <span className="truncate">{evt.venue}</span>
+          </span>
+          {evt.participationType === 'individual_only' ? (
+            <span className="shrink-0 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/[0.07] text-white/70 text-[10px] font-bold tracking-wide">SOLO</span>
+          ) : evt.participationType === 'team_only' ? (
+            <span className="shrink-0 px-2.5 py-1 rounded-full bg-[#FF4A15]/10 border border-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold tracking-wide">TEAM 2—5</span>
+          ) : (
+            <span className="shrink-0 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/45 text-[10px] tracking-wide">SOLO / TEAM</span>
+          )}
         </div>
 
-        {/* Live Seats Remaining Bar if upcoming */}
-        {evt.seatsRemaining !== undefined && evt.totalSeats !== undefined && (
-          <div className="space-y-1 pt-1">
-            <div className="flex items-center justify-between text-[9px] font-mono text-slate-400">
-              <span className="flex items-center gap-1 text-slate-400">
-                <Sparkles className="w-3 h-3 text-amber" />
-                <span>LIMITED CAPACITY</span>
+        <h3 className="font-[Syne] font-[700] leading-[1.2] tracking-[-0.02em] text-[16px] text-white group-hover:text-white transition-colors line-clamp-2">
+          {evt.title}
+        </h3>
+
+        <p className="text-[12.5px] leading-[1.6] text-white/45 line-clamp-2">{evt.description}</p>
+
+        {/* 2-col spec — reduced from 3 */}
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-2.5">
+            <div className="text-[10px] font-mono tracking-[0.10em] text-white/30 leading-none">STATUS</div>
+            <div className={`text-[12px] font-mono font-bold mt-1.5 leading-none ${evt.status === 'Upcoming' ? 'text-emerald-400' : evt.status === 'Ongoing' ? 'text-[#FF4A15]' : 'text-white/40'}`}>{evt.status.toUpperCase()}</div>
+          </div>
+          <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-2.5">
+            <div className="text-[10px] font-mono tracking-[0.10em] text-white/30 leading-none">ADMISSION</div>
+            <div className="text-[12px] font-mono font-bold text-white mt-1.5 leading-none">{evt.price && evt.price > 0 ? `₹${evt.price}` : 'FREE'}</div>
+          </div>
+        </div>
+
+        {pctRemaining !== null && (
+          <div className="pt-1">
+            <div className="flex justify-between items-center text-[11px] font-mono">
+              <span className="tracking-[0.06em] text-white/30">INVENTORY</span>
+              <span className={`font-bold text-[11px] ${isSoldOut ? 'text-red-400' : evt.seatsRemaining! < 10 ? 'text-[#FF4A15]' : 'text-white/60'}`}>
+                {isSoldOut ? 'SOLD OUT' : `${evt.seatsRemaining} left`}
               </span>
-              <span className="text-amber font-bold">{evt.seatsRemaining} SEATS LEFT</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-midnight-deep border border-white/5 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-lime via-amber to-amber-500 rounded-full"
-                style={{ width: `${Math.max(15, (1 - evt.seatsRemaining / evt.totalSeats) * 100)}%` }}
+            <div className="mt-2 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${isSoldOut ? 'bg-red-500' : 'bg-[#FF4A15]'}`}
+                style={{ width: `${Math.max(6, pctRemaining)}%` }}
               />
             </div>
           </div>
         )}
 
-        {/* Footer Registration Action */}
-        <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-          <div>
-            <span className="text-[9px] font-mono text-slate-500 block tracking-widest uppercase">ADMISSION FEE</span>
-            <span className="text-sm font-mono font-extrabold text-white">
-              {evt.price && evt.price > 0 ? `₹${evt.price} INR` : 'FREE Entry'}
-            </span>
+        <div className="mt-auto pt-4 border-t border-white/[0.06] flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono tracking-[0.10em] text-white/25 leading-none">FROM</div>
+            <div className="mt-1 font-[Syne] font-[800] tracking-[-0.02em] text-[15px] leading-none text-white">
+              {evt.price && evt.price > 0 ? `₹${evt.price.toLocaleString('en-IN')}` : 'Free Entry'}
+            </div>
+            <div className="text-[11px] font-mono text-white/30 leading-none mt-1 truncate">{evt.speaker ? evt.speaker : 'PIET ECE Forum'}</div>
           </div>
+
           {onRegisterClick ? (
             <button
               onClick={() => { soundFx.playLaser(); onRegisterClick(evt); }}
-              id={`register-btn-${evt.id}`}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white text-midnight font-space font-extrabold text-xs tracking-wider hover:bg-slate-100 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-95 cursor-pointer"
+              disabled={isSoldOut}
+              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 font-mono font-bold text-xs tracking-wide transition-all duration-300 ${
+                isSoldOut
+                  ? 'bg-white/[0.05] text-white/25 border border-white/[0.06] cursor-not-allowed'
+                  : 'bg-[#FF4A15] text-white border border-[#FF4A15] shadow-[0_8px_18px_rgba(255,74,21,0.28)] hover:shadow-[0_10px_24px_rgba(255,74,21,0.38)] hover:translate-y-[-1px]'
+              }`}
             >
-              <span>Register</span>
-              <ChevronRight className="w-4 h-4" />
+              {isSoldOut ? 'Closed' : 'Register'} {!isSoldOut && <ArrowUpRight className="w-3.5 h-3.5" />}
             </button>
           ) : (
-            <span className="text-[10px] font-mono text-slate-500 tracking-widest">{evt.status}</span>
+            <span className="text-xs font-mono px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/30">{evt.status}</span>
           )}
         </div>
       </div>

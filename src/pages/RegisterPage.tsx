@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, Calendar, Clock, MapPin, Ticket, ShieldCheck, 
@@ -228,7 +228,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
     }
 
     if (matched.minAmount && baseTotalAmount < matched.minAmount) {
-      setCouponError(`Coupon requires a minimum order amount of ₹${matched.minAmount}.`);
+      setCouponError(`Coupon requires a minimum order amount of â‚¹${matched.minAmount}.`);
       setAppliedCoupon(null);
       return;
     }
@@ -236,7 +236,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
     soundFx.playSuccess();
     setAppliedCoupon(matched);
     setCouponSuccessMsg(
-      `✓ Coupon "${matched.code}" applied! ${matched.description}`
+      `âœ“ Coupon "${matched.code}" applied! ${matched.description}`
     );
   };
 
@@ -296,7 +296,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
       particleCount: 160,
       spread: 90,
       origin: { y: 0.6 },
-      colors: ['#00E5FF', '#FFD60A', '#3B82F6', '#A855F7', '#10B981'],
+      colors: ['#00E5CC', '#FFD60A', '#3B82F6', '#A855F7', '#10B981'],
     });
   };
 
@@ -336,7 +336,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
             couponCode: appliedCoupon?.code || '',
           },
           theme: {
-            color: '#00E5FF',
+            color: '#00E5CC',
           },
           modal: {
             ondismiss: function () {
@@ -467,7 +467,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
       {/* Cyber Grid Pattern */}
       <div className="absolute inset-0 cyber-grid-pattern opacity-30 pointer-events-none" />
 
-      {/* ── Top Navigation Bar ────────────────────────────────────────── */}
+      {/* â”€â”€ Top Navigation Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <header className="sticky top-0 z-40 bg-[#040711]/90 backdrop-blur-2xl border-b border-white/10 py-3 px-4 sm:px-8 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
@@ -529,7 +529,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
         </div>
       </header>
 
-      {/* ── Main Registration Workspace ───────────────────────────────── */}
+      {/* â”€â”€ Main Registration Workspace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 relative z-10">
         
         {/* Page Title & Breadcrumb */}
@@ -546,7 +546,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
           </p>
         </div>
 
-        {/* ── Event Switcher Ribbon ────────────────────────────────────── */}
+        {/* â”€â”€ Event Switcher Ribbon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="mb-8 space-y-2">
           <span className="text-[11px] font-mono text-slate-400 block flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-lime" />
@@ -568,7 +568,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                   <span className="w-2 h-2 rounded-full bg-lime" />
                   <span className="font-space">{evt.title}</span>
                   <span className="text-[10px] text-amber px-2 py-0.5 rounded bg-midnight border border-white/10">
-                    {evt.price ? `₹${evt.price}/person` : 'FREE'}
+                    {evt.price ? `â‚¹${evt.price}/person` : 'FREE'}
                   </span>
                 </button>
               );
@@ -576,7 +576,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
           </div>
         </div>
 
-        {/* ── Two Column Registration Layout ───────────────────────────── */}
+        {/* â”€â”€ Two Column Registration Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {selectedEvent ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
@@ -596,7 +596,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                     {selectedEvent.badge || selectedEvent.category}
                   </div>
                   <div className="absolute bottom-3 right-3 px-3.5 py-1 rounded-xl bg-midnight/90 border border-amber-400/40 text-xs font-mono font-extrabold text-amber shadow-lg">
-                    {selectedEvent.price ? `₹${selectedEvent.price} / Attendee` : 'FREE ADMISSION'}
+                    {selectedEvent.price ? `â‚¹${selectedEvent.price} / Attendee` : 'FREE ADMISSION'}
                   </div>
                 </div>
 
@@ -645,7 +645,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                   <div className="p-4 rounded-2xl bg-midnight border border-amber/30 space-y-2 text-xs font-mono">
                     <div className="flex justify-between items-center text-slate-300">
                       <span>Rate per attendee:</span>
-                      <strong className="text-white">₹{perPersonPrice} INR</strong>
+                      <strong className="text-white">â‚¹{perPersonPrice} INR</strong>
                     </div>
                     <div className="flex justify-between items-center text-slate-300">
                       <span>Registered Attendees:</span>
@@ -654,13 +654,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                     {appliedCoupon && (
                       <div className="flex justify-between items-center text-cyber-emerald">
                         <span>Coupon ({appliedCoupon.code}):</span>
-                        <strong>-₹{discountAmount} INR</strong>
+                        <strong>-â‚¹{discountAmount} INR</strong>
                       </div>
                     )}
                     <div className="flex justify-between items-center pt-2 border-t border-white/10 text-sm">
                       <span className="text-white font-bold">Total Payable:</span>
                       <strong className="text-amber font-space font-extrabold text-lg">
-                        {finalPayableAmount > 0 ? `₹${finalPayableAmount} INR` : 'FREE'}
+                        {finalPayableAmount > 0 ? `â‚¹${finalPayableAmount} INR` : 'FREE'}
                       </strong>
                     </div>
                   </div>
@@ -695,7 +695,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                     </p>
                   </div>
 
-                  {/* ── STEP 1: Google Auth Gatekeeper ── */}
+                  {/* â”€â”€ STEP 1: Google Auth Gatekeeper â”€â”€ */}
                   {!isAuthenticated || !user ? (
                     <div className="p-6 rounded-2xl bg-gradient-to-br from-[#080D1F] to-[#04060E] border border-lime/40 space-y-4 text-center">
                       <div className="w-12 h-12 rounded-2xl bg-lime/15 border border-lime/40 flex items-center justify-center mx-auto text-lime shadow-lime">
@@ -756,7 +756,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                     </div>
                   )}
 
-                  {/* ── STEP 2: Participation Mode Selector (Individual vs Team) ── */}
+                  {/* â”€â”€ STEP 2: Participation Mode Selector (Individual vs Team) â”€â”€ */}
                   <div className="space-y-2">
                     <label className="text-slate-300 text-xs font-mono block">Registration Format:</label>
 
@@ -770,7 +770,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                           <div>
                             <strong className="text-white text-xs font-space block">Individual Registration Only</strong>
                             <span className="text-[10px] text-slate-300 block font-mono">
-                              This event is configured for solo participants (1 Attendee · ₹{perPersonPrice}).
+                              This event is configured for solo participants (1 Attendee Â· â‚¹{perPersonPrice}).
                             </span>
                           </div>
                         </div>
@@ -788,7 +788,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                           <div>
                             <strong className="text-white text-xs font-space block">Team Registration Mandatory</strong>
                             <span className="text-[10px] text-slate-300 block font-mono">
-                              This event requires a team of 2 to 5 members (₹{perPersonPrice}/person).
+                              This event requires a team of 2 to 5 members (â‚¹{perPersonPrice}/person).
                             </span>
                           </div>
                         </div>
@@ -818,7 +818,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                           </div>
                           <div>
                             <strong className="font-space block text-xs">Individual</strong>
-                            <span className="text-[10px] text-slate-400 block">1 Participant (₹{perPersonPrice})</span>
+                            <span className="text-[10px] text-slate-400 block">1 Participant (â‚¹{perPersonPrice})</span>
                           </div>
                         </button>
 
@@ -850,14 +850,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                           </div>
                           <div>
                             <strong className="font-space block text-xs">Team Registration</strong>
-                            <span className="text-[10px] text-slate-400 block">2 to 5 Members (₹{perPersonPrice}/person)</span>
+                            <span className="text-[10px] text-slate-400 block">2 to 5 Members (â‚¹{perPersonPrice}/person)</span>
                           </div>
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* ── STEP 3: Registration Form ── */}
+                  {/* â”€â”€ STEP 3: Registration Form â”€â”€ */}
                   <form onSubmit={handleSubmit} className="space-y-5 font-mono text-xs">
                     
                     {/* Team Details (If Team selected) */}
@@ -995,7 +995,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
 
                     </div>
 
-                    {/* ── Additional Team Members Manager (If Team selected) ── */}
+                    {/* â”€â”€ Additional Team Members Manager (If Team selected) â”€â”€ */}
                     {regType === 'team' && (
                       <div className="space-y-4 pt-2">
                         <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
@@ -1131,7 +1131,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                       </div>
                     )}
 
-                    {/* ── STEP 4: Coupon Code Engine ── */}
+                    {/* â”€â”€ STEP 4: Coupon Code Engine â”€â”€ */}
                     <div className="p-4 rounded-2xl bg-midnight border border-white/10 space-y-3">
                       <div className="flex items-center justify-between">
                         <label className="text-slate-300 text-xs font-mono flex items-center gap-1.5 font-bold">
@@ -1169,7 +1169,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                                   {appliedCoupon.code}
                                 </span>
                                 <span className="text-xs font-bold text-cyber-emerald">
-                                  -₹{discountAmount} OFF Applied!
+                                  -â‚¹{discountAmount} OFF Applied!
                                 </span>
                               </div>
                               <span className="text-[10px] text-slate-300 font-sans block mt-0.5 truncate">
@@ -1205,7 +1205,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                       )}
                     </div>
 
-                    {/* ── STEP 5: Final Pricing Summary Table ── */}
+                    {/* â”€â”€ STEP 5: Final Pricing Summary Table â”€â”€ */}
                     <div className="p-4 rounded-2xl bg-midnight border border-white/10 space-y-2">
                       <div className="flex justify-between items-center text-xs font-mono text-slate-400">
                         <span>Event:</span>
@@ -1218,21 +1218,21 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-                        <span>Base Admission (₹{perPersonPrice} × {totalAttendees}):</span>
-                        <span className="text-slate-200">₹{baseTotalAmount} INR</span>
+                        <span>Base Admission (â‚¹{perPersonPrice} Ã— {totalAttendees}):</span>
+                        <span className="text-slate-200">â‚¹{baseTotalAmount} INR</span>
                       </div>
 
                       {appliedCoupon && (
                         <div className="flex justify-between items-center text-xs font-mono text-cyber-emerald">
                           <span>Coupon Discount ({appliedCoupon.code}):</span>
-                          <strong className="font-bold">-₹{discountAmount} INR</strong>
+                          <strong className="font-bold">-â‚¹{discountAmount} INR</strong>
                         </div>
                       )}
 
                       <div className="flex justify-between items-center text-xs font-mono border-t border-white/10 pt-2.5">
                         <span className="text-white font-bold">Total Final Payable:</span>
                         <strong className="text-lg text-amber font-space font-extrabold">
-                          {finalPayableAmount > 0 ? `₹${finalPayableAmount} INR` : 'FREE ENTRY'}
+                          {finalPayableAmount > 0 ? `â‚¹${finalPayableAmount} INR` : 'FREE ENTRY'}
                         </strong>
                       </div>
                     </div>
@@ -1305,7 +1305,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                               <CreditCard className="w-4 h-4 text-midnight" />
                               <span>
                                 {finalPayableAmount > 0
-                                  ? `Proceed to Secure Checkout (₹${finalPayableAmount})`
+                                  ? `Proceed to Secure Checkout (â‚¹${finalPayableAmount})`
                                   : `Generate Instant Free Pass (${regType === 'team' ? `${totalAttendees} Members` : '1 Attendee'})`}
                               </span>
                               <ChevronRight className="w-4 h-4 text-midnight" />
@@ -1319,7 +1319,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
 
                 </div>
               ) : (
-                /* ── STEP 6: Pass Generation Success Showcase ── */
+                /* â”€â”€ STEP 6: Pass Generation Success Showcase â”€â”€ */
                 <div className="space-y-6 animate-in fade-in zoom-in duration-300">
                   
                   <div className="p-4 rounded-2xl bg-cyber-emerald/15 border border-cyber-emerald/40 text-cyber-emerald flex items-center justify-between gap-3">

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Maximize2, Play, Image as ImageIcon, X, ChevronLeft, ChevronRight, Download, Share2, Check } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Maximize2, Play, Image as ImageIcon, X, ChevronLeft, ChevronRight, Download, Share2, Check, Sparkles, Archive, Layers, Hash, Eye } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { useScrollReveal } from './useScrollReveal';
 
@@ -13,77 +13,25 @@ export interface GalleryItem {
 }
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
-  {
-    id: 'ARCH-01',
-    title: 'National Autonomous Robotics Expo',
-    category: 'Project Expo',
-    type: 'image',
-    url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80',
-    caption: 'Autonomous LiDAR rover & obstacle-avoidance demonstration by 3rd year ECE engineering team.',
-  },
-  {
-    id: 'ARCH-02',
-    title: 'SMT Micro-Soldering & 4-Layer PCB Lab',
-    category: 'Workshop',
-    type: 'image',
-    url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-    caption: 'Students practicing surface mount micro-soldering and impedance matching on 4-layer boards.',
-  },
-  {
-    id: 'ARCH-03',
-    title: '24-Hour National Hardware Hackathon',
-    category: 'Hackathon',
-    type: 'image',
-    url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
-    caption: 'Over 50 teams hacking hardware prototypes round the clock in the central innovation auditorium.',
-  },
-  {
-    id: 'ARCH-04',
-    title: 'Semiconductor Fabrication Cleanroom Visit',
-    category: 'Industrial Visit',
-    type: 'image',
-    url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
-    caption: 'Department students observing silicon wafer photolithography and cleanroom chemical etching.',
-  },
-  {
-    id: 'ARCH-05',
-    title: 'FPGA Verilog & RISC-V Synthesis Sprint',
-    category: 'Workshop',
-    type: 'image',
-    url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-    caption: 'Designing custom 32-bit RISC-V processor cores synthesized onto Xilinx Artix-7 FPGA boards.',
-  },
-  {
-    id: 'ARCH-06',
-    title: 'IoT Drone Swarm & Telemetry Testing',
-    category: 'Project Expo',
-    type: 'image',
-    url: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80',
-    caption: 'Outdoor field testing of multi-node LoRa mesh telemetry communication for quadcopters.',
-  },
+  { id: 'ARCH-01', title: 'National Autonomous Robotics Expo', category: 'Project Expo', type: 'image', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80', caption: 'Autonomous LiDAR rover & obstacle-avoidance demo by 3rd year ECE team.' },
+  { id: 'ARCH-02', title: 'SMT Micro-Soldering & 4-Layer PCB Lab', category: 'Workshop', type: 'image', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80', caption: 'Students practicing surface mount micro-soldering on 4-layer boards.' },
+  { id: 'ARCH-03', title: '24-Hour National Hardware Hackathon', category: 'Hackathon', type: 'image', url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80', caption: '50+ teams hacking hardware prototypes round the clock.' },
+  { id: 'ARCH-04', title: 'Semiconductor Fabrication Cleanroom Visit', category: 'Industrial Visit', type: 'image', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80', caption: 'Students observing silicon wafer photolithography.' },
+  { id: 'ARCH-05', title: 'FPGA Verilog & RISC-V Synthesis Sprint', category: 'Workshop', type: 'image', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80', caption: 'Designing custom 32-bit RISC-V cores on Xilinx Artix-7.' },
+  { id: 'ARCH-06', title: 'IoT Drone Swarm & Telemetry Testing', category: 'Project Expo', type: 'image', url: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80', caption: 'Outdoor field testing of multi-node LoRa mesh telemetry.' },
 ];
 
-interface GallerySectionProps {
-  galleryItems?: GalleryItem[];
-}
-
-export const GallerySection: React.FC<GallerySectionProps> = ({
-  galleryItems,
-}) => {
-  const [activeCategory, setActiveCategory] = useState<string>('All');
+export const GallerySection: React.FC<{ galleryItems?: GalleryItem[] }> = ({ galleryItems }) => {
+  const [activeCategory, setActiveCategory] = useState('All');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [copiedToast, setCopiedToast] = useState<string | null>(null);
   const revealRef = useScrollReveal(0.06);
 
-  const activeItems = Array.isArray(galleryItems) ? galleryItems : DEFAULT_GALLERY_ITEMS;
+  const activeItems = Array.isArray(galleryItems) && galleryItems.length ? galleryItems : DEFAULT_GALLERY_ITEMS;
+  const filteredItems = activeItems.filter((item) => activeCategory === 'All' || item.category === activeCategory);
 
-  const filteredItems = activeItems.filter(
-    (item) => activeCategory === 'All' || item.category === activeCategory
-  );
-
-  // Keyboard navigation for Lightbox
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (lightboxIndex === null) return;
       if (e.key === 'Escape') setLightboxIndex(null);
       if (e.key === 'ArrowRight') {
@@ -95,232 +43,238 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
         setLightboxIndex((prev) => (prev !== null ? (prev - 1 + filteredItems.length) % filteredItems.length : 0));
       }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [lightboxIndex, filteredItems.length]);
 
-  const currentLightboxItem = lightboxIndex !== null ? filteredItems[lightboxIndex] : null;
+  const current = lightboxIndex !== null ? filteredItems[lightboxIndex] : null;
 
-  const handleShareImage = (item: GalleryItem) => {
+  const handleShare = (item: GalleryItem) => {
     soundFx.playClick();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(item.url);
-      setCopiedToast(`Copied image link for "${item.title}"`);
-      setTimeout(() => setCopiedToast(null), 2500);
-    }
+    navigator.clipboard?.writeText(item.url);
+    setCopiedToast(`Copied archive link — ${item.title}`);
+    setTimeout(() => setCopiedToast(null), 2500);
   };
 
-  return (
-    <section
-      id="gallery"
-      ref={revealRef}
-      className="relative py-28 bg-transparent overflow-hidden"
-    >
-      {/* Laser Divider */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lime/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-purple/30 to-transparent" />
+  const categories = ['All', 'Hackathon', 'Workshop', 'Project Expo', 'Industrial Visit'] as const;
 
-      {/* Copied Link Toast Notification */}
+  return (
+    <section id="gallery" ref={revealRef} className="relative py-20 lg:py-28 bg-[#08080A] text-[#F5F3EF] overflow-hidden">
+      {/* Atelier backdrop */}
+      <div className="absolute inset-0 editorial-grid opacity-[0.06] pointer-events-none" />
+      <div className="mesh-blob mesh-blob-signal w-[640px] h-[480px] top-10 -left-32 opacity-[0.22]" />
+      <div className="mesh-blob mesh-blob-cyan w-[520px] h-[520px] bottom-10 -right-24 opacity-[0.12]" />
+      <div className="section-divider absolute top-0 left-0 right-0 opacity-50" />
+
       {copiedToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-midnight-deep border border-lime text-white text-xs font-mono px-4 py-2.5 rounded-2xl shadow-[0_0_30px_rgba(0,242,254,0.4)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <Check className="w-4 h-4 text-cyber-emerald" />
-          <span>{copiedToast}</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-[rgba(16,16,18,0.96)] border border-white/[0.12] text-white text-xs font-mono px-4 py-3 rounded-2xl shadow-glass-xl backdrop-blur-3xl">
+          <span className="w-7 h-7 rounded-full bg-[#FF4A15] text-white grid place-items-center shrink-0"><Check className="w-3.5 h-3.5" /></span>
+          {copiedToast}
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-14 gap-6">
-          <div className="space-y-3 reveal">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header — archive masthead */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+          <div className="reveal">
             <div className="section-eyebrow-hud">
-              03 // VISUAL ARCHIVE &amp; LAB MEMORIES
+              <Archive className="w-3.5 h-3.5" /> 04 — VISUAL ARCHIVE
+              <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-2.5 border-l border-[rgba(255,74,21,0.22)] text-white/40 tracking-[0.08em] normal-case">BENTO CATALOG · REF ARC-04 · {activeItems.length} PLATES</span>
             </div>
-            <h2 className="font-space text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Hardware Labs &amp;
-              <br className="hidden sm:block" />
-              Hackathons in Action.
+            <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.045em] leading-[0.88] text-[32px] sm:text-[42px] lg:text-[48px] text-[#F5F3EF]">
+              Labs & <span className="font-[Instrument_Serif] italic font-[400] text-[#FF4A15]">hackathons</span> in action.
             </h2>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-mono">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] px-3 py-1.5 text-white/60"><Layers className="w-3 h-3 text-[#FF4A15]" /> ARCHIVE BENTO</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FF4A15]/10 border border-[#FF4A15]/20 px-3 py-1.5 text-[#FF4A15] font-bold"><Eye className="w-3 h-3" /> LIGHTBOX ENABLED</span>
+            </div>
           </div>
-          <p className="text-xs font-mono text-slate-400 max-w-xs sm:text-right leading-relaxed reveal stagger-2">
-            Documenting student prototyping breakthroughs, industrial semiconductor tours, and national hackathon championships.
+          <p className="text-[13px] leading-relaxed font-mono text-white/45 max-w-[380px] reveal stagger-2 border-l-2 border-[#FF4A15]/30 pl-4">
+            Prototyping breakthroughs, silicon cleanrooms, and national championships — filed as editorial plates with dossier metadata.
           </p>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 reveal">
-          {['All', 'Hackathon', 'Workshop', 'Project Expo', 'Industrial Visit'].map((cat) => {
-            const count = cat === 'All'
-              ? activeItems.length
-              : activeItems.filter((item) => item.category === cat).length;
-
-            return (
-              <button
-                key={cat}
-                onClick={() => { soundFx.playClick(); setActiveCategory(cat); setLightboxIndex(null); }}
-                id={`gallery-filter-${cat.toLowerCase().replace(/\s+/g, '-')}`}
-                className={`filter-pill flex items-center gap-1.5 ${activeCategory === cat ? 'active' : ''}`}
-              >
-                <span>{cat}</span>
-                <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${activeCategory === cat ? 'bg-midnight text-white font-bold' : 'bg-white/10 text-slate-400'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+        {/* Category Filters — archive tabs */}
+        <div className="reveal stagger-1 flex flex-wrap items-center justify-center sm:justify-between gap-3 mb-10">
+          <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full bg-[#0F0F11] border border-white/[0.06] justify-center">
+            {categories.map((cat) => {
+              const count = cat === 'All' ? activeItems.length : activeItems.filter((i) => i.category === cat).length;
+              const isActive = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => { soundFx.playClick(); setActiveCategory(cat); setLightboxIndex(null); }}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-mono border transition-all duration-300 ${
+                    isActive
+                      ? 'bg-[#FF4A15] text-white border-[#FF4A15] font-bold shadow-[0_6px_18px_rgba(255,74,21,0.35)]'
+                      : 'bg-transparent border-transparent text-white/50 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  {cat}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none ${isActive ? 'bg-white text-[#FF4A15]' : 'bg-white/10 text-white/60'}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-white/30">
+            <Hash className="w-3.5 h-3.5" /> {filteredItems.length} PLATES · CLICK TO ENLARGE
+          </div>
         </div>
 
-        {/* Gallery Bento Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredItems.map((item, idx) => (
-            <div
-              key={item.id}
-              onClick={() => { soundFx.playClick(); setLightboxIndex(idx); }}
-              onMouseEnter={() => soundFx.playHover()}
-              className="group cursor-pointer relative rounded-3xl overflow-hidden border border-white/10 hover:border-lime/50 transition-all duration-500 shadow-[0_15px_35px_rgba(0,0,0,0.7)] animate-in fade-in duration-300"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-midnight-deep">
-                <img
-                  src={item.url}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  loading="lazy"
-                />
-                {/* Gradient Overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#04060C] via-[#04060C]/40 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-400" />
-
-                {/* Top Corner Floating Badges */}
-                <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2 bg-midnight-deep/90 backdrop-blur-md border border-white/15 px-3 py-1 rounded-xl shadow-md">
-                    {item.type === 'video' ? (
-                      <Play className="w-3 h-3 fill-white text-white" />
-                    ) : (
-                      <ImageIcon className="w-3 h-3 text-lime" />
-                    )}
-                    <span className="text-[9px] font-mono font-bold text-white uppercase tracking-wider">
-                      {item.category}
-                    </span>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-midnight-deep/90 backdrop-blur-md border border-lime/40 p-2 rounded-xl text-lime shadow-[0_0_15px_rgba(0,242,254,0.3)]">
-                    <Maximize2 className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-
-                {/* Bottom Caption Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 transform translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] font-mono text-lime font-bold tracking-widest uppercase">
-                      {item.id}
-                    </span>
-                  </div>
-                  <h3 className="font-space font-extrabold text-base text-white leading-snug mb-1.5 group-hover:text-lime transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-slate-300 line-clamp-2 font-sans opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {item.caption}
-                  </p>
-                </div>
-              </div>
+        {/* Film Contact Sheet — horizontal runway, not bento */}
+        {filteredItems.length === 0 ? (
+          <div className="reveal py-16 text-center rounded-[28px] bg-[#0F0F11] border border-dashed border-white/[0.08]">
+            <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.06] grid place-items-center mx-auto"><Archive className="w-6 h-6 text-white/30" /></div>
+            <div className="mt-4 font-[Syne] font-[700] tracking-tight text-white">No plates in this archive</div>
+            <div className="text-xs font-mono text-white/40 mt-1">Switch category — archive holds {activeItems.length} plates.</div>
+          </div>
+        ) : (
+          <div className="reveal -mx-4 sm:mx-0">
+            {/* film sprocket top bar */}
+            <div className="hidden sm:flex h-6 bg-[#0A0A0C] border-y border-white/[0.08] items-center justify-between px-3 gap-1">
+              {Array.from({ length: 28 }).map((_, i) => (
+                <span key={i} className="w-3 h-3 rounded-[2px] bg-[#1A1A1E] border border-white/[0.06] shadow-inner" />
+              ))}
+              <span className="ml-auto text-[9px] font-mono tracking-[0.14em] text-white/20 whitespace-nowrap hidden lg:inline">CONTACT SHEET — 35MM — ATELIER NO.08</span>
             </div>
-          ))}
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 sm:px-0 py-4 bg-[#0A0A0C] sm:bg-transparent sm:py-0 border-y sm:border-0 border-white/[0.08] sm:border-transparent">
+              {filteredItems.map((item, idx) => (
+                <div
+                  key={item.id}
+                  onClick={() => { soundFx.playClick(); setLightboxIndex(idx); }}
+                  className="group snap-start shrink-0 w-[78vw] sm:w-[340px] lg:w-[380px] bg-[#0F0F11] border border-white/[0.08] rounded-[18px] overflow-hidden cursor-pointer hover:border-white/15 hover:-translate-y-0.5 transition-all duration-300"
+                  style={{ transitionDelay: `${(idx % 4) * 60}ms` } as React.CSSProperties}
+                >
+                  {/* perforation header */}
+                  <div className="h-6 bg-[#0A0A0C] border-b border-white/[0.06] flex items-center justify-between px-2.5">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-[0.08em] text-white/50"><Hash className="w-3 h-3 text-[#FF4A15]" /> {item.id}</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60"><span className={`w-4 h-4 rounded-full grid place-items-center ${item.type === 'video' ? 'bg-[#FF4A15] text-white' : 'bg-white/15 text-white'}`}>{item.type === 'video' ? <Play className="w-2.5 h-2.5 fill-white" /> : <ImageIcon className="w-2.5 h-2.5" />}</span> {item.category}</span>
+                  </div>
+                  <div className="relative aspect-[16/10] overflow-hidden bg-[#050507]">
+                    <img src={item.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#08080A]/70 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur border border-white/15 px-2.5 py-1 text-[10px] font-mono text-white">{String(idx+1).padStart(2,'0')}/{String(filteredItems.length).padStart(2,'0')} · {item.type.toUpperCase()}</div>
+                    <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#FF4A15] text-white hidden group-hover:grid place-items-center shadow-[0_0_14px_rgba(255,74,21,0.4)]"><Maximize2 className="w-3.5 h-3.5" /></span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-[Syne] font-[700] leading-tight tracking-[-0.02em] text-[15px] text-[#F5F3EF] line-clamp-2 group-hover:text-white transition-colors">{item.title}</h3>
+                    <p className="text-xs leading-relaxed text-white/50 line-clamp-2 mt-1.5">{item.caption}</p>
+                    <div className="mt-3 flex items-center gap-2 text-[11px] font-mono text-white/40"><span className="h-px flex-1 bg-white/10 group-hover:bg-[#FF4A15]/25 transition-colors" /><span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" /> VIEW</span></div>
+                  </div>
+                  {/* perforation footer */}
+                  <div className="h-5 bg-[#0A0A0C] border-t border-white/[0.06] flex items-center justify-between px-2">
+                    <span className="flex gap-1">{Array.from({ length: 6 }).map((_, i) => <span key={i} className="w-2 h-2 rounded-[1px] bg-white/10" />)}</span>
+                    <span className="text-[9px] font-mono tracking-[0.12em] text-white/20">ATELIER 08 · 35MM</span>
+                  </div>
+                </div>
+              ))}
+              <div className="shrink-0 w-4 sm:hidden" aria-hidden />
+            </div>
+            <div className="hidden sm:flex h-6 bg-[#0A0A0C] border-y border-white/[0.08] items-center justify-between px-3 gap-1 -mt-0">
+              {Array.from({ length: 28 }).map((_, i) => (
+                <span key={i} className="w-3 h-3 rounded-[2px] bg-[#1A1A1E] border border-white/[0.06]" />
+              ))}
+              <span className="ml-auto text-[9px] font-mono tracking-[0.14em] text-white/20 hidden lg:inline whitespace-nowrap">— END CONTACT SHEET —</span>
+            </div>
+          </div>
+        )}
+
+        {/* archive footer meta */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-mono text-white/30 border-t border-white/[0.06] pt-4 reveal">
+          <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FF4A15] animate-pulse shadow-[0_0_8px_rgba(255,74,21,0.4)]" /> ARCHIVE INDEXED · {filteredItems.length} / {activeItems.length} PLATES VISIBLE</span>
+          <span className="text-white/40">© PIET ECE · SPACE × SINC · ATELIER No. 8</span>
         </div>
       </div>
 
-      {/* Cinematic Fullscreen Lightbox Modal with Next/Prev Controls */}
-      {currentLightboxItem && lightboxIndex !== null && (
+      {/* Lightbox — premium glass with signal accent */}
+      {current && lightboxIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020306]/95 backdrop-blur-2xl animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#08080A]/85 backdrop-blur-[20px] animate-in fade-in duration-200"
           onClick={() => setLightboxIndex(null)}
         >
           <div
-            className="relative max-w-4xl w-full bg-[#070B16] border border-white/15 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-250"
+            className="relative max-w-4xl w-full rounded-[28px] overflow-hidden bg-[rgba(16,16,18,0.98)] border border-white/[0.10] shadow-[0_24px_64px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-2xl hud-corner"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
+            {/* signal top line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/60 to-transparent z-20 pointer-events-none" />
+            <div className="absolute -top-20 -right-20 w-72 h-72 bg-[radial-gradient(circle_at_center,_rgba(255,74,21,0.12),_transparent_70%)] pointer-events-none blur-[1px]" />
+
             <button
               onClick={() => setLightboxIndex(null)}
-              id="gallery-lightbox-close"
-              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-xl bg-midnight-deep/90 border border-white/20 text-slate-300 hover:text-white hover:border-lime flex items-center justify-center transition-all duration-200 cursor-pointer shadow-lg"
+              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-[#08080A]/70 backdrop-blur-xl border border-white/15 text-white grid place-items-center hover:bg-white hover:text-black hover:border-white transition-all duration-300"
+              aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            {/* Prev / Next Nav Buttons */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 soundFx.playClick();
                 setLightboxIndex((lightboxIndex - 1 + filteredItems.length) % filteredItems.length);
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-2xl bg-midnight-deep/90 border border-white/20 text-white hover:border-lime flex items-center justify-center transition-all cursor-pointer shadow-xl"
+              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#08080A]/70 backdrop-blur-xl border border-white/15 text-white grid place-items-center hover:bg-[#FF4A15] hover:border-[#FF4A15] hover:text-white transition-all duration-300 shadow-lg"
+              aria-label="Previous"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
 
             <button
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 soundFx.playClick();
                 setLightboxIndex((lightboxIndex + 1) % filteredItems.length);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-2xl bg-midnight-deep/90 border border-white/20 text-white hover:border-lime flex items-center justify-center transition-all cursor-pointer shadow-xl"
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#08080A]/70 backdrop-blur-xl border border-white/15 text-white grid place-items-center hover:bg-[#FF4A15] hover:border-[#FF4A15] hover:text-white transition-all duration-300 shadow-lg"
+              aria-label="Next"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
 
-            {/* Main Image */}
-            <div className="aspect-video w-full overflow-hidden bg-midnight-deep relative group">
-              <img
-                src={currentLightboxItem.url}
-                alt={currentLightboxItem.title}
-                className="w-full h-full object-cover"
-              />
+            <div className="relative aspect-[16/10] sm:aspect-video bg-[#050507] max-h-[60vh] flex items-center justify-center overflow-hidden">
+              <img src={current.url} alt={current.title} className="w-full h-full object-contain" />
+              {/* subtle vignette */}
+              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.5)]" />
+              <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 px-3 py-1 text-[11px] font-mono text-white">
+                <Sparkles className="w-3 h-3 text-[#FF4A15]" /> ARCHIVE PLATE · {current.id}
+              </div>
+              <div className="absolute bottom-3 right-3 hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#FF4A15] text-white px-3 py-1 text-[11px] font-mono font-bold shadow-[0_6px_16px_rgba(255,74,21,0.4)]">
+                {lightboxIndex + 1} / {filteredItems.length}
+              </div>
             </div>
 
-            {/* Metadata Footer with Action Buttons */}
-            <div className="p-7 space-y-3 border-t border-white/10">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-lime font-extrabold uppercase tracking-widest flex items-center gap-2">
-                  <span>{currentLightboxItem.category}</span>
-                  <span className="text-slate-600">/</span>
-                  <span className="text-amber">{currentLightboxItem.type.toUpperCase()}</span>
+            <div className="p-6 sm:p-7 space-y-4 relative">
+              <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FF4A15]/14 border border-[#FF4A15]/20 px-3 py-1 text-[#FF4A15] font-bold">{current.category}</span>
+                  <span className="text-white/30">·</span>
+                  <span className="text-white/50">{current.type.toUpperCase()}</span>
                 </span>
-                <span className="text-slate-400 font-bold">
-                  {lightboxIndex + 1} / {filteredItems.length} · DOC REF: {currentLightboxItem.id}
-                </span>
+                <span className="sm:hidden text-white/40 font-mono">{lightboxIndex + 1} / {filteredItems.length}</span>
+                <span className="hidden sm:inline text-white/30">{current.id} · {String(lightboxIndex+1).padStart(2,'0')}</span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="font-space font-extrabold text-xl text-white">{currentLightboxItem.title}</h3>
-                  <p className="text-sm text-slate-300 font-sans leading-relaxed">{currentLightboxItem.caption}</p>
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+                <div className="min-w-0">
+                  <h3 className="font-[Syne] font-[800] tracking-[-0.02em] text-[20px] sm:text-[22px] leading-tight text-white">{current.title}</h3>
+                  <p className="text-[13.5px] leading-relaxed text-white/60 mt-2 max-w-[520px]">{current.caption}</p>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 lg:pt-1">
                   <a
-                    href={currentLightboxItem.url}
+                    href={current.url}
                     target="_blank"
                     rel="noreferrer"
-                    download
-                    className="p-2.5 rounded-xl bg-midnight-deep border border-white/15 text-slate-300 hover:text-white hover:border-lime transition-colors flex items-center gap-1.5 text-xs font-mono"
-                    title="Open Full Resolution"
+                    className="btn-signal !px-4 !py-2.5 !text-xs"
                   >
-                    <Download className="w-4 h-4 text-lime" />
-                    <span className="hidden sm:inline">Hi-Res</span>
+                    <Download className="w-3.5 h-3.5 relative z-10" /> <span className="relative z-10">High-Res</span>
                   </a>
-
                   <button
-                    onClick={() => handleShareImage(currentLightboxItem)}
-                    className="p-2.5 rounded-xl bg-midnight-deep border border-white/15 text-slate-300 hover:text-amber hover:border-amber-400/50 transition-colors flex items-center gap-1.5 text-xs font-mono cursor-pointer"
-                    title="Copy Image Link"
+                    onClick={() => handleShare(current)}
+                    className="btn-glass !px-4 !py-2.5 !text-xs"
                   >
-                    <Share2 className="w-4 h-4 text-amber" />
-                    <span className="hidden sm:inline">Share</span>
+                    <Share2 className="w-3.5 h-3.5" /> Share
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
         </div>

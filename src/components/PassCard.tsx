@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
 import { Download, Printer, ShieldCheck, CheckCircle2, QrCode as QrIcon, Sparkles, Loader2 } from 'lucide-react';
@@ -58,7 +58,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     ctx.fill();
 
     // Border
-    ctx.strokeStyle = '#00E5FF';
+    ctx.strokeStyle = '#00E5CC';
     ctx.lineWidth = 4;
     if (ctx.roundRect) {
       ctx.roundRect(4, 4, 872, 1092, 44);
@@ -68,16 +68,16 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     ctx.stroke();
 
     // Header
-    ctx.fillStyle = '#00E5FF';
+    ctx.fillStyle = '#00E5CC';
     ctx.font = 'bold 24px monospace';
-    ctx.fillText('★ OFFICIAL ENTRY PASS', 48, 80);
+    ctx.fillText('â˜… OFFICIAL ENTRY PASS', 48, 80);
 
     ctx.fillStyle = '#94A3B8';
     ctx.font = '20px monospace';
-    ctx.fillText('PIET • ECE Department Forum', 48, 115);
+    ctx.fillText('PIET â€¢ ECE Department Forum', 48, 115);
 
     // Status
-    ctx.fillStyle = passData.status === 'CHECKED_IN' ? '#10B981' : '#00E5FF';
+    ctx.fillStyle = passData.status === 'CHECKED_IN' ? '#10B981' : '#00E5CC';
     ctx.font = 'bold 20px monospace';
     ctx.fillText(`[ ${passData.status} ]`, 680, 95);
 
@@ -89,9 +89,9 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     // Event meta
     ctx.fillStyle = '#94A3B8';
     ctx.font = '22px monospace';
-    ctx.fillText(`📅 ${passData.eventDate}  •  ⏰ ${passData.eventTime}`, 48, 230);
+    ctx.fillText(`ðŸ“… ${passData.eventDate}  â€¢  â° ${passData.eventTime}`, 48, 230);
     ctx.fillStyle = '#FFD60A';
-    ctx.fillText(`📍 ${passData.eventVenue}`, 48, 268);
+    ctx.fillText(`ðŸ“ ${passData.eventVenue}`, 48, 268);
 
     // Pass ID Box
     ctx.fillStyle = '#03060E';
@@ -101,14 +101,14 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
       ctx.rect(48, 305, 784, 105);
     }
     ctx.fill();
-    ctx.strokeStyle = 'rgba(0,229,255,0.4)';
+    ctx.strokeStyle = 'rgba(0,229,204,0.4)';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#64748B';
     ctx.font = '18px monospace';
     ctx.fillText('UNIQUE PASS ID', 72, 345);
-    ctx.fillStyle = '#00E5FF';
+    ctx.fillStyle = '#00E5CC';
     ctx.font = 'bold 30px monospace';
     ctx.fillText(passData.passId, 72, 388);
 
@@ -141,7 +141,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     ctx.fillStyle = '#64748B';
     ctx.font = '16px monospace';
     ctx.fillText('EMAIL', 72, 575);
-    ctx.fillStyle = '#00E5FF';
+    ctx.fillStyle = '#00E5CC';
     ctx.font = 'bold 22px monospace';
     ctx.fillText(passData.userEmail, 72, 608);
 
@@ -157,7 +157,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     ctx.fillText('PAYMENT REF', 72, 755);
     ctx.fillStyle = '#10B981';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText(`${passData.paymentId} · ${passData.paymentStatus}`, 72, 788);
+    ctx.fillText(`${passData.paymentId} Â· ${passData.paymentStatus}`, 72, 788);
 
     // Draw QR Code image
     if (qrUrl) {
@@ -187,7 +187,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     // Footer
     ctx.fillStyle = '#475569';
     ctx.font = '18px monospace';
-    ctx.fillText('ECE-FORUM-2026-PASS • OFFICIAL VERIFIED DIGITAL PASS', 170, 970);
+    ctx.fillText('ECE-FORUM-2026-PASS â€¢ OFFICIAL VERIFIED DIGITAL PASS', 170, 970);
 
     return canvas.toDataURL('image/png');
   };
@@ -275,11 +275,11 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
               width: 100%;
               max-width: 440px;
               background: #0B1020;
-              border: 2px solid #00E5FF;
+              border: 2px solid #00E5CC;
               border-radius: 24px;
               padding: 28px;
               box-sizing: border-box;
-              box-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
+              box-shadow: 0 0 40px rgba(0, 229, 204, 0.2);
             }
             .header {
               display: flex;
@@ -291,7 +291,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
             }
             .header-title {
               font-size: 11px;
-              color: #00E5FF;
+              color: #00E5CC;
               font-family: 'JetBrains Mono', monospace;
               font-weight: 700;
               letter-spacing: 1.5px;
@@ -302,9 +302,9 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
               font-family: 'JetBrains Mono', monospace;
             }
             .badge {
-              background: rgba(0, 229, 255, 0.15);
-              border: 1px solid #00E5FF;
-              color: #00E5FF;
+              background: rgba(0, 229, 204, 0.15);
+              border: 1px solid #00E5CC;
+              color: #00E5CC;
               font-family: 'JetBrains Mono', monospace;
               font-size: 10px;
               font-weight: 700;
@@ -329,7 +329,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
             }
             .id-box {
               background: #03060E;
-              border: 1px solid rgba(0, 229, 255, 0.3);
+              border: 1px solid rgba(0, 229, 204, 0.3);
               border-radius: 14px;
               padding: 12px 16px;
               display: flex;
@@ -346,7 +346,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
             .id-val {
               font-size: 14px;
               font-weight: 800;
-              color: #00E5FF;
+              color: #00E5CC;
             }
             .checksum-val {
               font-size: 12px;
@@ -412,16 +412,16 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <div class="pass-box">
             <div class="header">
               <div>
-                <div class="header-title">★ OFFICIAL ENTRY PASS</div>
-                <div class="header-sub">PIET • ECE Department Forum</div>
+                <div class="header-title">â˜… OFFICIAL ENTRY PASS</div>
+                <div class="header-sub">PIET â€¢ ECE Department Forum</div>
               </div>
               <div class="badge">${pass.status}</div>
             </div>
 
             <div class="event-title">${pass.eventTitle}</div>
             <div class="event-meta">
-              📅 ${pass.eventDate} · ⏰ ${pass.eventTime}<br>
-              <span class="venue">📍 ${pass.eventVenue}</span>
+              ðŸ“… ${pass.eventDate} Â· â° ${pass.eventTime}<br>
+              <span class="venue">ðŸ“ ${pass.eventVenue}</span>
             </div>
 
             <div class="id-box">
@@ -441,7 +441,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <div class="details-val">${pass.userName}</div>
 
                 <span class="details-label">EMAIL</span>
-                <div class="details-val" style="color: #00E5FF;">${pass.userEmail}</div>
+                <div class="details-val" style="color: #00E5CC;">${pass.userEmail}</div>
 
                 <span class="details-label">COLLEGE / INSTITUTION</span>
                 <div class="details-val" style="color: #FFD60A;">${pass.collegeName || 'PIET, Nagpur'}</div>
@@ -450,7 +450,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <div class="details-val">${pass.department} (${pass.year})</div>
 
                 <span class="details-label">PAYMENT REF</span>
-                <div class="details-val">${pass.paymentId} · ${pass.paymentStatus}</div>
+                <div class="details-val">${pass.paymentId} Â· ${pass.paymentStatus}</div>
               </div>
 
               <div class="qr-col">
@@ -486,7 +486,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
       <div
         ref={cardRef}
         id={`pass-card-${pass.passId}`}
-        className="relative bg-gradient-to-b from-[#0B1020] via-[#060A14] to-[#04060A] border-2 border-lime/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_50px_rgba(0,242,254,0.18)] overflow-hidden text-slate-100 font-sans"
+        className="relative bg-gradient-to-b from-[#0B1020] via-[#060A14] to-[#04060A] border-2 border-[#FF4A15]/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_50px_rgba(255,74,21,0.12)] overflow-hidden text-slate-100 font-sans"
       >
         {/* Holographic corner tech accents */}
         <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-lime/25 to-transparent rounded-tl-3xl pointer-events-none" />
@@ -498,7 +498,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-midnight border border-white/10">
               <img src="/space_logo.webp" alt="SPACE" className="w-6 h-6 object-contain" />
-              <span className="text-slate-600 text-[9px] font-mono">×</span>
+              <span className="text-slate-600 text-[9px] font-mono">Ã—</span>
               <img src="/sinc_logo.webp" alt="SINC" className="w-6 h-6 object-contain filter drop-shadow-[0_0_4px_rgba(0,242,254,0.6)]" />
             </div>
             <div>
@@ -506,7 +506,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <Sparkles className="w-2.5 h-2.5 text-amber" />
                 <span>OFFICIAL ENTRY PASS</span>
               </div>
-              <div className="text-[9px] font-mono text-slate-400">PIET • ECE Department Forum</div>
+              <div className="text-[9px] font-mono text-slate-400">PIET â€¢ ECE Department Forum</div>
             </div>
           </div>
 
@@ -533,19 +533,19 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
             {pass.eventTitle}
           </h4>
           <p className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
-            <span>📅 {pass.eventDate}</span>
-            <span>•</span>
-            <span>⏰ {pass.eventTime}</span>
+            <span>ðŸ“… {pass.eventDate}</span>
+            <span>â€¢</span>
+            <span>â° {pass.eventTime}</span>
           </p>
           <p className="text-[11px] font-mono text-amber">
-            📍 {pass.eventVenue}
+            ðŸ“ {pass.eventVenue}
           </p>
         </div>
 
         {/* Pass ID Banner with Security Watermark */}
         <div className="p-3 rounded-2xl bg-midnight/90 border border-lime/30 flex items-center justify-between mb-4 relative overflow-hidden">
           <div className="absolute right-2 top-1 text-[24px] font-mono font-black text-white/[0.03] select-none pointer-events-none">
-            SPACE·SINC
+            SPACEÂ·SINC
           </div>
           <div>
             <span className="text-[9px] font-mono text-slate-400 block tracking-wider uppercase">
@@ -664,7 +664,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
         {pass.couponCode && (
           <div className="mb-4 p-2.5 rounded-xl bg-cyber-emerald/10 border border-cyber-emerald/30 flex items-center justify-between text-[10px] font-mono text-cyber-emerald">
             <span>PROMO COUPON: <strong className="text-white">{pass.couponCode}</strong></span>
-            <span>-₹{pass.discountAmount || 0} DISCOUNT APPLIED</span>
+            <span>-â‚¹{pass.discountAmount || 0} DISCOUNT APPLIED</span>
           </div>
         )}
 
@@ -684,7 +684,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <div className="flex items-center gap-1.5 text-emerald-400">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span className="font-bold uppercase tracking-wider">
-              {pass.amount > 0 ? `Paid ₹${pass.amount} (Razorpay)` : 'Free Admission Pass'}
+              {pass.amount > 0 ? `Paid â‚¹${pass.amount} (Razorpay)` : 'Free Admission Pass'}
             </span>
           </div>
           <div className="text-right text-[9px] text-slate-500">
@@ -711,7 +711,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <button
             onClick={handleDownload}
             disabled={isDownloading}
-            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-lime to-blue-600 text-midnight font-space font-bold text-xs shadow-lime hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#FF4A15] to-[#FF6B3A] text-[#030508] font-[Syne] font-bold text-xs shadow-[0_0_20px_rgba(255,74,21,0.3)] hover:shadow-[0_0_30px_rgba(255,74,21,0.45)] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isDownloading ? (
               <>

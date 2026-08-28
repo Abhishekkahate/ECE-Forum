@@ -1,168 +1,169 @@
-import React from 'react';
-import { BookOpen, FlaskConical, ChevronRight } from 'lucide-react';
-import { soundFx } from '../utils/audio';
+﻿import React from 'react';
+import { BookOpen, FlaskConical, ArrowUpRight, GraduationCap, Shield, Cpu } from 'lucide-react';
 import { OptimizedImage } from './OptimizedImage';
 import { useScrollReveal } from './useScrollReveal';
-
-interface FacultyMember {
-  code: string;
-  name: string;
-  designation: string;
-  department: string;
-  researchInterests: string[];
-  publications: string;
-  badge: string;
-  image: string;
-}
 
 export const FacultySection: React.FC = () => {
   const revealRef = useScrollReveal(0.08);
 
-  const faculty: FacultyMember[] = [
+  const faculty = [
     {
       code: 'FAC-01',
       name: 'Dr. A. P. Rathkanthiwar',
-      designation: 'Professor & Head of Department',
-      department: 'Electronics & Communication Engineering',
-      researchInterests: ['VLSI Microelectronics', 'FPGA Architecture', 'Wireless Comm'],
-      publications: '28+ Years Exp · 48+ Publications',
+      role: 'Professor & Head of Department',
+      dept: 'Electronics & Communication Engineering',
+      interests: ['VLSI Design', 'FPGA Architecture', 'Wireless Systems'],
+      pubs: '28+ Yrs Experience · 48+ Publications',
       badge: 'HEAD OF DEPARTMENT',
       image: '/faculty_images/hod.webp',
+      accent: 'from-[#FF4A15]/18',
     },
     {
       code: 'FAC-02',
       name: 'Dr. Sunita N Parihar',
-      designation: 'Associate Professor & SPACE Incharge',
-      department: 'Electronics & Communication Engineering',
-      researchInterests: ['Embedded Systems', 'IoT Smart Grids', 'TinyML Sensors'],
-      publications: '20+ Years Exp · 28+ Publications',
+      role: 'Associate Professor · SPACE Incharge',
+      dept: 'Electronics & Communication Engineering',
+      interests: ['Embedded Systems', 'IoT Smart Grids', 'TinyML'],
+      pubs: '20+ Yrs Experience · 28+ Publications',
       badge: 'SPACE INCHARGE',
       image: '/faculty_images/parihar.webp',
+      accent: 'from-[#FF4A15]/12',
     },
     {
       code: 'FAC-03',
       name: 'Ms. V. V. Shirpurkar',
-      designation: 'Assistant Professor & SINC Incharge',
-      department: 'Electronics & Communication Engineering',
-      researchInterests: ['Autonomous Robotics', 'ROS 2', 'LiDAR Kinematics'],
-      publications: '15+ Years Exp · 12+ Publications',
+      role: 'Assistant Professor · SINC Incharge',
+      dept: 'Electronics & Communication Engineering',
+      interests: ['Autonomous Robotics', 'ROS 2 Systems', 'LiDAR & Sensors'],
+      pubs: '15+ Yrs Experience · 12+ Publications',
       badge: 'SINC INCHARGE',
       image: '/faculty_images/shirpurkar.webp',
+      accent: 'from-[#FF4A15]/10',
     },
   ];
 
-  const badgeColors: Record<string, string> = {
-    'HEAD OF DEPARTMENT': 'text-amber border-amber-500/40 bg-amber-500/10 shadow-[0_0_15px_rgba(255,184,0,0.2)]',
-    'SPACE INCHARGE':     'text-lime border-lime/40 bg-lime/10 shadow-[0_0_15px_rgba(0,242,254,0.2)]',
-    'SINC INCHARGE':      'text-cyber-purple border-purple-500/40 bg-purple-500/10 shadow-[0_0_15px_rgba(168,85,247,0.2)]',
-  };
-
   return (
-    <section
-      id="faculty"
-      ref={revealRef}
-      className="relative py-28 bg-transparent overflow-hidden"
-    >
-      {/* Laser Gradient Dividers */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lime/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-purple/30 to-transparent" />
+    <section id="faculty" ref={revealRef} className="relative py-20 lg:py-28 bg-[#08080A] text-[#F5F3EF] overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 editorial-grid opacity-[0.06]" />
+        <div className="absolute -top-20 right-0 w-[720px] h-[420px] rounded-full blur-[90px] opacity-[0.07]" style={{ background: 'radial-gradient(ellipse at center, #FF4A15 0%, transparent 68%)' }} />
+      </div>
+      <div className="section-divider-subtle absolute top-0 left-0 right-0" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/18 to-transparent" />
 
-      {/* Ambient Lighting */}
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-cyber-purple/[0.03] rounded-full blur-[140px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-6">
-          <div className="space-y-3 reveal">
-            <div className="section-eyebrow-hud">
-              07 // FACULTY ADVISORS
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
+          <div className="reveal max-w-[620px]">
+            <div className="inline-flex items-center gap-2.5 rounded-full bg-[rgba(255,74,21,0.08)] border border-[rgba(255,74,21,0.18)] px-3.5 py-1.5 backdrop-blur-xl">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)]" />
+              <span className="text-[10.5px] font-mono tracking-[0.16em] font-bold text-[#FF4A15]">05 — ACADEMIC BOARD & ADVISORS</span>
             </div>
-            <h2 className="font-space text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Faculty Leadership
-              <br className="hidden sm:block" />
-              &amp; Laboratory Guidance.
+            <h2 className="mt-5 font-display font-[800] tracking-[-0.05em] leading-[0.88] text-[32px] sm:text-[42px] lg:text-[52px] text-[#F5F3EF]">
+              Faculty <span className="font-serif italic font-[400] tracking-[-0.04em] text-[#FF4A15]">leadership</span>
+              <span className="block text-white/90"> &amp; labs.</span>
             </h2>
+            <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/35">
+              <span className="h-px w-8 bg-white/15" />
+              <span>ATELIER DOSSIERS — PRINCIPAL INVESTIGATORS — PIET ECE</span>
+            </div>
           </div>
-          <p className="text-xs font-mono text-slate-400 max-w-xs sm:text-right leading-relaxed reveal stagger-2">
-            Distinguished faculty directing laboratories, student research, and academic excellence.
+          <p className="reveal stagger-2 max-w-[360px] text-[13px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/30 pl-4">
+            Academic mentors directing research laboratories, patent filings and the atelier&apos;s scholarly rigour — each dossier is a lab in itself.
           </p>
         </div>
 
-        {/* Faculty Dossiers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* PREMIUM GLASS CARDS — 3-col grid */}
+        <div className="grid md:grid-cols-3 gap-6">
           {faculty.map((f, idx) => (
             <div
               key={f.code}
-              onMouseEnter={() => soundFx.playHover()}
-              className={`reveal stagger-${idx + 1} glass-cyber-interactive p-8 rounded-3xl flex flex-col justify-between space-y-6 group shadow-[0_20px_50px_rgba(0,0,0,0.7)]`}
+              className="reveal glass-card-premium rounded-[24px] overflow-hidden flex flex-col group bg-[rgba(14,14,16,0.72)] border border-white/[0.08] hover:border-[rgba(255,74,21,0.22)] hover:-translate-y-1.5 transition-all duration-500"
+              style={{ transitionDelay: `${idx * 80}ms` }}
             >
-              <div className="space-y-5">
-                {/* Badge + Code */}
-                <div className="flex items-center justify-between">
-                  <span className={`text-[9px] font-mono font-extrabold px-3 py-1 rounded-xl border tracking-widest ${badgeColors[f.badge] || 'text-slate-300 border-white/10 bg-midnight-deep'}`}>
+              {/* top image header with gradient */}
+              <div className="relative h-[232px] sm:h-[248px] overflow-hidden shrink-0">
+                <OptimizedImage
+                  src={f.image}
+                  alt={f.name}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-out"
+                  wrapperClassName="absolute inset-0 w-full h-full"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#08080A] via-[#08080A]/40 to-transparent" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${f.accent} to-transparent opacity-60 pointer-events-none`} />
+                <div className="absolute inset-0 opacity-40 mix-blend-overlay" style={{ background: 'radial-gradient(520px circle at 50% 0%, rgba(255,74,21,0.16), transparent 62%)' }} />
+                {/* header badges */}
+                <div className="absolute top-3.5 left-3.5 right-3.5 flex items-start justify-between gap-2">
+                  <span className="inline-flex text-[10px] font-mono tracking-[0.08em] px-2.5 py-1 rounded-full bg-[#FF4A15] text-white font-bold shadow-[0_4px_14px_rgba(255,74,21,0.4)]">
                     {f.badge}
                   </span>
-                  <span className="text-[10px] font-mono text-slate-500 font-bold">{f.code}</span>
+                  <span className="text-[10px] font-mono tracking-[0.12em] text-white/75 bg-black/35 backdrop-blur-md border border-white/10 px-2 py-1 rounded-full">
+                    {f.code}
+                  </span>
                 </div>
+                {/* hover accent line */}
+                <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* subtle Shield watermark for premium feel */}
+                <Shield className="absolute bottom-3 right-3 w-8 h-8 text-white/10 group-hover:text-white/15 transition-colors" strokeWidth={1.2} />
+              </div>
 
-                {/* Avatar & Info */}
-                <div className="flex items-center gap-4">
-                  <div className="relative w-18 h-18 rounded-2xl overflow-hidden border-2 border-white/15 shrink-0 bg-midnight-deep shadow-md group-hover:border-lime/60 transition-colors">
-                    <OptimizedImage
-                      src={f.image}
-                      alt={f.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      wrapperClassName="w-full h-full"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-midnight-deep/50 to-transparent" />
+              {/* body */}
+              <div className="flex-1 flex flex-col p-5 sm:p-6 gap-3.5">
+                <div>
+                  <h3 className="font-[Syne] font-[800] leading-none tracking-[-0.02em] text-[18px] sm:text-[19px] text-[#F5F3EF]">
+                    {f.name}
+                  </h3>
+                  <div className="mt-1.5 text-[12px] font-mono font-semibold text-[#FF4A15] leading-snug">{f.role}</div>
+                  <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-mono text-white/45">
+                    <Cpu className="w-3 h-3 text-white/30 shrink-0" /> {f.dept}
                   </div>
-                  <div>
-                    <h3 className="font-space font-extrabold text-base sm:text-lg text-white group-hover:text-lime transition-colors leading-snug">
-                      {f.name}
-                    </h3>
-                    <p className="text-xs font-mono text-amber font-semibold mt-1">{f.designation}</p>
-                    <p className="text-[11px] font-sans text-slate-400 mt-0.5">{f.department}</p>
-                  </div>
                 </div>
 
-                {/* Publications & Experience */}
-                <div className="flex items-center gap-2 text-xs font-mono text-slate-300 border-t border-white/10 pt-4">
-                  <BookOpen className="w-4 h-4 text-lime shrink-0" />
-                  <span>{f.publications}</span>
+                <div className="inline-flex items-center gap-2 text-[11px] font-mono text-white/60 bg-[rgba(255,74,21,0.06)] border border-[rgba(255,74,21,0.12)] rounded-full px-3 py-1.5 w-fit">
+                  <BookOpen className="w-3.5 h-3.5 text-[#FF4A15] shrink-0" /> {f.pubs}
                 </div>
 
-                {/* Research Interests Tags */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider">
-                    <FlaskConical className="w-3.5 h-3.5 text-amber" />
-                    Specialized Research Domains
+                <div className="pt-3.5 mt-1 border-t border-white/[0.06]">
+                  <div className="text-[10px] font-mono tracking-[0.12em] text-white/30 flex items-center gap-1.5 mb-2.5">
+                    <FlaskConical className="w-3.5 h-3.5 text-[#FF4A15]/60" /> RESEARCH DOMAINS
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {f.researchInterests.map((interest, i) => (
+                    {f.interests.map((i) => (
                       <span
                         key={i}
-                        className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-midnight-deep border border-white/10 text-slate-300 group-hover:border-white/20 transition-colors"
+                        className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/[0.07] text-white/70 group-hover:bg-white/[0.08] group-hover:border-white/[0.10] transition-colors"
                       >
-                        {interest}
+                        {i}
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Card Footer */}
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono text-slate-400">
-                <span className="tracking-wider">PIET ECE DEPT</span>
-                <span className="text-lime font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                  <span>VIEW DOSSIER</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+              {/* bottom border footer */}
+              <div className="px-5 sm:px-6 py-3.5 border-t border-white/[0.06] bg-white/[0.02] flex items-center justify-between group-hover:bg-white/[0.04] transition-colors">
+                <span className="text-[10px] font-mono tracking-[0.12em] text-white/25 inline-flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-white/20" /> {f.code} — DOSSIER
+                </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold tracking-[0.06em] text-white/40 group-hover:text-[#FF4A15] transition-colors">
+                  VIEW <ArrowUpRight className="w-3.5 h-3.5" />
                 </span>
               </div>
             </div>
           ))}
         </div>
 
+        {/* footnote */}
+        <div
+          className="reveal mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur px-4 py-3 flex flex-wrap items-center gap-3 text-[11px] font-mono text-white/40"
+          style={{ transitionDelay: '260ms' }}
+        >
+          <span className="inline-flex items-center gap-2 text-[#FF4A15] font-bold tracking-[0.08em]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15]" /> LAB HOURS
+          </span>
+          <span>Mon–Sat · ECE Block · Research cells open for dossier review &amp; project mentorship.</span>
+          <span className="hidden sm:inline w-1 h-1 rounded-full bg-white/20" />
+          <span className="text-white/25">Contact via department office.</span>
+        </div>
       </div>
     </section>
   );

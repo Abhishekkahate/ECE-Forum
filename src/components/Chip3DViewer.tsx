@@ -1,347 +1,137 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Radio, Activity, RefreshCw, Cpu } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Cpu, Zap } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 export const Chip3DViewer: React.FC = () => {
-  const [activeMode, setActiveMode] = useState<'ai' | 'dsp' | 'rf'>('ai');
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [shockwave, setShockwave] = useState(false);
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number>(0);
 
-  // Smooth lerp 3D parallax without triggering React re-renders on mousemove
+  // Optimized lerp tilt — RAF only, pauses when off-screen or prefers-reduced-motion
   useEffect(() => {
-    let targetX = 0;
-    let targetY = 0;
-    let currentX = 0;
-    let currentY = 0;
-    let animId: number;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia('(max-width: 768px)').matches) return; // no tilt on mobile for perf
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      targetX = -y * 0.08;
-      targetY = x * 0.08;
+    let tx = 0, ty = 0, cx = 0, cy = 0;
+    let ticking = false;
+    let visible = true;
+
+    const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }, { threshold: 0.1 });
+    if (containerRef.current) io.observe(containerRef.current);
+
+    const onMove = (e: MouseEvent) => {
+      if (!visible || !containerRef.current || ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const r = containerRef.current!.getBoundingClientRect();
+        const x = e.clientX - r.left - r.width / 2;
+        const y = e.clientY - r.top - r.height / 2;
+        tx = (-y * 0.05);
+        ty = (x * 0.05);
+        ticking = false;
+      });
     };
+    const onLeave = () => { tx = 0; ty = 0; };
 
-    const handleMouseLeave = () => {
-      targetX = 0;
-      targetY = 0;
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove, { passive: true });
-      container.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+    const el = containerRef.current;
+    if (el) {
+      el.addEventListener('mousemove', onMove, { passive: true });
+      el.addEventListener('mouseleave', onLeave, { passive: true });
     }
 
-    const updateTilt = () => {
-      currentX += (targetX - currentX) * 0.12;
-      currentY += (targetY - currentY) * 0.12;
-
-      if (cardRef.current) {
-        cardRef.current.style.transform = `rotateX(${currentX.toFixed(2)}deg) rotateY(${currentY.toFixed(2)}deg) translateZ(0)`;
+    const loop = () => {
+      if (visible) {
+        cx += (tx - cx) * 0.07;
+        cy += (ty - cy) * 0.07;
+        if (cardRef.current) {
+          cardRef.current.style.transform = `perspective(900px) rotateX(${cx.toFixed(2)}deg) rotateY(${cy.toFixed(2)}deg) translateZ(0)`;
+        }
       }
-
-      animId = requestAnimationFrame(updateTilt);
+      rafRef.current = requestAnimationFrame(loop);
     };
-
-    animId = requestAnimationFrame(updateTilt);
+    rafRef.current = requestAnimationFrame(loop);
 
     return () => {
-      if (container) {
-        container.removeEventListener('mousemove', handleMouseMove);
-        container.removeEventListener('mouseleave', handleMouseLeave);
+      io.disconnect();
+      if (el) {
+        el.removeEventListener('mousemove', onMove);
+        el.removeEventListener('mouseleave', onLeave);
       }
-      cancelAnimationFrame(animId);
+      cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
-  // Auto flip every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsFlipped((prev) => !prev);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleManualFlip = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    soundFx.playLaser();
-    setIsFlipped((prev) => !prev);
-  };
-
-  const handleCoreClick = () => {
-    soundFx.playPowerUp();
-    setShockwave(true);
-    setTimeout(() => setShockwave(false), 800);
-  };
-
-  const handleModeChange = (mode: 'ai' | 'dsp' | 'rf') => {
-    soundFx.playClick();
-    setActiveMode(mode);
-  };
-
-  // Telemetry metadata for modes
-  const modeData = {
-    ai: {
-      color: '#00F2FE',
-      label: 'RISC-V 32-BIT AI CORE',
-      clock: '450.00 MHz',
-      volt: '1.20 V',
-      temp: '37.4 °C',
-      tag: 'TINYML ENGINE'
-    },
-    dsp: {
-      color: '#FFB800',
-      label: 'FPGA DSP ARITHMETIC',
-      clock: '600.00 MHz',
-      volt: '1.80 V',
-      temp: '42.1 °C',
-      tag: 'HDL PIPELINE'
-    },
-    rf: {
-      color: '#A855F7',
-      label: 'SUB-GHZ LoRa MESH ARRAY',
-      clock: '868.10 MHz',
-      volt: '3.30 V',
-      temp: '34.8 °C',
-      tag: 'PATENTED GRID'
-    }
-  };
-
-  const curMode = modeData[activeMode];
-
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full max-w-md lg:max-w-lg aspect-square flex items-center justify-center cursor-pointer select-none group perspective-1000"
-      onClick={handleCoreClick}
-    >
-      {/* Dynamic Ambient Volumetric Aura */}
-      <div 
-        className="absolute inset-0 rounded-full blur-[100px] opacity-60 group-hover:opacity-90 transition-all duration-700 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle, ${curMode.color}33 0%, rgba(139, 92, 246, 0.12) 50%, transparent 70%)`
-        }}
-      />
+    <div ref={containerRef} className="relative w-full aspect-[1.08] max-w-[420px] mx-auto flex items-center justify-center select-none group">
+      {/* soft aura — reduced blur + opacity for perf */}
+      <div className="absolute inset-0 rounded-[32px] blur-[60px] opacity-30 group-hover:opacity-45 transition-opacity duration-700 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 35%, rgba(255,74,21,0.18), transparent 62%)' }} />
 
-      {/* 3D Orbiting Quantum Electron Halos */}
-      <div className="absolute w-[94%] h-[94%] rounded-full border border-dashed pointer-events-none animate-spin-slow" style={{ borderColor: `${curMode.color}40` }}>
-        {/* Electron Point */}
-        <div 
-          className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full shadow-lg"
-          style={{ backgroundColor: curMode.color, boxShadow: `0 0 12px ${curMode.color}` }}
-        />
-      </div>
-
-      <div className="absolute w-[108%] h-[108%] rounded-full border border-dotted border-cyber-purple/30 pointer-events-none animate-spin-slow [animation-direction:reverse]">
-        <div 
-          className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-amber shadow-[0_0_10px_#FFB800]"
-        />
-      </div>
-
-      {/* Shockwave Pulse Effect on Click */}
-      {shockwave && (
-        <div 
-          className="absolute w-full h-full rounded-full border-2 animate-ping pointer-events-none"
-          style={{ borderColor: curMode.color }}
-        />
-      )}
-
-      {/* ── Main 3D Interactive Silicon Chassis ───────────────── */}
+      {/* card — no will-change by default, only on hover via group */}
       <div
         ref={cardRef}
-        className="relative w-[320px] h-[320px] sm:w-[390px] sm:h-[390px] rounded-3xl bg-gradient-to-b from-[#0C1226]/95 via-[#070A18]/98 to-[#03050E] border border-white/15 p-6 shadow-[0_25px_65px_-15px_rgba(0,0,0,0.95),0_0_40px_-10px_rgba(0,242,254,0.25)] flex flex-col justify-between backdrop-blur-xl preserve-3d will-change-transform"
-        style={{
-          transform: 'rotateX(0deg) rotateY(0deg) translateZ(0)',
-        }}
+        className="relative w-full rounded-[28px] bg-[rgba(14,14,16,0.92)] border border-white/[0.08] overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] group-hover:[will-change:transform]"
+        style={{ transform: 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0)' }}
       >
-        {/* PCB Gold Corner Mounting Pads */}
-        <div className="absolute top-3 left-3 w-3.5 h-3.5 rounded-full border-2 border-amber/80 bg-midnight-deep shadow-[0_0_8px_rgba(255,184,0,0.6)] flex items-center justify-center">
-          <div className="w-1 h-1 rounded-full bg-amber" />
-        </div>
-        <div className="absolute top-3 right-3 w-3.5 h-3.5 rounded-full border-2 border-lime/80 bg-midnight-deep shadow-[0_0_8px_rgba(0,242,254,0.6)] flex items-center justify-center">
-          <div className="w-1 h-1 rounded-full bg-lime" />
-        </div>
-        <div className="absolute bottom-3 left-3 w-3.5 h-3.5 rounded-full border-2 border-lime/80 bg-midnight-deep shadow-[0_0_8px_rgba(0,242,254,0.6)] flex items-center justify-center">
-          <div className="w-1 h-1 rounded-full bg-lime" />
-        </div>
-        <div className="absolute bottom-3 right-3 w-3.5 h-3.5 rounded-full border-2 border-amber/80 bg-midnight-deep shadow-[0_0_8px_rgba(255,184,0,0.6)] flex items-center justify-center">
-          <div className="w-1 h-1 rounded-full bg-amber" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/28 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+        {/* header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/[0.06] bg-white/[0.02]">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-[0.14em] font-bold text-white/40">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_8px_rgba(255,74,21,0.6)] animate-pulse" /> DUAL ATELIER CORE
+          </span>
+          <span className="text-[10px] font-mono tracking-[0.08em] text-white/25">FIG. 01 — 1:1 — VERIFIED</span>
         </div>
 
-        {/* Top Header Telemetry & Quick Flip */}
-        <div className="flex items-center justify-between z-10">
-          <div className="flex items-center space-x-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: curMode.color }}></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 shadow-md" style={{ backgroundColor: curMode.color }}></span>
-            </span>
-            <span className="text-[10px] font-mono tracking-widest font-bold" style={{ color: curMode.color }}>
-              {curMode.tag}
-            </span>
+        {/* dual sigil — both logos visible together */}
+        <div className="px-5 py-6">
+          <div className="relative grid grid-cols-2 gap-0 rounded-[18px] overflow-hidden border border-white/[0.08] bg-[#050507]">
+            {/* subtle grid */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
+            {/* divider */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#FF4A15]/30 to-transparent hidden sm:block" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#0A0A0C] border border-white/10 grid place-items-center text-[9px] font-mono font-bold text-white/30 hidden sm:grid">×</div>
+
+            {/* SPACE */}
+            <div className="relative flex flex-col items-center text-center gap-3 py-7 px-4 bg-[radial-gradient(ellipse_at_top,_rgba(245,243,239,0.06),_transparent_62%)]">
+              <div className="w-[84px] h-[84px] rounded-[18px] bg-[#F5F3EF] p-3 grid place-items-center shadow-[0_8px_24px_rgba(245,243,239,0.18)] border border-white">
+                <img src="/space_logo.webp" alt="SPACE" className="w-full h-full object-contain" loading="eager" decoding="async" />
+              </div>
+              <div>
+                <div className="font-[Syne] font-[800] tracking-[-0.02em] text-[13px] text-[#F5F3EF]">SPACE</div>
+                <div className="text-[10px] font-mono tracking-[0.08em] text-white/35 leading-none mt-0.5">2012 · RESEARCH</div>
+                <div className="mt-1.5 inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60">IEEE · ELEKTRONIKOS</div>
+              </div>
+            </div>
+
+            {/* SINC — white bg, dark logo */}
+            <div className="relative flex flex-col items-center text-center gap-3 py-7 px-4 bg-[radial-gradient(ellipse_at_top,_rgba(245,243,239,0.06),_transparent_62%)]">
+              <div className="w-[84px] h-[84px] rounded-[18px] bg-[#F5F3EF] p-3 grid place-items-center shadow-[0_8px_24px_rgba(245,243,239,0.18)] border border-white">
+                <img src="/sinc_logo.webp" alt="SINC" className="w-full h-full object-contain" loading="eager" decoding="async" style={{ filter: 'brightness(0.15)' }} />
+              </div>
+              <div>
+                <div className="font-[Syne] font-[800] tracking-[-0.02em] text-[13px] text-[#F5F3EF]">SINC</div>
+                <div className="text-[10px] font-mono tracking-[0.08em] text-white/35 leading-none mt-0.5">2018 · HARDWARE</div>
+                <div className="mt-1.5 inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/60">PATENT · ROVER</div>
+              </div>
+            </div>
           </div>
 
-          <button
-            onClick={handleManualFlip}
-            title="Click to flip Council Badge"
-            className="flex items-center space-x-1.5 bg-midnight-deep/90 px-3 py-1 rounded-full border border-white/15 text-[10px] font-mono text-slate-300 hover:text-white hover:border-white/30 transition-all shadow-sm cursor-pointer"
-          >
-            <RefreshCw className={`w-3 h-3 ${isFlipped ? 'rotate-180 text-lime' : 'text-amber'} transition-transform duration-700`} />
-            <span className="font-bold">{isFlipped ? 'SINC COUNCIL' : 'SPACE FORUM'}</span>
+          {/* bottom telemetry — single line, no state */}
+          <div className="mt-4 grid grid-cols-3 divide-x divide-white/[0.06] border border-white/[0.06] rounded-full overflow-hidden bg-[rgba(8,8,10,0.6)] text-center">
+            <div className="px-2 py-2"><div className="text-[9px] font-mono tracking-[0.12em] text-white/30">CORES</div><div className="text-[11px] font-mono font-bold text-[#F5F3EF] leading-none mt-1 flex items-center justify-center gap-1"><Cpu className="w-3 h-3 text-[#FF4A15]" /> RISC-V ×2</div></div>
+            <div className="px-2 py-2"><div className="text-[9px] font-mono tracking-[0.12em] text-white/30">FABRIC</div><div className="text-[11px] font-mono font-bold text-white leading-none mt-1">Artix-7 · 450 MHz</div></div>
+            <div className="px-2 py-2"><div className="text-[9px] font-mono tracking-[0.12em] text-white/30">LINK</div><div className="text-[11px] font-mono font-bold text-[#00E5CC] leading-none mt-1 flex items-center justify-center gap-1"><Zap className="w-3 h-3" /> LoRa MESH</div></div>
+          </div>
+        </div>
+
+        {/* footer */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.06] bg-white/[0.02] text-[10px] font-mono tracking-[0.08em]">
+          <span className="text-white/30">ATELIER No.08 — SPACE × SINC — 2026—27</span>
+          <button onClick={() => soundFx.playClick()} className="hidden sm:inline-flex items-center gap-1 text-white/40 hover:text-[#FF4A15] transition-colors">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] animate-pulse" /> LIVE
           </button>
         </div>
-
-        {/* ── Center Silicon Die with Dual 3D Flipping Badges ──── */}
-        <div className="relative my-auto flex items-center justify-center">
-          {/* Peripheral Gold Solder Pin Array Simulation */}
-          <div className="absolute w-56 h-56 sm:w-64 sm:h-64 rounded-2xl border border-dashed border-white/15 pointer-events-none flex items-center justify-center">
-            {/* Top & Bottom Pin Ticks */}
-            <div className="absolute -top-1.5 flex gap-2">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400/50" />
-              ))}
-            </div>
-            <div className="absolute -bottom-1.5 flex gap-2">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-400/50" />
-              ))}
-            </div>
-          </div>
-
-          {/* 3D Core Card Container */}
-          <div className="relative w-44 h-44 sm:w-52 sm:h-52 perspective-1000">
-            <div
-              className="w-full h-full relative transition-transform duration-700 preserve-3d"
-              style={{
-                transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
-              }}
-            >
-              {/* FRONT: SPACE FORUM HOLOGRAPHIC BADGE */}
-              <div className="absolute inset-0 w-full h-full rounded-2xl bg-gradient-to-br from-[#141B2E] via-[#0A1022] to-[#04060E] border-2 border-amber/70 shadow-[0_0_35px_rgba(255,184,0,0.35)] flex flex-col items-center justify-center p-3.5 overflow-hidden [backface-visibility:hidden]">
-                {/* Circuit Grid Background */}
-                <div className="absolute inset-0 circuit-grid-pattern opacity-40" />
-
-                {/* Laser scanline */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-400/15 to-transparent animate-scan-line pointer-events-none" />
-
-                <div className="z-10 flex flex-col items-center text-center space-y-2">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 p-1.5 rounded-2xl bg-amber-500/10 border border-amber-400/40 flex items-center justify-center shadow-[0_0_20px_rgba(255,184,0,0.35)]">
-                    <img
-                      src="/space_logo.webp"
-                      alt="SPACE Forum"
-                      className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,184,0,0.75)]"
-                    />
-                  </div>
-                  <div>
-                    <span className="block text-xs sm:text-sm font-space font-extrabold tracking-widest text-amber">
-                      SPACE FORUM
-                    </span>
-                    <span className="block text-[8px] sm:text-[9px] font-mono text-slate-300 uppercase tracking-wider">
-                      STUDENT'S PROGRESSIVE ASSOC.
-                    </span>
-                  </div>
-                </div>
-
-                {/* Top/Bottom Laser Glows */}
-                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
-                <div className="absolute bottom-0 right-0 w-full h-[2px] bg-gradient-to-r from-transparent via-yellow-300 to-transparent" />
-              </div>
-
-              {/* BACK: SINC COUNCIL HOLOGRAPHIC BADGE */}
-              <div
-                className="absolute inset-0 w-full h-full rounded-2xl bg-gradient-to-br from-[#0D162C] via-[#060E22] to-[#030612] border-2 border-lime/70 shadow-[0_0_35px_rgba(0,242,254,0.4)] flex flex-col items-center justify-center p-3.5 overflow-hidden [backface-visibility:hidden]"
-                style={{ transform: 'rotateY(180deg)' }}
-              >
-                {/* Circuit Grid Background */}
-                <div className="absolute inset-0 circuit-grid-pattern opacity-40" />
-
-                {/* Laser scanline */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/15 to-transparent animate-scan-line pointer-events-none" />
-
-                <div className="z-10 flex flex-col items-center text-center space-y-2">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 p-1.5 rounded-2xl bg-lime/10 border border-lime/40 flex items-center justify-center shadow-[0_0_20px_rgba(0,242,254,0.45)]">
-                    <img
-                      src="/sinc_logo.webp"
-                      alt="SINC Council"
-                      className="w-full h-full object-contain filter drop-shadow-[0_0_12px_rgba(0,242,254,0.85)]"
-                    />
-                  </div>
-                  <div>
-                    <span className="block text-xs sm:text-sm font-space font-extrabold tracking-widest text-lime">
-                      SINC COUNCIL
-                    </span>
-                    <span className="block text-[8px] sm:text-[9px] font-mono text-slate-300 uppercase tracking-wider">
-                      STUDENT INNOVATION COUNCIL
-                    </span>
-                  </div>
-                </div>
-
-                {/* Top/Bottom Laser Glows */}
-                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-                <div className="absolute bottom-0 right-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Bottom Silicon Telemetry HUD & Mode Switcher ──── */}
-        <div className="space-y-2.5 z-10 border-t border-white/10 pt-3">
-          
-          {/* Micro Telemetry Bar */}
-          <div className="flex items-center justify-between text-[9px] font-mono text-slate-400">
-            <span>CLK: <strong className="text-white">{curMode.clock}</strong></span>
-            <span>•</span>
-            <span>CORE: <strong className="text-white">{curMode.volt}</strong></span>
-            <span>•</span>
-            <span>TEMP: <strong className="text-cyber-emerald font-bold">{curMode.temp}</strong></span>
-          </div>
-
-          {/* Mode Buttons */}
-          <div className="flex items-center justify-between gap-1.5">
-            <button
-              onClick={(e) => { e.stopPropagation(); handleModeChange('ai'); }}
-              className={`flex-1 flex items-center justify-center space-x-1 py-1 rounded-lg transition-all text-[10px] font-mono cursor-pointer ${
-                activeMode === 'ai'
-                  ? 'bg-lime/20 text-lime border border-lime/50 shadow-[0_0_10px_rgba(0,242,254,0.3)] font-bold'
-                  : 'bg-midnight-deep text-slate-400 hover:text-white border border-white/5'
-              }`}
-            >
-              <Cpu className="w-3 h-3" />
-              <span>AI Core</span>
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); handleModeChange('dsp'); }}
-              className={`flex-1 flex items-center justify-center space-x-1 py-1 rounded-lg transition-all text-[10px] font-mono cursor-pointer ${
-                activeMode === 'dsp'
-                  ? 'bg-amber/20 text-amber border border-amber/50 shadow-[0_0_10px_rgba(255,184,0,0.3)] font-bold'
-                  : 'bg-midnight-deep text-slate-400 hover:text-white border border-white/5'
-              }`}
-            >
-              <Activity className="w-3 h-3" />
-              <span>FPGA DSP</span>
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); handleModeChange('rf'); }}
-              className={`flex-1 flex items-center justify-center space-x-1 py-1 rounded-lg transition-all text-[10px] font-mono cursor-pointer ${
-                activeMode === 'rf'
-                  ? 'bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/50 shadow-[0_0_10px_rgba(168,85,247,0.3)] font-bold'
-                  : 'bg-midnight-deep text-slate-400 hover:text-white border border-white/5'
-              }`}
-            >
-              <Radio className="w-3 h-3" />
-              <span>LoRa Mesh</span>
-            </button>
-          </div>
-
-        </div>
-
       </div>
     </div>
   );

@@ -1,90 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowUp, Calendar } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { ArrowUp } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 export const ScrollToTopFab: React.FC = () => {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = Math.min(100, Math.max(0, (window.scrollY / totalHeight) * 100));
-        setScrollProgress(progress);
-        setIsVisible(window.scrollY > 300);
-      }
+    const onScroll = () => {
+      setVisible(window.scrollY > 400);
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 0);
     };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const scrollToTop = () => {
-    soundFx.playLaser();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const scrollToEvents = () => {
-    soundFx.playClick();
-    const el = document.getElementById('events');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  if (!isVisible) return null;
-
+  if (!visible) return null;
+  const size = 48;
+  const stroke = 2.5;
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
+  const offset = circumference - progress * circumference;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-2.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      
-      {/* Quick Jump to Events Button */}
-      <button
-        onClick={scrollToEvents}
-        title="Jump to Event Calendar & Tickets"
-        id="fab-quick-events-btn"
-        className="p-2.5 rounded-full bg-midnight-deep/90 border border-amber/40 text-amber hover:bg-amber/20 hover:scale-110 transition-all duration-300 shadow-[0_0_20px_rgba(255,184,0,0.25)] backdrop-blur-xl cursor-pointer group"
-      >
-        <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" />
-      </button>
-
-      {/* Ascend to Top with Circular SVG Progress Ring */}
-      <button
-        onClick={scrollToTop}
-        title={`Scroll to Top (${Math.round(scrollProgress)}%)`}
-        id="fab-scroll-top-btn"
-        className="relative w-12 h-12 rounded-full bg-midnight-deep/90 border border-white/15 text-slate-300 hover:text-lime hover:border-lime/50 hover:scale-110 transition-all duration-300 shadow-[0_10px_25px_rgba(0,0,0,0.8)] backdrop-blur-xl flex items-center justify-center cursor-pointer group"
-      >
-        {/* SVG Progress Circle */}
-        <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 44 44">
-          <circle
-            cx="22"
-            cy="22"
-            r={radius}
-            className="text-white/10"
-            strokeWidth="2.5"
-            stroke="currentColor"
-            fill="transparent"
-          />
-          <circle
-            cx="22"
-            cy="22"
-            r={radius}
-            className="text-lime transition-all duration-150 ease-out"
-            strokeWidth="2.5"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            stroke="currentColor"
-            fill="transparent"
-          />
-        </svg>
-
-        <ArrowUp className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-      </button>
-
-    </div>
+    <button
+      onClick={() => {
+        soundFx.playLaser();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+      aria-label="Back to top"
+      className="fixed z-40 w-12 h-12 rounded-full bg-[rgba(12,12,14,0.88)] backdrop-blur-2xl border border-white/[0.10] text-[#F5F3EF] grid place-items-center shadow-[0_16px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-[#FF4A15]/40 hover:bg-[#FF4A15] hover:text-white hover:shadow-[0_0_30px_rgba(255,74,21,0.45),0_16px_40px_rgba(0,0,0,0.5)] transition-all duration-300 group max-lg:hidden"
+      style={{ bottom: 'max(20px, env(safe-area-inset-bottom))', right: 'max(20px, env(safe-area-inset-right))' }}
+    >
+      {/* circular progress — signal stroke */}
+      <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 44 44" aria-hidden>
+        <circle cx="22" cy="22" r={radius} fill="none" stroke="rgba(245,243,239,0.08)" strokeWidth={stroke} />
+        <circle
+          cx="22"
+          cy="22"
+          r={radius}
+          fill="none"
+          stroke="#FF4A15"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.12s linear', filter: 'drop-shadow(0 0 6px rgba(255,74,21,0.55))' }}
+        />
+      </svg>
+      {/* inner dot */}
+      <span className="absolute w-1.5 h-1.5 rounded-full bg-[#FF4A15] top-1.5 left-1/2 -translate-x-1/2 opacity-60 group-hover:bg-white transition-colors" />
+      <ArrowUp className="w-4 h-4 relative z-10 group-hover:-translate-y-0.5 transition-transform duration-300" />
+    </button>
   );
 };
