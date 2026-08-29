@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mail, ExternalLink, Shield, Sparkles, Search, X, Check, Award, ArrowUpRight,
-  Users, Layers, Hash, LayoutGrid, List, Zap, Cpu, BookOpen, ChevronRight, Activity
+  Users, Layers, Hash, LayoutGrid, List, Zap, Cpu, BookOpen, ChevronRight, ChevronLeft, Activity
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { OptimizedImage } from './OptimizedImage';
@@ -69,6 +69,32 @@ export const TeamSection: React.FC = () => {
     { name: 'Shreya Rathi', role: 'Technical Co-Incharge SINC', category: 'Technical Leads', council: 'SINC', year: '2nd Year ECE', image: '/team_images/shreya.webp', linkedin: 'https://linkedin.com', email: 'shreya.r@ece-elevate.org', quote: 'Facilitating hands-on microcontroller and VLSI bootcamps.', specialty: 'MCU Bootcamps' },
   ];
 
+  // Current selected member index for next/prev navigation
+  const currentIndex = useMemo(() => {
+    if (!selectedMember) return -1;
+    return teamMembers.findIndex((m) => m.name === selectedMember.name);
+  }, [selectedMember, teamMembers]);
+
+  const handlePrevMember = () => {
+    if (currentIndex <= 0) {
+      soundFx.playClick();
+      setSelectedMember(teamMembers[teamMembers.length - 1]);
+    } else {
+      soundFx.playClick();
+      setSelectedMember(teamMembers[currentIndex - 1]);
+    }
+  };
+
+  const handleNextMember = () => {
+    if (currentIndex >= teamMembers.length - 1 || currentIndex === -1) {
+      soundFx.playClick();
+      setSelectedMember(teamMembers[0]);
+    } else {
+      soundFx.playClick();
+      setSelectedMember(teamMembers[currentIndex + 1]);
+    }
+  };
+
   // Lock body scroll and pause Lenis smoothly when modal is active
   useEffect(() => {
     if (selectedMember) {
@@ -79,16 +105,18 @@ export const TeamSection: React.FC = () => {
       if (modalScrollRef.current) {
         modalScrollRef.current.scrollTop = 0;
       }
-      const onEsc = (e: KeyboardEvent) => {
+      const onKey = (e: KeyboardEvent) => {
         if (e.key === 'Escape') setSelectedMember(null);
+        if (e.key === 'ArrowRight') handleNextMember();
+        if (e.key === 'ArrowLeft') handlePrevMember();
       };
-      window.addEventListener('keydown', onEsc);
+      window.addEventListener('keydown', onKey);
       return () => {
         if (typeof window !== 'undefined' && (window as any).__lenis) {
           (window as any).__lenis.start();
         }
         document.body.style.overflow = '';
-        window.removeEventListener('keydown', onEsc);
+        window.removeEventListener('keydown', onKey);
       };
     } else {
       if (typeof window !== 'undefined' && (window as any).__lenis) {
@@ -96,7 +124,7 @@ export const TeamSection: React.FC = () => {
       }
       document.body.style.overflow = '';
     }
-  }, [selectedMember]);
+  }, [selectedMember, currentIndex]);
 
   // Sub-wings for each council
   const subWings = useMemo(() => {
@@ -490,103 +518,195 @@ export const TeamSection: React.FC = () => {
       </div>
       </div>
 
-      {/* Portal-Mounted Dossier Modal — Rendered directly to <body> so it is ALWAYS fixed in center of viewport */}
+      {/* Cinematic Dual-Column Member Dossier Modal — Rendered directly to <body> via createPortal */}
       {selectedMember && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-[#08080A]/85 backdrop-blur-[24px] animate-in fade-in duration-200"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-[#08080A]/90 backdrop-blur-[28px] animate-in fade-in duration-200"
           onClick={() => setSelectedMember(null)}
         >
           <div
             ref={modalScrollRef}
-            className="relative w-full max-w-[560px] rounded-[28px] overflow-hidden bg-[#0F0F11] border border-white/[0.12] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto custom-scrollbar"
+            className="relative w-full max-w-[940px] rounded-[32px] overflow-hidden bg-[#0F0F12] border border-white/[0.14] shadow-[0_32px_96px_rgba(0,0,0,0.85)] max-h-[92vh] overflow-y-auto custom-scrollbar animate-in zoom-in-[0.97] duration-300 flex flex-col md:flex-row"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/60 to-transparent" />
+            {/* Top Signal Hairline */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/70 to-transparent z-30 pointer-events-none" />
 
+            {/* Close Button */}
             <button
               onClick={() => { soundFx.playClick(); setSelectedMember(null); }}
-              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/[0.06] border border-white/[0.1] text-white grid place-items-center hover:bg-white hover:text-black transition-colors z-20 cursor-pointer"
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#08080A]/80 border border-white/15 text-white grid place-items-center hover:bg-[#FF4A15] hover:border-[#FF4A15] transition-all duration-300 z-30 cursor-pointer shadow-lg"
+              title="Close Dossier (Esc)"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* Modal Header */}
-            <div className="relative p-6 sm:p-7 border-b border-white/[0.08] bg-[rgba(255,74,21,0.04)]">
-              <div className="inline-flex items-center gap-2 text-[10px] font-mono tracking-[0.14em] font-bold text-[#FF4A15]">
-                <Sparkles className="w-3.5 h-3.5" /> LEADERSHIP DOSSIER · 2026–27
+            {/* ── LEFT COLUMN: Animated Member Cutout & Stage ── */}
+            <div className="md:w-[380px] lg:w-[410px] shrink-0 relative overflow-hidden bg-gradient-to-b from-[#18181F] via-[#101014] to-[#08080A] border-b md:border-b-0 md:border-r border-white/[0.08] p-6 sm:p-8 flex flex-col justify-between items-center text-center">
+              {/* Glowing Aura / Holographic Grid Background */}
+              <div className="absolute inset-0 editorial-grid opacity-[0.08] pointer-events-none" />
+              <div
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] rounded-full blur-[70px] pointer-events-none opacity-40 transition-all duration-700 ${
+                  selectedMember.council === 'SPACE' ? 'bg-[#3b82f6]/30' : 'bg-[#FF4A15]/40'
+                }`}
+              />
+
+              {/* Top Chapter Tag */}
+              <div className="w-full flex items-center justify-between text-[10px] font-mono text-white/40 tracking-[0.14em] pb-3 border-b border-white/[0.06] relative z-10">
+                <span className="flex items-center gap-1.5 font-bold text-white/75 uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF88] animate-pulse" />
+                  {selectedMember.council} DOSSIER
+                </span>
+                <span className="text-[#FF4A15] font-bold">
+                  {currentIndex !== -1 ? `${String(currentIndex + 1).padStart(2, '0')} / ${teamMembers.length}` : 'LEADER'}
+                </span>
               </div>
-              <div className="mt-4 flex gap-4 items-center">
-                <div className="w-20 h-20 sm:w-[84px] sm:h-[84px] rounded-[20px] overflow-hidden bg-white/[0.06] border border-white/[0.12] shrink-0">
-                  <img src={selectedMember.image} alt={selectedMember.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="min-w-0">
-                  <span className={`inline-flex text-[10px] font-mono font-bold tracking-[0.06em] px-3 py-1 rounded-full border ${
-                    selectedMember.council === 'SPACE' ? 'bg-[#F5F3EF] text-black border-white' : 'bg-[#FF4A15] text-white border-[#FF4A15]'
-                  }`}>
-                    {selectedMember.role}
-                  </span>
-                  <h3 className="mt-2 font-[Syne] font-[800] tracking-[-0.02em] text-[22px] sm:text-[24px] text-white leading-tight">
-                    {selectedMember.name}
-                  </h3>
-                  <div className="text-[11px] font-mono text-white/50 mt-1 flex items-center gap-2">
-                    <span>{selectedMember.year}</span>
-                    <span>·</span>
-                    <span className="text-[#FF4A15] font-bold">{selectedMember.council} COUNCIL</span>
+
+              {/* The Hero Cutout / Portrait Frame with dynamic entrance */}
+              <div className="relative my-6 group">
+                {/* Cybernetic Frame Ring */}
+                <div className="absolute -inset-3 rounded-[32px] border border-white/10 border-dashed animate-[spin_25s_linear_infinite] pointer-events-none opacity-60" />
+                
+                {/* Glow Backdrop */}
+                <div className={`absolute -inset-1 rounded-[28px] blur-md opacity-75 transition-colors ${
+                  selectedMember.council === 'SPACE' ? 'bg-gradient-to-b from-[#3b82f6]/30 to-transparent' : 'bg-gradient-to-b from-[#FF4A15]/35 to-transparent'
+                }`} />
+
+                {/* Member Cutout / Image */}
+                <div className="relative w-[190px] h-[230px] sm:w-[220px] sm:h-[260px] md:w-[240px] md:h-[290px] rounded-[24px] overflow-hidden bg-[#050507] border-2 border-white/20 shadow-[0_20px_48px_rgba(0,0,0,0.8)] animate-in slide-in-from-left duration-500">
+                  <img
+                    src={selectedMember.image}
+                    alt={selectedMember.name}
+                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                  />
+                  {/* Subtle Lighting Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#08080A]/90 via-transparent to-transparent pointer-events-none" />
+
+                  {/* Cutout Bottom Label */}
+                  <div className="absolute bottom-2.5 inset-x-2.5 px-3 py-1.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 text-center shadow-lg">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.12em] font-bold text-white line-clamp-1">
+                      {selectedMember.role}
+                    </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Prev / Next Quick Nav Controls */}
+              <div className="w-full pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 relative z-10">
+                <button
+                  onClick={handlePrevMember}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/[0.12] text-xs font-mono transition-all cursor-pointer"
+                  title="Previous Leader (←)"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                </button>
+                <span className="text-[9.5px] font-mono text-white/30 tracking-[0.12em]">
+                  LEADERSHIP ROSTER
+                </span>
+                <button
+                  onClick={handleNextMember}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/[0.12] text-xs font-mono transition-all cursor-pointer"
+                  title="Next Leader (→)"
+                >
+                  Next <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 sm:p-7 space-y-4">
-              {selectedMember.specialty && (
-                <div className="rounded-2xl bg-[rgba(255,74,21,0.06)] border border-[rgba(255,74,21,0.12)] p-4">
-                  <div className="text-[10px] font-mono tracking-[0.14em] font-bold text-[#FF4A15] flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5" /> FOCUS &amp; SPECIALTY
-                  </div>
-                  <div className="font-[Syne] font-bold text-white mt-1 text-[15px] leading-snug">
-                    {selectedMember.specialty}
-                  </div>
-                  <div className="text-[11px] font-mono text-white/40 mt-1">
-                    {selectedMember.category} · {selectedMember.council} Council
-                  </div>
+            {/* ── RIGHT COLUMN: High-Tech Leader Intelligence Dossier ── */}
+            <div className="flex-1 p-6 sm:p-8 md:p-9 flex flex-col justify-between space-y-6 animate-in slide-in-from-right duration-500 delay-75">
+              <div>
+                {/* Header Sub-Pills */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 text-[10.5px] font-mono font-bold tracking-[0.08em] px-3 py-1 rounded-full border ${
+                    selectedMember.council === 'SPACE'
+                      ? 'bg-[#F5F3EF] text-black border-white shadow-sm'
+                      : 'bg-[#FF4A15] text-white border-[#FF4A15] shadow-[0_2px_12px_rgba(255,74,21,0.35)]'
+                  }`}>
+                    {selectedMember.council === 'SPACE' ? <BookOpen className="w-3 h-3" /> : <Cpu className="w-3 h-3" />}
+                    {selectedMember.council} COUNCIL
+                  </span>
+                  <span className="text-[10.5px] font-mono text-white/60 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
+                    {selectedMember.category}
+                  </span>
+                  <span className="text-[10.5px] font-mono text-white/40 ml-auto hidden sm:inline">
+                    {selectedMember.year}
+                  </span>
                 </div>
-              )}
 
-              <div className="rounded-2xl bg-[#08080A] border border-white/[0.08] p-4">
-                <div className="text-[10px] font-mono tracking-[0.12em] font-bold text-white/40">LEADER STATEMENT</div>
-                <p className="text-[13px] leading-relaxed italic text-white/75 mt-1.5">“{selectedMember.quote}”</p>
+                {/* Leader Name */}
+                <h3 className="mt-4 font-[Syne] font-[800] tracking-[-0.03em] text-[28px] sm:text-[34px] lg:text-[38px] text-white leading-[1.05]">
+                  {selectedMember.name}
+                </h3>
+                <div className="text-[13px] font-mono text-[#FF4A15] font-semibold mt-1 flex items-center gap-2">
+                  <span>{selectedMember.role}</span>
+                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="text-white/40">{selectedMember.year}</span>
+                </div>
+
+                {/* Leader Mission / Quote */}
+                <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-[#08080A] border border-white/[0.08] relative overflow-hidden">
+                  <div className="text-[9.5px] font-mono tracking-[0.14em] font-bold text-white/30 uppercase flex items-center gap-1.5 mb-2">
+                    <Sparkles className="w-3 h-3 text-[#FF4A15]" /> Vision &amp; Leadership Statement
+                  </div>
+                  <p className="font-['Instrument_Serif'] italic font-[400] text-[17px] sm:text-[19px] leading-[1.5] text-white/90">
+                    “{selectedMember.quote}”
+                  </p>
+                </div>
+
+                {/* Core Focus & Specialty */}
+                {selectedMember.specialty && (
+                  <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-[rgba(255,74,21,0.08)] to-transparent border border-[rgba(255,74,21,0.16)] flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#FF4A15]/15 border border-[#FF4A15]/30 text-[#FF4A15] grid place-items-center shrink-0 mt-0.5">
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono tracking-[0.12em] text-[#FF4A15] font-bold uppercase">
+                        Core Domain Specialization
+                      </div>
+                      <div className="font-[Syne] font-bold text-[15px] text-white mt-0.5">
+                        {selectedMember.specialty}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-mono tracking-[0.12em] font-bold text-white/40">CONTACT EMAIL</div>
-                  <div className="text-[12px] font-mono font-medium text-white truncate mt-0.5">{selectedMember.email}</div>
-                </div>
-                <button
-                  onClick={() => handleCopy(selectedMember.email)}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-black font-mono font-bold text-[11px] hover:bg-white/90 cursor-pointer"
-                >
-                  {copiedEmail === selectedMember.email ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Mail className="w-3.5 h-3.5" />}
-                  {copiedEmail === selectedMember.email ? 'Copied' : 'Copy'}
-                </button>
-              </div>
+              {/* Action Hub & Contact Channels */}
+              <div className="pt-4 border-t border-white/[0.08] space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <button
+                    onClick={() => handleCopy(selectedMember.email)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF4A15] text-white font-mono font-bold text-xs py-3 px-4 hover:bg-[#FF4A15]/90 transition-all cursor-pointer shadow-[0_4px_16px_rgba(255,74,21,0.35)]"
+                  >
+                    {copiedEmail === selectedMember.email ? (
+                      <>
+                        <Check className="w-4 h-4 text-white" />
+                        <span>Email Address Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        <span>Copy {selectedMember.email}</span>
+                      </>
+                    )}
+                  </button>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => handleCopy(selectedMember.email)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#FF4A15] text-white font-mono font-bold text-xs py-3 hover:bg-[#FF4A15]/90 transition-all cursor-pointer shadow-lg"
-                >
-                  <Mail className="w-4 h-4" /> Copy Email Address
-                </button>
-                <a
-                  href={selectedMember.linkedin}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-white font-mono font-bold text-xs inline-flex items-center gap-1.5 hover:bg-white hover:text-black transition-colors"
-                >
-                  LinkedIn <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                  <a
+                    href={selectedMember.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/[0.06] border border-white/[0.12] text-white font-mono font-bold text-xs hover:bg-white hover:text-black transition-all"
+                  >
+                    <span>Connect on LinkedIn</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono text-white/35 pt-1">
+                  <span>PIET ECE COUNCIL · APPOINTED SESSION 2026–27</span>
+                  <span className="hidden sm:inline">VERIFIED APEX DOSSIER</span>
+                </div>
               </div>
             </div>
           </div>
