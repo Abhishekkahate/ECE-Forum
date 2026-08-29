@@ -596,7 +596,7 @@ export const forumApi = {
     // 1. Direct Supabase Cloud Settings (Source of truth)
     try {
       const supaCoupons = await supabaseDb.getSiteSettings('coupon_codes');
-      if (supaCoupons && Array.isArray(supaCoupons)) {
+      if (supaCoupons !== null && supaCoupons !== undefined && Array.isArray(supaCoupons)) {
         try {
           localStorage.setItem('ece_coupon_codes', JSON.stringify(supaCoupons));
         } catch {}
@@ -606,26 +606,26 @@ export const forumApi = {
       console.warn('Supabase getCoupons warning:', err);
     }
 
-    // 2. Render Backend API Fallback
+    // 2. LocalStorage Cache (supports deleted empty list)
+    try {
+      const saved = localStorage.getItem('ece_coupon_codes');
+      if (saved !== null && saved !== undefined) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+
+    // 3. Render Backend API Fallback
     try {
       const res = await fetch(`${API_BASE}/coupons`, { method: 'GET' });
       if (res.ok) {
         const backendCoupons = await res.json();
-        if (Array.isArray(backendCoupons) && backendCoupons.length > 0) {
+        if (Array.isArray(backendCoupons)) {
           try {
             localStorage.setItem('ece_coupon_codes', JSON.stringify(backendCoupons));
           } catch {}
           return backendCoupons;
         }
-      }
-    } catch {}
-
-    // 3. LocalStorage Cache
-    try {
-      const saved = localStorage.getItem('ece_coupon_codes');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
 
@@ -650,7 +650,18 @@ export const forumApi = {
       }).catch(() => {});
     } catch {}
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ece_coupons_updated', { detail: coupons }));
+    }
+
     return Boolean(supaOk);
+  },
+
+  async deleteCoupon(code: string): Promise<boolean> {
+    const clean = (code || '').trim().toUpperCase();
+    const current = await this.getCoupons();
+    const updated = current.filter((c) => (c.code || '').trim().toUpperCase() !== clean);
+    return await this.updateCoupons(updated);
   },
 
   async incrementCouponUsage(code: string): Promise<void> {

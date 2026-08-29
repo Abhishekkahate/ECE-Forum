@@ -198,9 +198,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const refreshCoupons = async () => {
     try {
       const list = await api.getCoupons();
-      setCouponsList(list && list.length ? list : DEFAULT_COUPONS);
+      if (Array.isArray(list)) {
+        setCouponsList(list);
+      } else {
+        setCouponsList([]);
+      }
     } catch {
-      setCouponsList(DEFAULT_COUPONS);
+      setCouponsList([]);
     }
   };
 
@@ -385,8 +389,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     if (!clean) return;
     let updated: Coupon[];
     if (editingCouponCode) {
+      const cleanEdit = editingCouponCode.trim().toUpperCase();
       updated = couponsList.map((c) =>
-        c.code === editingCouponCode
+        (c.code || '').trim().toUpperCase() === cleanEdit
           ? {
               ...couponFormData,
               code: clean,
@@ -409,7 +414,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         validUntil: couponFormData.validUntil || undefined,
         validFrom: couponFormData.validFrom || undefined,
       };
-      updated = [nc, ...couponsList.filter((c) => c.code !== clean)];
+      updated = [nc, ...couponsList.filter((c) => (c.code || '').trim().toUpperCase() !== clean)];
     }
     setCouponsList(updated);
     await api.updateCoupons(updated);
@@ -422,16 +427,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
   const handleDeleteCoupon = async (code: string) => {
     soundFx.playLaser();
-    const updated = couponsList.filter((c) => c.code !== code);
+    const clean = (code || '').trim().toUpperCase();
+    const updated = couponsList.filter((c) => (c.code || '').trim().toUpperCase() !== clean);
     setCouponsList(updated);
-    await api.updateCoupons(updated);
+    await api.deleteCoupon(clean);
     setCouponSavedMsg(true);
     setTimeout(() => setCouponSavedMsg(false), 3000);
   };
 
   const handleToggleCouponActive = async (code: string) => {
     soundFx.playClick();
-    const updated = couponsList.map((c) => (c.code === code ? { ...c, active: !(c.active !== false) } : c));
+    const clean = (code || '').trim().toUpperCase();
+    const updated = couponsList.map((c) =>
+      (c.code || '').trim().toUpperCase() === clean ? { ...c, active: !(c.active !== false) } : c
+    );
     setCouponsList(updated);
     await api.updateCoupons(updated);
   };
