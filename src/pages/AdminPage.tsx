@@ -6,7 +6,7 @@ import {
   LogOut, Trash2, Search, Upload, Image as ImageIcon, Sparkles,
   Check, CheckCircle2, Sliders, Edit3, FileDown, Tag, Copy, Activity,
   Eye, ExternalLink, AlertTriangle, X, CheckSquare, Layers, Clock, ShieldCheck, DollarSign,
-  User, Phone, Mail, School, Building2, Download
+  User, Phone, Mail, School, Building2, Download, QrCode
 } from 'lucide-react';
 import { AdminLogin } from '../components/AdminLogin';
 import { type EventItem } from '../components/EventsSection';
@@ -193,6 +193,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     minTeamSize: undefined,
     maxTeamSize: undefined,
     requiredTeamSize: undefined,
+    paymentQr: '',
+    upiId: '',
+    payeeName: '',
+    paymentInstructions: '',
   };
 
   // Events Management State
@@ -230,6 +234,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       minTeamSize: event.minTeamSize || 2,
       maxTeamSize: event.maxTeamSize || 5,
       requiredTeamSize: event.requiredTeamSize,
+      paymentQr: event.paymentQr || '',
+      upiId: event.upiId || '',
+      payeeName: event.payeeName || '',
+      paymentInstructions: event.paymentInstructions || '',
     });
     setShowEventForm(true);
   };
@@ -258,6 +266,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               minTeamSize: Number(newEvent.minTeamSize) || 2,
               maxTeamSize: Number(newEvent.maxTeamSize) || 5,
               requiredTeamSize: newEvent.requiredTeamSize ? Number(newEvent.requiredTeamSize) : undefined,
+              paymentQr: newEvent.paymentQr || undefined,
+              upiId: newEvent.upiId || undefined,
+              payeeName: newEvent.payeeName || undefined,
+              paymentInstructions: newEvent.paymentInstructions || undefined,
             }
           : evt
       );
@@ -282,6 +294,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         minTeamSize: Number(newEvent.minTeamSize) || 2,
         maxTeamSize: Number(newEvent.maxTeamSize) || 5,
         requiredTeamSize: newEvent.requiredTeamSize ? Number(newEvent.requiredTeamSize) : undefined,
+        paymentQr: newEvent.paymentQr || undefined,
+        upiId: newEvent.upiId || undefined,
+        payeeName: newEvent.payeeName || undefined,
+        paymentInstructions: newEvent.paymentInstructions || undefined,
       };
       onAddEvent(eventToAdd);
       await api.createEvent(eventToAdd);
@@ -994,6 +1010,94 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                 ))}
                               </div>
                             </label>
+
+                            {/* Event-Specific Organizer Payment QR & UPI Details (Optional) */}
+                            <div className="sm:col-span-2 lg:col-span-3 p-4 rounded-2xl bg-black/50 border border-[#00E5CC]/30 space-y-3 font-mono">
+                              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                                <span className="text-[11px] font-bold text-[#00E5CC] flex items-center gap-1.5 uppercase">
+                                  <QrCode className="w-3.5 h-3.5 text-[#00E5CC]" />
+                                  <span>Organizer Payment QR &amp; UPI (Optional Event Override)</span>
+                                </span>
+                                <span className="text-[10px] text-white/40">Overrides Site Default QR</span>
+                              </div>
+
+                              <p className="text-[11px] text-white/60 font-sans leading-relaxed">
+                                If this event has a specific coordinator receiving payments, upload their QR code and enter their UPI ID below. If left blank, the website's default Council QR code will be used.
+                              </p>
+
+                              <div className="grid sm:grid-cols-12 gap-3 items-center">
+                                {/* QR Upload & Preview */}
+                                <div className="sm:col-span-4 flex items-center gap-3 p-2.5 rounded-xl bg-black border border-white/10">
+                                  {newEvent.paymentQr ? (
+                                    <img
+                                      src={newEvent.paymentQr}
+                                      alt="Organizer QR"
+                                      className="w-14 h-14 object-contain rounded-lg bg-white p-0.5 shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-14 h-14 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-white/30 shrink-0">
+                                      <QrCode className="w-6 h-6" />
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 flex-1 space-y-1">
+                                    <label className="px-2.5 py-1 rounded-lg bg-[#00E5CC]/15 border border-[#00E5CC]/30 text-[#00E5CC] text-[10px] font-mono font-bold hover:bg-[#00E5CC] hover:text-black transition-colors cursor-pointer inline-flex items-center gap-1">
+                                      <Upload className="w-3 h-3" /> Upload QR
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          const r = new FileReader();
+                                          r.onload = () => {
+                                            if (typeof r.result === 'string') {
+                                              setNewEvent((prev) => ({ ...prev, paymentQr: r.result as string }));
+                                            }
+                                          };
+                                          r.readAsDataURL(file);
+                                        }}
+                                      />
+                                    </label>
+                                    {newEvent.paymentQr && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setNewEvent((prev) => ({ ...prev, paymentQr: '' }))}
+                                        className="block text-[9px] text-red-400 hover:underline"
+                                      >
+                                        Remove QR
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* UPI ID */}
+                                <div className="sm:col-span-4 space-y-1">
+                                  <span className="text-white/60 text-[10px] block">Organizer UPI ID / VPA</span>
+                                  <input
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    value={newEvent.upiId || ''}
+                                    onChange={(e) => setNewEvent({ ...newEvent, upiId: e.target.value })}
+                                    placeholder="organizer@upi"
+                                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white font-mono text-xs focus:border-[#00E5CC]/60 outline-none"
+                                  />
+                                </div>
+
+                                {/* Payee Name */}
+                                <div className="sm:col-span-4 space-y-1">
+                                  <span className="text-white/60 text-[10px] block">Payee Display Name</span>
+                                  <input
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    value={newEvent.payeeName || ''}
+                                    onChange={(e) => setNewEvent({ ...newEvent, payeeName: e.target.value })}
+                                    placeholder="e.g. TARANG Organizing Lead"
+                                    className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white font-mono text-xs focus:border-[#00E5CC]/60 outline-none"
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
                             <button

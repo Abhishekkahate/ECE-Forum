@@ -24,6 +24,10 @@ export interface EventItem {
   minTeamSize?: number;
   maxTeamSize?: number;
   requiredTeamSize?: number;
+  paymentQr?: string;
+  upiId?: string;
+  payeeName?: string;
+  paymentInstructions?: string;
 }
 
 interface EventsSectionProps {

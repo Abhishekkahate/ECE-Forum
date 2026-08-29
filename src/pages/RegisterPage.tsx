@@ -159,10 +159,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
   const totalAttendees = regType === 'team' ? 1 + teamMembers.length : 1;
   const finalPayableAmount = perPersonPrice * totalAttendees;
 
-  // Active Payment Gateways
-  const activeUpiId = siteConfig.paymentUpiId || UPI_ID;
-  const activePayeeName = siteConfig.paymentPayeeName || UPI_PAYEE_NAME;
-  const customPaymentQr = siteConfig.paymentQrImage || '';
+  // Active Payment Gateways (Priority: Event Organizer Custom QR/UPI -> Site-wide Admin QR/UPI -> Default Council UPI)
+  const activeUpiId = selectedEvent?.upiId || siteConfig.paymentUpiId || UPI_ID;
+  const activePayeeName = selectedEvent?.payeeName || siteConfig.paymentPayeeName || UPI_PAYEE_NAME;
+  const customPaymentQr = selectedEvent?.paymentQr || siteConfig.paymentQrImage || '';
+  const activeInstructions = selectedEvent?.paymentInstructions || siteConfig.paymentBankDetails || '';
 
   // Generate dynamic UPI QR Code URL if no custom image is uploaded
   useEffect(() => {
@@ -1175,9 +1176,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                               </div>
                             </div>
 
-                            {siteConfig.paymentBankDetails && (
+                            {activeInstructions && (
                               <p className="text-[11px] text-[#00E5CC] leading-relaxed p-2 rounded-xl bg-[#00E5CC]/10 border border-[#00E5CC]/20">
-                                {siteConfig.paymentBankDetails}
+                                {activeInstructions}
                               </p>
                             )}
 

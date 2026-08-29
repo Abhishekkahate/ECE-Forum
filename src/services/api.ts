@@ -18,6 +18,10 @@ export interface ApiEvent {
   minTeamSize?: number;
   maxTeamSize?: number;
   requiredTeamSize?: number;
+  paymentQr?: string;
+  upiId?: string;
+  payeeName?: string;
+  paymentInstructions?: string;
 }
 
 export interface ApiPass {
@@ -66,6 +70,17 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export const forumApi = {
   // ── Events ───────────────────────────────────────────────────────────────
   async getEvents(): Promise<ApiEvent[]> {
+    // 0. Direct Supabase Manifest (Rich metadata: QRs, UPIs, exact team constraints)
+    try {
+      const supaManifest = await supabaseDb.getSiteSettings('events_manifest');
+      if (Array.isArray(supaManifest) && supaManifest.length > 0) {
+        try {
+          localStorage.setItem('ece_forum_events_cache', JSON.stringify(supaManifest));
+        } catch {}
+        return supaManifest;
+      }
+    } catch {}
+
     // 1. Direct Supabase Cloud Query (Real-time Source of Truth)
     try {
       const supabaseEvents = await supabaseDb.getEvents();
@@ -87,6 +102,10 @@ export const forumApi = {
           minTeamSize: e.min_team_size || e.minTeamSize || 2,
           maxTeamSize: e.max_team_size || e.maxTeamSize || 5,
           requiredTeamSize: e.required_team_size || e.requiredTeamSize || undefined,
+          paymentQr: e.payment_qr || e.paymentQr || undefined,
+          upiId: e.upi_id || e.upiId || undefined,
+          payeeName: e.payee_name || e.payeeName || undefined,
+          paymentInstructions: e.payment_instructions || e.paymentInstructions || undefined,
         }));
         try {
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
@@ -109,6 +128,10 @@ export const forumApi = {
             minTeamSize: e.min_team_size || e.minTeamSize || 2,
             maxTeamSize: e.max_team_size || e.maxTeamSize || 5,
             requiredTeamSize: e.required_team_size || e.requiredTeamSize || undefined,
+            paymentQr: e.payment_qr || e.paymentQr || undefined,
+            upiId: e.upi_id || e.upiId || undefined,
+            payeeName: e.payee_name || e.payeeName || undefined,
+            paymentInstructions: e.payment_instructions || e.paymentInstructions || undefined,
           }));
           try {
             localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
@@ -149,17 +172,29 @@ export const forumApi = {
       minTeamSize: eventData.minTeamSize || 2,
       maxTeamSize: eventData.maxTeamSize || 5,
       requiredTeamSize: eventData.requiredTeamSize || undefined,
+      paymentQr: eventData.paymentQr || undefined,
+      upiId: eventData.upiId || undefined,
+      payeeName: eventData.payeeName || undefined,
+      paymentInstructions: eventData.paymentInstructions || undefined,
     };
 
     // 1. Immediately update localStorage cache
+    let updatedList: ApiEvent[] = [];
     try {
       const cached = localStorage.getItem('ece_forum_events_cache');
       const list = cached ? JSON.parse(cached) : [];
-      const updated = [fullEvent, ...list.filter((e: any) => e.id !== fullEvent.id)];
-      localStorage.setItem('ece_forum_events_cache', JSON.stringify(updated));
+      updatedList = [fullEvent, ...list.filter((e: any) => e.id !== fullEvent.id)];
+      localStorage.setItem('ece_forum_events_cache', JSON.stringify(updatedList));
     } catch {}
 
-    // 2. Direct Supabase Cloud Insert (Always primary)
+    // 2. Persist manifest to Supabase site_settings
+    try {
+      if (updatedList.length > 0) {
+        await supabaseDb.setSiteSettings(updatedList, 'events_manifest');
+      }
+    } catch {}
+
+    // 3. Direct Supabase Cloud Insert
     try {
       const inserted = await supabaseDb.insertEvent(fullEvent);
       if (inserted) {
@@ -169,27 +204,12 @@ export const forumApi = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(fullEvent),
         }).catch(() => {});
-
-        return {
-          id: inserted.id,
-          title: inserted.title,
-          category: inserted.category,
-          status: inserted.status,
-          date: inserted.date,
-          time: inserted.time,
-          venue: inserted.venue,
-          description: inserted.description,
-          badge: inserted.badge,
-          image: inserted.image,
-          price: Number(inserted.price),
-          totalSeats: inserted.total_seats,
-        } as ApiEvent;
       }
     } catch (err) {
       console.warn('Supabase direct event insert error:', err);
     }
 
-    // 3. Render / Local Backend Fallback
+    // 4. Render / Local Backend Fallback
     try {
       await fetch(`${API_BASE}/events`, {
         method: 'POST',
@@ -207,18 +227,24 @@ export const forumApi = {
 
   async deleteEvent(eventId: string): Promise<boolean> {
     // 1. Immediately remove from localStorage cache so UI never revives it
+    let filtered: ApiEvent[] = [];
     try {
       const cached = localStorage.getItem('ece_forum_events_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed)) {
-          const filtered = parsed.filter((e: any) => e.id !== eventId);
+          filtered = parsed.filter((e: any) => e.id !== eventId);
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(filtered));
         }
       }
     } catch {}
 
-    // 2. Direct Supabase Cloud Delete
+    // 2. Update Supabase site_settings manifest
+    try {
+      await supabaseDb.setSiteSettings(filtered, 'events_manifest');
+    } catch {}
+
+    // 3. Direct Supabase Cloud Delete
     try {
       await supabaseDb.deleteEvent(eventId);
     } catch {}
