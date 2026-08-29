@@ -43,7 +43,7 @@ export const FacultySection: React.FC = () => {
   ];
 
   return (
-    <section id="faculty" ref={revealRef} className="relative py-20 lg:py-28 bg-[#08080A] text-[#F5F3EF] overflow-hidden">
+    <section id="faculty" ref={revealRef} className="relative py-16 lg:py-24 bg-[#08080A] text-[#F5F3EF] overflow-hidden border-t border-white/[0.06]">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 editorial-grid opacity-[0.06]" />
         <div className="absolute -top-20 right-0 w-[720px] h-[420px] rounded-full blur-[90px] opacity-[0.07]" style={{ background: 'radial-gradient(ellipse at center, #FF4A15 0%, transparent 68%)' }} />
@@ -51,28 +51,58 @@ export const FacultySection: React.FC = () => {
       <div className="section-divider-subtle absolute top-0 left-0 right-0" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/18 to-transparent" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
-          <div className="reveal max-w-[620px]">
-            <div className="section-eyebrow-hud">
-              <Shield className="w-3.5 h-3.5 text-[#FF4A15]" /> 07 — ACADEMIC BOARD &amp; ADVISORS
-              <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-2.5 border-l border-[rgba(255,74,21,0.22)] text-white/40 tracking-[0.08em] normal-case">
-                ATELIER DOSSIERS · PIET ECE
-              </span>
-            </div>
-            <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.88] text-[34px] sm:text-[44px] lg:text-[52px] text-[#F5F3EF]">
-              Faculty <span className="font-['Instrument_Serif'] italic font-[400] text-[#FF4A15]">leadership</span>
-              <span className="block text-white/90"> &amp; research labs.</span>
-            </h2>
-            <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
-              <span className="h-px w-8 bg-white/15" />
-              <span>PRINCIPAL INVESTIGATORS &amp; LAB DIRECTORS · PIET AUTONOMOUS</span>
-            </div>
-          </div>
-          <p className="reveal stagger-2 max-w-[380px] text-[13.5px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/40 pl-4">
-            Academic mentors directing research laboratories, patent filings and the atelier&apos;s scholarly rigour — each dossier is a lab in itself.
-          </p>
+      {/* LEFT RAIL — vertical technical border text */}
+      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] bg-[rgba(10,10,12,0.45)] backdrop-blur-xl flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[10px] font-mono tracking-[0.22em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          ACADEMIC BOARD — CH 06
+        </span>
+        <span className="mt-auto text-[10px] font-mono tracking-[0.18em] text-[#FF4A15] font-bold [writing-mode:vertical-rl] rotate-180">
+          INVESTIGATORS — FAC 006
+        </span>
+        <span className="mt-4 w-px h-16 bg-gradient-to-b from-[#FF4A15]/60 to-transparent" />
+        <span className="mt-4 w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
+      </div>
+
+      {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
+      <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
+          RESEARCH LAB DIRECTORS // PIET
+        </span>
+        <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          SCALE 1:1 // 2026
+        </span>
+      </div>
+
+      <div className="relative lg:pl-[56px] 2xl:pr-[48px]">
+        {/* faint blueprint watermark */}
+        <div className="pointer-events-none absolute top-2 left-4 right-4 select-none hidden xl:block overflow-hidden opacity-[0.018]">
+          <span className="font-[Syne] font-[800] tracking-[-0.06em] leading-none text-[120px] text-white whitespace-nowrap">
+            FACULTY LEADERSHIP &amp; LAB DIRECTORS — ATELIER No.08
+          </span>
         </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
+            <div className="reveal max-w-[620px]">
+              <div className="section-eyebrow-hud">
+                <Shield className="w-3.5 h-3.5 text-[#FF4A15]" /> 06 — ACADEMIC BOARD &amp; ADVISORS
+                <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-2.5 border-l border-[rgba(255,74,21,0.22)] text-white/40 tracking-[0.08em] normal-case">
+                  ATELIER DOSSIERS · PIET ECE
+                </span>
+              </div>
+              <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.88] text-[34px] sm:text-[44px] lg:text-[52px] text-[#F5F3EF]">
+                Faculty <span className="font-['Instrument_Serif'] italic font-[400] text-[#FF4A15]">leadership</span>
+                <span className="block text-white/90"> &amp; research labs.</span>
+              </h2>
+              <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
+                <span className="h-px w-8 bg-white/15" />
+                <span>PRINCIPAL INVESTIGATORS &amp; LAB DIRECTORS · PIET AUTONOMOUS</span>
+              </div>
+            </div>
+            <p className="reveal stagger-2 max-w-[380px] text-[13.5px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/40 pl-4">
+              Academic mentors directing research laboratories, patent filings and the atelier&apos;s scholarly rigour — each dossier is a lab in itself.
+            </p>
+          </div>
 
         {/* PREMIUM GLASS CARDS — 3-col grid */}
         <div className="grid md:grid-cols-3 gap-6">
@@ -166,6 +196,7 @@ export const FacultySection: React.FC = () => {
           <span className="hidden sm:inline w-1 h-1 rounded-full bg-white/20" />
           <span className="text-white/25">Contact via department office.</span>
         </div>
+      </div>
       </div>
     </section>
   );

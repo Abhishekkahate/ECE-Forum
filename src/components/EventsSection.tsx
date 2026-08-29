@@ -149,11 +149,33 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const categories = ['All', 'Upcoming', 'Workshop', 'Competition', 'Seminar', 'Past'] as const;
 
   return (
-    <section id="events" ref={revealRef} className="relative py-20 lg:py-28 bg-[#08080A] text-[#F5F3EF] overflow-hidden">
+    <section id="events" ref={revealRef} className="relative py-16 lg:py-24 bg-[#08080A] text-[#F5F3EF] overflow-hidden border-t border-white/[0.06]">
       <div className="absolute inset-0 editorial-grid opacity-[0.04] pointer-events-none" />
-      <div className="mesh-blob mesh-blob-signal w-[640px] h-[480px] -top-28 -right-36 opacity-[0.22]" />
-      <div className="mesh-blob mesh-blob-cyan w-[520px] h-[520px] -bottom-20 -left-20 opacity-[0.10]" />
+      <div className="mesh-blob mesh-blob-signal w-[640px] h-[480px] -top-28 -right-36 opacity-[0.22] pointer-events-none" />
+      <div className="mesh-blob mesh-blob-cyan w-[520px] h-[520px] -bottom-20 -left-20 opacity-[0.10] pointer-events-none" />
       <div className="section-divider absolute top-0 left-0 right-0 opacity-40" />
+
+      {/* LEFT RAIL — vertical technical border text */}
+      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] bg-[rgba(10,10,12,0.45)] backdrop-blur-xl flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[10px] font-mono tracking-[0.22em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          EVENTS &amp; SYMPOSIA — CH 03
+        </span>
+        <span className="mt-auto text-[10px] font-mono tracking-[0.18em] text-[#FF4A15] font-bold [writing-mode:vertical-rl] rotate-180">
+          GATEWAY — PASS 003
+        </span>
+        <span className="mt-4 w-px h-16 bg-gradient-to-b from-[#FF4A15]/60 to-transparent" />
+        <span className="mt-4 w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
+      </div>
+
+      {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
+      <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
+          LIVE TELEMETRY // SEAT INVENTORY
+        </span>
+        <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          SCALE 1:1 // 2026
+        </span>
+      </div>
 
       {shareToast && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-[rgba(16,16,18,0.96)] border border-white/[0.10] text-white text-xs font-mono px-4 py-3 rounded-2xl shadow-glass-xl backdrop-blur-3xl">
@@ -162,16 +184,24 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
         </div>
       )}
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 lg:gap-10 mb-10">
-          <div className="reveal max-w-[640px]">
-            <div className="section-eyebrow-hud">
-              <Layers className="w-3.5 h-3.5" /> 03 — EVENTS &amp; REGISTRATION
-            </div>
-            <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.045em] leading-[0.88] text-[34px] sm:text-[42px] lg:text-[48px] text-[#F5F3EF]">
-              Calendar &amp; <span className="font-[Instrument_Serif] italic font-[400] text-[#FF4A15]">live registration.</span>
-            </h2>
+      <div className="relative lg:pl-[56px] 2xl:pr-[48px]">
+        {/* faint blueprint watermark */}
+        <div className="pointer-events-none absolute top-2 left-4 right-4 select-none hidden xl:block overflow-hidden opacity-[0.018]">
+          <span className="font-[Syne] font-[800] tracking-[-0.06em] leading-none text-[120px] text-white whitespace-nowrap">
+            CALENDAR &amp; REGISTRATION — ATELIER No.08
+          </span>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 lg:gap-10 mb-10">
+            <div className="reveal max-w-[640px]">
+              <div className="section-eyebrow-hud">
+                <Layers className="w-3.5 h-3.5" /> 03 — EVENTS &amp; REGISTRATION
+              </div>
+              <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.045em] leading-[0.88] text-[34px] sm:text-[42px] lg:text-[48px] text-[#F5F3EF]">
+                Calendar &amp; <span className="font-['Instrument_Serif'] italic font-[400] text-[#FF4A15]">live registration.</span>
+              </h2>
             <div className="mt-3 inline-flex items-center gap-2 text-[11px] font-mono">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/[0.07] px-3 py-1 text-white/60">
                 <Hash className="w-3 h-3 text-[#FF4A15]" /> {activeEvents.length} CATALOGUED
@@ -411,6 +441,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             </div>
           </div>
         )}
+      </div>
       </div>
     </section>
   );

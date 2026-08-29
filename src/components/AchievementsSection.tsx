@@ -111,7 +111,7 @@ export const AchievementsSection: React.FC = () => {
   const filteredItems = items.filter((it) => activeCategory === 'All' || it.category === activeCategory);
 
   return (
-    <section id="achievements" ref={revealRef} className="relative py-20 lg:py-28 bg-[#08080A] text-[#F5F3EF] overflow-hidden">
+    <section id="achievements" ref={revealRef} className="relative py-16 lg:py-24 bg-[#08080A] text-[#F5F3EF] overflow-hidden border-t border-white/[0.06]">
       {/* Dynamic Background Atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 editorial-grid opacity-[0.05]" />
@@ -130,37 +130,64 @@ export const AchievementsSection: React.FC = () => {
       </div>
       <div className="section-divider absolute top-0 left-0 right-0 opacity-40" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
-          <div className="reveal max-w-[640px]">
-            <div className="inline-flex items-center gap-2.5 rounded-full bg-[rgba(255,74,21,0.08)] border border-[rgba(255,74,21,0.18)] px-4 py-1.5 backdrop-blur-xl">
-              <span className="w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.7)] animate-pulse" />
-              <span className="text-[11px] font-mono tracking-[0.16em] font-bold text-[#FF4A15]">
-                05 — PRESTIGE &amp; HONOURS
-              </span>
-              <span className="hidden sm:inline-flex text-[9.5px] font-mono tracking-[0.10em] px-2.5 py-0.5 rounded-full bg-[#08080A] border border-white/10 text-white/60">
-                AUDITED 2026
-              </span>
-            </div>
-            <h2 className="mt-5 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.88] text-[34px] sm:text-[44px] lg:text-[52px] text-[#F5F3EF]">
-              Verified <span className="font-['Instrument_Serif'] italic font-[400] text-[#FF4A15]">victories</span>
-              <span className="block text-white/90"> &amp; patents.</span>
-            </h2>
-            <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
-              <span className="h-px w-8 bg-white/15" />
-              <span>DOSSIER // 2025–26 · VERIFIED RECORDS ONLY · PIET ECE</span>
-            </div>
-          </div>
-          <div className="reveal stagger-2 max-w-[380px] space-y-3">
-            <p className="text-[13.5px] leading-relaxed font-mono text-white/60 border-l-2 border-[#FF4A15]/40 pl-4">
-              Student breakthroughs in national robotics expos, sovereign patent grants &amp; core silicon careers — documented, stamped, and traceable.
-            </p>
-            <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
-              <Verified className="w-3.5 h-3.5 text-[#FF4A15]" /> OFFICIAL REGISTRY — PIET AUTONOMOUS
-            </div>
-          </div>
+      {/* LEFT RAIL — vertical technical border text */}
+      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] bg-[rgba(10,10,12,0.45)] backdrop-blur-xl flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[10px] font-mono tracking-[0.22em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          PRESTIGE &amp; HONOURS — CH 05
+        </span>
+        <span className="mt-auto text-[10px] font-mono tracking-[0.18em] text-[#FF4A15] font-bold [writing-mode:vertical-rl] rotate-180">
+          HONOURS — SPEC 005
+        </span>
+        <span className="mt-4 w-px h-16 bg-gradient-to-b from-[#FF4A15]/60 to-transparent" />
+        <span className="mt-4 w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
+      </div>
+
+      {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
+      <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
+          PATENT IN 492026 // IP INDIA
+        </span>
+        <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          SCALE 1:1 // 2026
+        </span>
+      </div>
+
+      <div className="relative lg:pl-[56px] 2xl:pr-[48px]">
+        {/* faint blueprint watermark */}
+        <div className="pointer-events-none absolute top-2 left-4 right-4 select-none hidden xl:block overflow-hidden opacity-[0.018]">
+          <span className="font-[Syne] font-[800] tracking-[-0.06em] leading-none text-[120px] text-white whitespace-nowrap">
+            PRESTIGE &amp; PATENTS — ATELIER No.08
+          </span>
         </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
+            <div className="reveal max-w-[640px]">
+              <div className="section-eyebrow-hud">
+                <Trophy className="w-3.5 h-3.5" /> 05 — PRESTIGE &amp; HONOURS
+                <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-2.5 border-l border-[rgba(255,74,21,0.22)] text-white/40 tracking-[0.08em] normal-case">
+                  AUDITED 2026 · VERIFIED
+                </span>
+              </div>
+              <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.88] text-[34px] sm:text-[44px] lg:text-[52px] text-[#F5F3EF]">
+                Verified <span className="font-['Instrument_Serif'] italic font-[400] text-[#FF4A15]">victories</span>
+                <span className="block text-white/90"> &amp; patents.</span>
+              </h2>
+              <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
+                <span className="h-px w-8 bg-white/15" />
+                <span>DOSSIER // 2025–26 · VERIFIED RECORDS ONLY · PIET ECE</span>
+              </div>
+            </div>
+            <div className="reveal stagger-2 max-w-[380px] space-y-3">
+              <p className="text-[13.5px] leading-relaxed font-mono text-white/60 border-l-2 border-[#FF4A15]/40 pl-4">
+                Student breakthroughs in national robotics expos, sovereign patent grants &amp; core silicon careers — documented, stamped, and traceable.
+              </p>
+              <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
+                <Verified className="w-3.5 h-3.5 text-[#FF4A15]" /> OFFICIAL REGISTRY — PIET AUTONOMOUS
+              </div>
+            </div>
+          </div>
 
         {/* Milestone Stat Ribbon */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-10 reveal">
@@ -291,6 +318,7 @@ export const AchievementsSection: React.FC = () => {
           </span>
           <span className="text-white/30">Official Patent Registration: IN 492026</span>
         </div>
+      </div>
       </div>
 
       {/* Patent Dossier Lightbox — Rendered via createPortal */}

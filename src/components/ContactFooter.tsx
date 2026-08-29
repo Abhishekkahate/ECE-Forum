@@ -45,16 +45,39 @@ export const ContactFooter: React.FC = () => {
       </div>
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/22 to-transparent" />
 
-      {/* Editorial massive */}
-      <div className="relative border-b border-white/[0.06]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 lg:pt-20 pb-8">
-          <div className="flex flex-col lg:flex-row items-start justify-between gap-10">
-            <div className="reveal space-y-5 max-w-[680px]">
-              <div className="inline-flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-[rgba(255,74,21,0.09)] border border-[rgba(255,74,21,0.18)] px-3.5 py-1.5 text-[10.5px] font-mono tracking-[0.14em] font-bold text-[#FF4A15] backdrop-blur">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
-                  ELECTRONICS & COMMUNICATION — PIET NAGPUR
-                </span>
+      {/* LEFT RAIL — vertical technical border text */}
+      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] bg-[rgba(10,10,12,0.45)] backdrop-blur-xl flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[10px] font-mono tracking-[0.22em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          DISPATCH &amp; FOOTER — CH 08
+        </span>
+        <span className="mt-auto text-[10px] font-mono tracking-[0.18em] text-[#FF4A15] font-bold [writing-mode:vertical-rl] rotate-180">
+          END TRANSMISSION — 008
+        </span>
+        <span className="mt-4 w-px h-16 bg-gradient-to-b from-[#FF4A15]/60 to-transparent" />
+        <span className="mt-4 w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
+      </div>
+
+      {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
+      <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
+          PIET ECE CAMPUS // NAGPUR
+        </span>
+        <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          21.14°N 79.08°E // 2026
+        </span>
+      </div>
+
+      <div className="relative lg:pl-[56px] 2xl:pr-[48px]">
+        {/* Editorial massive */}
+        <div className="relative border-b border-white/[0.06]">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pt-14 lg:pt-20 pb-8">
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-10">
+              <div className="reveal space-y-5 max-w-[680px]">
+                <div className="inline-flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[rgba(255,74,21,0.09)] border border-[rgba(255,74,21,0.18)] px-3.5 py-1.5 text-[10.5px] font-mono tracking-[0.14em] font-bold text-[#FF4A15] backdrop-blur">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
+                    ELECTRONICS &amp; COMMUNICATION — PIET NAGPUR
+                  </span>
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono tracking-[0.10em] px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-white/45">
                   <Verified className="w-3 h-3 text-[#FF4A15]" /> ATELIER No.08 — 2026–27
                 </span>
@@ -154,7 +177,7 @@ export const ContactFooter: React.FC = () => {
       </div>
 
       {/* link grid */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-10 border-b border-white/[0.07]">
           <div className="lg:col-span-4 space-y-4 reveal">
             <div className="flex items-center gap-3">
@@ -256,6 +279,7 @@ export const ContactFooter: React.FC = () => {
           <span className="hidden sm:inline w-1 h-1 rounded-full bg-white/10" />
           <span className="hidden sm:inline">TYPE — SYNE + JETBRAINS MONO</span>
         </div>
+      </div>
       </div>
     </footer>
   );

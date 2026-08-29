@@ -25,43 +25,73 @@ export const AboutSection: React.FC = () => {
   ];
 
   return (
-    <section id="about" ref={revealRef} className="relative bg-[#08080A] text-[#F5F3EF] overflow-hidden border-t border-white/[0.06] py-20 lg:py-28">
+    <section id="about" ref={revealRef} className="relative bg-[#08080A] text-[#F5F3EF] overflow-hidden border-t border-white/[0.06] py-16 lg:py-24">
       {/* Dynamic Background Atmosphere */}
       <div className="absolute inset-0 editorial-grid opacity-[0.04] pointer-events-none" />
       <div className="mesh-blob mesh-blob-signal w-[580px] h-[580px] top-[10%] -left-[120px] opacity-[0.14] pointer-events-none" />
       <div className="mesh-blob mesh-blob-cyan w-[500px] h-[500px] bottom-[5%] -right-[100px] opacity-[0.10] pointer-events-none" />
       <div className="section-divider absolute top-0 left-0 right-0 opacity-40" />
 
-      <div className="relative max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10">
-        {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 lg:gap-12 mb-12 lg:mb-16">
-          <div className="reveal max-w-[640px]">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-1.5 backdrop-blur-xl shadow-glass-sm">
-              <span className="w-5 h-5 rounded-full bg-[#FF4A15] text-white grid place-items-center">
-                <Compass className="w-3 h-3" />
-              </span>
-              <span className="text-[11px] font-mono tracking-[0.16em] font-bold text-white/90 uppercase">
-                01 — THE ATELIER &amp; DUAL COUNCIL
-              </span>
-            </div>
-            <h2 className="mt-5 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.92] text-[34px] sm:text-[46px] lg:text-[54px] text-white">
-              Two councils.
-              <br />
-              <span className="font-['Instrument_Serif'] font-normal italic tracking-[-0.02em] text-[#FF4A15]">
-                One unified engineering culture.
-              </span>
-            </h2>
-          </div>
-          <div className="reveal stagger-2 max-w-[440px] space-y-3">
-            <p className="text-[14px] sm:text-[14.5px] leading-[1.75] text-white/60">
-              <strong className="text-white font-semibold">SPACE</strong> drives research conferences, student journals, and academic chapters.{' '}
-              <strong className="text-[#FF4A15] font-semibold">SINC</strong> engineers production hardware — autonomous rovers, RISC-V silicon cores, and LoRa edge nodes.
-            </p>
-            <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
-              <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" /> PIET ECE DEPARTMENT OPERATING SYSTEM 2026–27
-            </div>
-          </div>
+      {/* LEFT RAIL — vertical technical border text */}
+      <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] bg-[rgba(10,10,12,0.45)] backdrop-blur-xl flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[10px] font-mono tracking-[0.22em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          ATELIER NO.08 — SPEC 01 — DUAL COUNCILS
+        </span>
+        <span className="mt-auto text-[10px] font-mono tracking-[0.18em] text-[#FF4A15] font-bold [writing-mode:vertical-rl] rotate-180">
+          ARCH — SPEC 002
+        </span>
+        <span className="mt-4 w-px h-16 bg-gradient-to-b from-[#FF4A15]/60 to-transparent" />
+        <span className="mt-4 w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
+      </div>
+
+      {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
+      <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
+        <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
+          SPACE (2012) × SINC (2018) — PIET ECE
+        </span>
+        <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
+          SCALE 1:1 // 21.14°N
+        </span>
+      </div>
+
+      <div className="relative lg:pl-[56px] 2xl:pr-[48px]">
+        {/* faint blueprint watermark in background */}
+        <div className="pointer-events-none absolute top-2 left-4 right-4 select-none hidden xl:block overflow-hidden opacity-[0.018]">
+          <span className="font-[Syne] font-[800] tracking-[-0.06em] leading-none text-[120px] text-white whitespace-nowrap">
+            DUAL COUNCIL ARCHITECTURE — ATELIER No.08
+          </span>
         </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14">
+          {/* Section Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 lg:gap-12 mb-10 lg:mb-14">
+            <div className="reveal max-w-[640px]">
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-4 py-1.5 backdrop-blur-xl shadow-glass-sm">
+                <span className="w-5 h-5 rounded-full bg-[#FF4A15] text-white grid place-items-center">
+                  <Compass className="w-3 h-3" />
+                </span>
+                <span className="text-[11px] font-mono tracking-[0.16em] font-bold text-white/90 uppercase">
+                  01 — THE ATELIER &amp; DUAL COUNCIL
+                </span>
+              </div>
+              <h2 className="mt-5 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.92] text-[34px] sm:text-[46px] lg:text-[54px] text-white">
+                Two councils.
+                <br />
+                <span className="font-['Instrument_Serif'] font-normal italic tracking-[-0.02em] text-[#FF4A15]">
+                  One unified engineering culture.
+                </span>
+              </h2>
+            </div>
+            <div className="reveal stagger-2 max-w-[440px] space-y-3">
+              <p className="text-[14px] sm:text-[14.5px] leading-[1.75] text-white/60">
+                <strong className="text-white font-semibold">SPACE</strong> drives research conferences, student journals, and academic chapters.{' '}
+                <strong className="text-[#FF4A15] font-semibold">SINC</strong> engineers production hardware — autonomous rovers, RISC-V silicon cores, and LoRa edge nodes.
+              </p>
+              <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
+                <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" /> PIET ECE DEPARTMENT OPERATING SYSTEM 2026–27
+              </div>
+            </div>
+          </div>
 
         {/* Council Interactive Switcher */}
         <div className="flex justify-center sm:justify-start mb-8 reveal">
@@ -340,6 +370,7 @@ export const AboutSection: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </section>
   );
