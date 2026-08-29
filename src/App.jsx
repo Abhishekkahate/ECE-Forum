@@ -406,7 +406,16 @@ export default function App() {
 
   // Backend Live State
   const [eventsList, setEventsList] = useState(DEFAULT_INITIAL_EVENTS);
-  const [galleryList, setGalleryList] = useState(DEFAULT_GALLERY_ITEMS);
+  const [galleryList, setGalleryList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ece_gallery_archive_items');
+      if (saved !== null && saved !== undefined) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [heroConfig, setHeroConfig] = useState(DEFAULT_HERO_CONFIG);
   const [announcement, setAnnouncement] = useState('');
 
@@ -495,7 +504,7 @@ export default function App() {
             return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
           });
         }
-        if (Array.isArray(remoteGallery) && remoteGallery.length) {
+        if (Array.isArray(remoteGallery)) {
           setGalleryList((prev) => (JSON.stringify(prev) === JSON.stringify(remoteGallery) ? prev : remoteGallery));
         }
       } catch (err) {
@@ -516,14 +525,23 @@ export default function App() {
       loadData();
     };
 
+    const handleGalleryUpdate = async () => {
+      const items = await forumApi.getGalleryItems().catch(() => null);
+      if (Array.isArray(items)) {
+        setGalleryList((prev) => (JSON.stringify(prev) === JSON.stringify(items) ? prev : items));
+      }
+    };
+
     window.addEventListener('ece_hero_config_updated', handleHeroUpdate);
     window.addEventListener('ece_events_updated', handleEventsUpdate);
+    window.addEventListener('ece_gallery_updated', handleGalleryUpdate);
 
     const iv = setInterval(loadData, 10000);
     return () => {
       clearInterval(iv);
       window.removeEventListener('ece_hero_config_updated', handleHeroUpdate);
       window.removeEventListener('ece_events_updated', handleEventsUpdate);
+      window.removeEventListener('ece_gallery_updated', handleGalleryUpdate);
     };
   }, []);
 

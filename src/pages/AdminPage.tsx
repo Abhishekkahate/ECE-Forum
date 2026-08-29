@@ -52,7 +52,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   currentAnnouncement = '',
   heroConfig,
   onUpdateHeroConfig = () => {},
-  galleryList = DEFAULT_GALLERY_ITEMS,
+  galleryList = [],
   onUpdateGallery = () => {},
 }) => {
   const [currentUser, setCurrentUser] = useState<{ email: string; role: string } | null>(null);
@@ -60,7 +60,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('ALL');
   
   // Gallery state (multi-photo event albums)
-  const [galleryDraft, setGalleryDraft] = useState<GalleryItem[]>(galleryList || DEFAULT_GALLERY_ITEMS);
+  const [galleryDraft, setGalleryDraft] = useState<GalleryItem[]>(galleryList || []);
   const [gallerySavedMsg, setGallerySavedMsg] = useState(false);
   const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
   const [isAddingGallery, setIsAddingGallery] = useState(false);
