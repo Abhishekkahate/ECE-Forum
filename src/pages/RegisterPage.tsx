@@ -16,16 +16,17 @@ import { PassCard } from '../components/PassCard';
 import { GoogleAuthModal } from '../components/GoogleAuthModal';
 import { MyPassesModal } from '../components/MyPassesModal';
 import { soundFx } from '../utils/audio';
-import { api, type Coupon } from '../services/api';
+import { api, type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
 
 const UPI_ID = 'pieteceforum@okhdfcbank';
 const UPI_PAYEE_NAME = 'PIET ECE COUNCIL';
 
 interface RegisterPageProps {
   eventsList: EventItem[];
+  heroConfig?: SiteHeroConfig;
 }
 
-export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConfig = DEFAULT_HERO_CONFIG }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { eventId: routeEventId } = useParams<{ eventId?: string }>();
   
@@ -38,12 +39,34 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMyPassesOpen, setIsMyPassesOpen] = useState(false);
 
+  // Dynamic Site & Payment Configuration
+  const [siteConfig, setSiteConfig] = useState<SiteHeroConfig>(heroConfig || DEFAULT_HERO_CONFIG);
+
+  useEffect(() => {
+    if (heroConfig) {
+      setSiteConfig(heroConfig);
+    }
+  }, [heroConfig]);
+
+  useEffect(() => {
+    api.getSiteHeroConfig().then((cfg) => {
+      if (cfg) setSiteConfig(cfg);
+    }).catch(() => {});
+
+    const handleConfigUpdate = (e: any) => {
+      if (e.detail) setSiteConfig(e.detail);
+      else api.getSiteHeroConfig().then((cfg) => { if (cfg) setSiteConfig(cfg); }).catch(() => {});
+    };
+    window.addEventListener('ece_hero_config_updated', handleConfigUpdate);
+    return () => window.removeEventListener('ece_hero_config_updated', handleConfigUpdate);
+  }, []);
+
   // Registration Type: Individual vs Team
   const [regType, setRegType] = useState<'individual' | 'team'>('individual');
   const [teamName, setTeamName] = useState('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
-  // Team Leader / Primary Attendee Form Data (Blank by default)
+  // Team Leader / Primary Attendee Form Data (Completely Blank by default)
   const [formData, setFormData] = useState({
     name: user?.name || '',
     department: '',
@@ -61,39 +84,19 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
   const [copiedUpi, setCopiedUpi] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Coupon System State
-  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
-  const [couponInput, setCouponInput] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
-  const [couponSuccessMsg, setCouponSuccessMsg] = useState<string | null>(null);
-
   const [generatedPass, setGeneratedPass] = useState<EventPass | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [formValidationWarning, setFormValidationWarning] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Load available coupons
-  useEffect(() => {
-    const fetchCoupons = async () => {
-      try {
-        const list = await api.getCoupons();
-        setAvailableCoupons(list);
-      } catch {}
-    };
-    fetchCoupons();
-  }, []);
-
-  // Sync user state from Google Auth
+  // Sync user state from Google Auth (only fill verified name & email, keep department, college, year, phone blank for user entry)
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
         ...prev,
         name: user.name || prev.name,
         email: user.email || prev.email,
-        department: user.department || prev.department,
-        year: user.year || prev.year,
-        phone: user.phone || prev.phone,
+        phone: prev.phone || user.phone || '',
       }));
     }
   }, [user]);
@@ -123,9 +126,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
           current.push({
             name: '',
             email: '',
-            department: formData.department || 'Electronics & Communication Engineering',
-            collegeName: formData.collegeName || 'PIET, Nagpur',
-            year: '3rd Year',
+            collegeName: '',
+            department: '',
+            year: '',
             phone: '',
           });
         }
@@ -140,9 +143,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
           current.push({
             name: '',
             email: '',
-            department: formData.department || 'Electronics & Communication Engineering',
-            collegeName: formData.collegeName || 'PIET, Nagpur',
-            year: '3rd Year',
+            collegeName: '',
+            department: '',
+            year: '',
             phone: '',
           });
         }
@@ -151,46 +154,36 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
     }
   }, [selectedEvent?.id, selectedEvent?.participationType, selectedEvent?.requiredTeamSize, regType]);
 
-  // Price calculations:
+  // Price calculations
   const perPersonPrice = selectedEvent?.price || 0;
   const totalAttendees = regType === 'team' ? 1 + teamMembers.length : 1;
-  const baseTotalAmount = perPersonPrice * totalAttendees;
+  const finalPayableAmount = perPersonPrice * totalAttendees;
 
-  // Coupon discount calculation
-  let discountAmount = 0;
-  if (appliedCoupon) {
-    if (appliedCoupon.discountType === 'percentage') {
-      discountAmount = Math.round((baseTotalAmount * appliedCoupon.discountValue) / 100);
-    } else {
-      discountAmount = Math.min(baseTotalAmount, appliedCoupon.discountValue);
-    }
-    if (appliedCoupon.maxDiscount && discountAmount > appliedCoupon.maxDiscount) {
-      discountAmount = appliedCoupon.maxDiscount;
-    }
-  }
+  // Active Payment Gateways
+  const activeUpiId = siteConfig.paymentUpiId || UPI_ID;
+  const activePayeeName = siteConfig.paymentPayeeName || UPI_PAYEE_NAME;
+  const customPaymentQr = siteConfig.paymentQrImage || '';
 
-  const finalPayableAmount = Math.max(0, baseTotalAmount - discountAmount);
-
-  // Generate UPI QR Code URL whenever payable amount or event changes
+  // Generate dynamic UPI QR Code URL if no custom image is uploaded
   useEffect(() => {
     if (!selectedEvent || finalPayableAmount <= 0) {
       setUpiQrDataUrl('');
       return;
     }
 
-    const upiUri = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_PAYEE_NAME)}&am=${finalPayableAmount}&cu=INR&tn=${encodeURIComponent(`Reg ${selectedEvent.title.slice(0, 25)}`)}`;
+    const upiUri = `upi://pay?pa=${encodeURIComponent(activeUpiId)}&pn=${encodeURIComponent(activePayeeName)}&am=${finalPayableAmount}&cu=INR&tn=${encodeURIComponent(`Reg ${selectedEvent.title.slice(0, 25)}`)}`;
     
     QRCode.toDataURL(upiUri, {
-      width: 320,
+      width: 340,
       margin: 1,
       color: {
         dark: '#000000',
         light: '#FFFFFF',
       },
     })
-      .then((url) => setUpiQrDataUrl(url))
+      .then((url: string) => setUpiQrDataUrl(url))
       .catch(() => setUpiQrDataUrl(''));
-  }, [selectedEvent?.id, selectedEvent?.title, finalPayableAmount]);
+  }, [selectedEvent?.id, selectedEvent?.title, finalPayableAmount, activeUpiId, activePayeeName]);
 
   // Check if current user or entered email already has an active pass for this event
   const userEffectiveEmail = (user?.email || formData.email || '').trim().toLowerCase();
@@ -211,9 +204,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
       {
         name: '',
         email: '',
-        department: formData.department || 'Electronics & Communication Engineering',
-        collegeName: formData.collegeName || 'PIET, Nagpur',
-        year: '3rd Year',
+        collegeName: '',
+        department: '',
+        year: '',
         phone: '',
       },
     ]);
@@ -239,78 +232,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
     setTeamMembers(updated);
   };
 
-  // Coupon validation handler
-  const handleApplyCoupon = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    soundFx.playClick();
-    setCouponError(null);
-    setCouponSuccessMsg(null);
-
-    const clean = couponInput.trim().toUpperCase();
-    if (!clean) return;
-
-    const matched = availableCoupons.find(
-      (c) => c.code.toUpperCase() === clean && (c.active !== false)
-    );
-
-    if (!matched) {
-      setCouponError(`Coupon "${clean}" is invalid or disabled.`);
-      setAppliedCoupon(null);
-      return;
-    }
-
-    // Expiry Date Validation
-    if (matched.validUntil) {
-      const expiry = new Date(matched.validUntil);
-      if (matched.validUntil.length <= 10) {
-        expiry.setHours(23, 59, 59, 999);
-      }
-      if (new Date() > expiry) {
-        setCouponError(`Coupon "${clean}" expired on ${new Date(matched.validUntil).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`);
-        setAppliedCoupon(null);
-        return;
-      }
-    }
-
-    // Start Date Validation
-    if (matched.validFrom) {
-      const start = new Date(matched.validFrom);
-      if (new Date() < start) {
-        setCouponError(`Coupon "${clean}" will become active on ${new Date(matched.validFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`);
-        setAppliedCoupon(null);
-        return;
-      }
-    }
-
-    // Usage Limit Validation
-    if (matched.usageLimit !== undefined && (matched.usedCount || 0) >= matched.usageLimit) {
-      setCouponError(`Coupon "${clean}" redemption limit (${matched.usageLimit} maximum redemptions) has been reached.`);
-      setAppliedCoupon(null);
-      return;
-    }
-
-    if (matched.minAmount && baseTotalAmount < matched.minAmount) {
-      setCouponError(`Coupon requires a minimum order amount of ₹${matched.minAmount}.`);
-      setAppliedCoupon(null);
-      return;
-    }
-
-    soundFx.playSuccess();
-    setAppliedCoupon(matched);
-    setCouponSuccessMsg(`✓ Coupon "${matched.code}" applied! ${matched.description}`);
-  };
-
-  const handleRemoveCoupon = () => {
-    soundFx.playLaser();
-    setAppliedCoupon(null);
-    setCouponInput('');
-    setCouponSuccessMsg(null);
-    setCouponError(null);
-  };
-
   const handleCopyUpiId = () => {
     soundFx.playClick();
-    navigator.clipboard.writeText(UPI_ID);
+    navigator.clipboard.writeText(activeUpiId);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
   };
@@ -358,9 +282,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
       phone: formData.phone,
       paymentId: payId,
       amount: finalPayableAmount,
-      originalAmount: baseTotalAmount,
-      discountAmount,
-      couponCode: appliedCoupon?.code || '',
+      originalAmount: finalPayableAmount,
+      discountAmount: 0,
+      couponCode: undefined,
       registrationType: regType,
       teamName: regType === 'team' ? (teamName || `${formData.name}'s Team`) : undefined,
       teamMembers: regType === 'team' ? teamMembers : undefined,
@@ -370,9 +294,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
     });
 
     await api.createPass(pass);
-    if (appliedCoupon) {
-      await api.incrementCouponUsage(appliedCoupon.code);
-    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('ece_passes_updated'));
     }
@@ -409,13 +330,28 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
       return;
     }
 
-    if (!formData.department.trim()) {
-      setFormValidationWarning('Please enter your Department / Branch name.');
+    if (!formData.name.trim()) {
+      setFormValidationWarning('Please enter your Full Name.');
       return;
     }
 
     if (!formData.collegeName.trim()) {
       setFormValidationWarning('Please enter your College / Institution name.');
+      return;
+    }
+
+    if (!formData.department.trim()) {
+      setFormValidationWarning('Please enter your Department / Branch name.');
+      return;
+    }
+
+    if (!formData.year.trim()) {
+      setFormValidationWarning('Please select your Academic Year.');
+      return;
+    }
+
+    if (!formData.phone.trim() || formData.phone.trim().replace(/\D/g, '').length < 10) {
+      setFormValidationWarning('Please provide a valid Mobile / WhatsApp phone number (at least 10 digits).');
       return;
     }
 
@@ -428,14 +364,18 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
 
       const reqSize = selectedEvent.requiredTeamSize;
       if (reqSize && totalAttendees !== reqSize) {
-        setFormValidationWarning(`This event strictly requires exactly ${reqSize} team members. You currently have ${totalAttendees}.`);
+        setFormValidationWarning(`This event strictly requires exactly ${reqSize} team members (1 Team Leader + ${reqSize - 1} Teammates). You currently have ${totalAttendees}.`);
         return;
       }
 
       for (let i = 0; i < teamMembers.length; i++) {
         const m = teamMembers[i];
-        if (!m.name.trim() || !m.email.trim()) {
-          setFormValidationWarning(`Please fill out the Full Name and Email Address for Team Member #${i + 2}.`);
+        if (!m.name.trim()) {
+          setFormValidationWarning(`Please fill out the Full Name for Team Member #${i + 2}.`);
+          return;
+        }
+        if (!m.email.trim()) {
+          setFormValidationWarning(`Please fill out the Email Address for Team Member #${i + 2}.`);
           return;
         }
 
@@ -670,12 +610,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                       <span>Enrolled Attendees:</span>
                       <strong className="text-[#FF4A15]">{totalAttendees} {regType === 'team' ? '(Team)' : '(Individual)'}</strong>
                     </div>
-                    {appliedCoupon && (
-                      <div className="flex justify-between items-center text-[#00FF88]">
-                        <span>Coupon ({appliedCoupon.code}):</span>
-                        <strong>-₹{discountAmount} INR</strong>
-                      </div>
-                    )}
                     <div className="flex justify-between items-center pt-2 border-t border-white/[0.08] text-sm">
                       <span className="text-white font-bold font-[Syne]">Total Payable:</span>
                       <strong className="text-[#FFD60A] font-[Syne] font-[800] text-lg">
@@ -1018,15 +952,16 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                         <div className="space-y-1.5">
                           <label className="text-white/70 text-[11px] flex items-center gap-1">
                             <Phone className="w-3 h-3 text-[#00FF88]" />
-                            <span>Phone / WhatsApp Number</span>
+                            <span>Phone / WhatsApp Number *</span>
                           </label>
                           <input
                             type="tel"
+                            required
                             autoComplete="off"
                             spellCheck={false}
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="+91..."
+                            placeholder="Enter 10-digit mobile number"
                             className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono"
                           />
                         </div>
@@ -1078,6 +1013,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                               )}
                             </div>
 
+                            {/* Name and Email */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <label className="text-[10px] text-white/50 block mb-1">Full Name *</label>
@@ -1088,7 +1024,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                                   spellCheck={false}
                                   value={member.name}
                                   onChange={(e) => handleUpdateTeamMember(idx, 'name', e.target.value)}
-                                  placeholder="Member Name"
+                                  placeholder="Full Name"
                                   className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
                                 />
                               </div>
@@ -1108,7 +1044,21 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                               </div>
                             </div>
 
+                            {/* College and Department */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] text-white/50 block mb-1">College / Institution</label>
+                                <input
+                                  type="text"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  value={member.collegeName || ''}
+                                  onChange={(e) => handleUpdateTeamMember(idx, 'collegeName', e.target.value)}
+                                  placeholder="College Name"
+                                  className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
+                                />
+                              </div>
+
                               <div>
                                 <label className="text-[10px] text-white/50 block mb-1">Department / Branch</label>
                                 <input
@@ -1117,9 +1067,28 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                                   spellCheck={false}
                                   value={member.department || ''}
                                   onChange={(e) => handleUpdateTeamMember(idx, 'department', e.target.value)}
-                                  placeholder="Department"
+                                  placeholder="Department (e.g. ECE, CSE)"
                                   className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
                                 />
+                              </div>
+                            </div>
+
+                            {/* Year and Phone */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] text-white/50 block mb-1">Academic Year</label>
+                                <select
+                                  value={member.year || ''}
+                                  onChange={(e) => handleUpdateTeamMember(idx, 'year', e.target.value)}
+                                  className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC] cursor-pointer"
+                                >
+                                  <option value="">-- Select Year --</option>
+                                  <option value="1st Year">1st Year (FE)</option>
+                                  <option value="2nd Year">2nd Year (SE)</option>
+                                  <option value="3rd Year">3rd Year (TE)</option>
+                                  <option value="4th Year">4th Year (BE)</option>
+                                  <option value="Faculty / Alumni">Faculty / Alumni</option>
+                                </select>
                               </div>
 
                               <div>
@@ -1140,75 +1109,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                       </div>
                     )}
 
-                    {/* STEP 4: Coupon Code Engine */}
-                    <div className="p-4 rounded-2xl bg-black/60 border border-white/[0.08] space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-white/70 text-xs font-mono flex items-center gap-1.5 font-bold">
-                          <Tag className="w-3.5 h-3.5 text-[#FFD60A]" />
-                          <span>Promo &amp; Organizer Coupon Code</span>
-                        </label>
-                        <span className="text-[10px] font-mono text-white/40">Official Waiver Codes</span>
-                      </div>
-
-                      {!appliedCoupon ? (
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <input
-                            type="text"
-                            autoComplete="off"
-                            spellCheck={false}
-                            value={couponInput}
-                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                            placeholder="Enter Promo Code (e.g. ECE2026)"
-                            className="flex-1 w-full bg-[#121216] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-[#FFD60A] text-xs font-mono uppercase tracking-wider"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleApplyCoupon()}
-                            disabled={!couponInput.trim()}
-                            className="px-5 py-2.5 rounded-full bg-[#FFD60A] text-black font-[Syne] font-bold text-xs hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="p-3 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Check className="w-4 h-4 text-[#00FF88] shrink-0" />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono font-bold text-xs text-white bg-black/50 px-2 py-0.5 rounded border border-[#00FF88]/40">
-                                  {appliedCoupon.code}
-                                </span>
-                                <span className="text-xs font-bold text-[#00FF88]">
-                                  -₹{discountAmount} OFF Applied!
-                                </span>
-                              </div>
-                              <span className="text-[10px] text-white/60 font-sans block mt-0.5 truncate">
-                                {appliedCoupon.description}
-                              </span>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={handleRemoveCoupon}
-                            className="w-8 h-8 shrink-0 grid place-items-center rounded-full text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                            title="Remove Coupon"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-
-                      {couponError && (
-                        <p className="text-[11px] font-mono text-red-400 flex items-center gap-1.5">
-                          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                          <span>{couponError}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    {/* STEP 5: UPI Payment QR & Screenshot Upload Section (For Paid Events) */}
+                    {/* UPI Payment QR & Screenshot Upload Section (For Paid Events) */}
                     {finalPayableAmount > 0 ? (
                       <div className="p-5 rounded-2xl bg-gradient-to-br from-[#121216] to-[#0A0A0C] border border-[#FF4A15]/30 space-y-4 shadow-[0_0_30px_rgba(255,74,21,0.06)]">
                         <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
@@ -1225,7 +1126,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                         <div className="grid sm:grid-cols-12 gap-4 items-center">
                           {/* QR Code Container */}
                           <div className="sm:col-span-5 flex flex-col items-center justify-center p-3 rounded-2xl bg-white text-black shadow-lg">
-                            {upiQrDataUrl ? (
+                            {customPaymentQr ? (
+                              <img
+                                src={customPaymentQr}
+                                alt="Official Payment QR Code"
+                                className="w-44 h-44 object-contain rounded-lg"
+                              />
+                            ) : upiQrDataUrl ? (
                               <img
                                 src={upiQrDataUrl}
                                 alt="UPI Payment QR Code"
@@ -1236,21 +1143,31 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                                 Generating QR...
                               </div>
                             )}
-                            <div className="text-[10px] font-mono font-bold text-black/70 mt-1 tracking-wider">
-                              SCAN WITH ANY UPI APP
+                            <div className="text-[10px] font-mono font-bold text-black/70 mt-1.5 tracking-wider text-center">
+                              {customPaymentQr ? 'OFFICIAL PAYMENT QR' : 'SCAN WITH ANY UPI APP'}
                             </div>
                           </div>
 
                           {/* UPI ID & Instructions */}
                           <div className="sm:col-span-7 space-y-2.5 text-xs font-mono">
                             <div className="space-y-1">
-                              <span className="text-white/50 text-[10px] uppercase">Official Council UPI ID:</span>
+                              <span className="text-white/50 text-[10px] uppercase">Official Payee:</span>
+                              <div className="text-white font-bold text-xs">{activePayeeName}</div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-white/50 text-[10px] uppercase">UPI ID / VPA:</span>
                               <div className="flex items-center gap-2 p-2 rounded-xl bg-black border border-white/10">
-                                <span className="text-white font-mono font-bold text-xs truncate flex-1">{UPI_ID}</span>
+                                <span className="text-white font-mono font-bold text-xs truncate flex-1">{activeUpiId}</span>
                                 <button
                                   type="button"
-                                  onClick={handleCopyUpiId}
-                                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-[#FF4A15] text-white text-[10px] font-mono transition-colors shrink-0 flex items-center gap-1"
+                                  onClick={() => {
+                                    soundFx.playClick();
+                                    navigator.clipboard.writeText(activeUpiId);
+                                    setCopiedUpi(true);
+                                    setTimeout(() => setCopiedUpi(false), 2000);
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-[#FF4A15] text-white text-[10px] font-mono transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
                                 >
                                   {copiedUpi ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
                                   <span>{copiedUpi ? 'Copied!' : 'Copy'}</span>
@@ -1258,18 +1175,24 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                               </div>
                             </div>
 
+                            {siteConfig.paymentBankDetails && (
+                              <p className="text-[11px] text-[#00E5CC] leading-relaxed p-2 rounded-xl bg-[#00E5CC]/10 border border-[#00E5CC]/20">
+                                {siteConfig.paymentBankDetails}
+                              </p>
+                            )}
+
                             <div className="space-y-1 text-[11px] text-white/70">
                               <p className="flex items-center gap-1.5 text-white/90">
                                 <span className="w-4 h-4 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold grid place-items-center">1</span>
-                                Scan with GPay, PhonePe, Paytm, or BHIM.
+                                Scan via Google Pay, PhonePe, Paytm, or BHIM.
                               </p>
                               <p className="flex items-center gap-1.5 text-white/90">
                                 <span className="w-4 h-4 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold grid place-items-center">2</span>
-                                Complete payment of <strong>₹{finalPayableAmount}</strong>.
+                                Pay <strong>₹{finalPayableAmount}</strong> and take a screenshot.
                               </p>
                               <p className="flex items-center gap-1.5 text-white/90">
                                 <span className="w-4 h-4 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold grid place-items-center">3</span>
-                                Upload the payment success screenshot below.
+                                Upload the payment confirmation screenshot below.
                               </p>
                             </div>
                           </div>
@@ -1449,8 +1372,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList }) => {
                         setPaymentScreenshot('');
                         setScreenshotFileName('');
                         setTransactionId('');
-                        setAppliedCoupon(null);
-                        setCouponInput('');
                       }}
                       className="px-6 py-3 rounded-full bg-[#FF4A15] text-white font-[Syne] font-bold text-xs shadow-[0_0_20px_rgba(255,74,21,0.3)] hover:opacity-95 cursor-pointer"
                     >

@@ -686,6 +686,12 @@ export interface SiteHeroConfig {
   flagshipTargetDate: string; // "2026-07-30T10:00:00"
   flagshipTargetVenue: string; // "AUDITORIUM"
   flagshipButtonText: string; // "Register With Razorpay"
+
+  // 3. Payment Gateway / Official UPI QR Settings
+  paymentUpiId?: string; // e.g. "pieteceforum@okhdfcbank"
+  paymentPayeeName?: string; // e.g. "PIET ECE COUNCIL"
+  paymentQrImage?: string; // Custom uploaded QR code image (Base64/URL)
+  paymentBankDetails?: string; // Instructions or bank account notes
 }
 
 export const DEFAULT_HERO_CONFIG: SiteHeroConfig = {
@@ -699,7 +705,11 @@ export const DEFAULT_HERO_CONFIG: SiteHeroConfig = {
     'The grand induction of the 2026-27 departmental executive council followed by the TARANG freshers tech gala. Join faculty advisors, alumni, and 500+ student engineers.',
   flagshipTargetDate: '2026-08-30T10:00:00',
   flagshipTargetVenue: 'AUDITORIUM',
-  flagshipButtonText: 'Register With Razorpay',
+  flagshipButtonText: 'Register for Flagship',
+  paymentUpiId: 'pieteceforum@okhdfcbank',
+  paymentPayeeName: 'PIET ECE COUNCIL',
+  paymentQrImage: '',
+  paymentBankDetails: 'Scan using Google Pay, PhonePe, Paytm, or any UPI app and upload the confirmation screenshot below.',
 };
 
 export const api = forumApi;

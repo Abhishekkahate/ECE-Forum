@@ -474,8 +474,8 @@ export default function App() {
             />
           }
         />
-        <Route path="/register" element={<RegisterPage eventsList={eventsList} />} />
-        <Route path="/register/:eventId" element={<RegisterPage eventsList={eventsList} />} />
+        <Route path="/register" element={<RegisterPage eventsList={eventsList} heroConfig={heroConfig} />} />
+        <Route path="/register/:eventId" element={<RegisterPage eventsList={eventsList} heroConfig={heroConfig} />} />
         <Route
           path="/admin"
           element={

@@ -1803,6 +1803,123 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* Official Payment QR Code & UPI Gateway Configuration */}
+                      <div className="p-5 rounded-[24px] bg-[#121216] border border-[#00E5CC]/30 space-y-4 font-mono">
+                        <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                          <h4 className="font-[Syne] font-[800] text-sm text-white flex items-center gap-2">
+                            <QrCode className="w-4 h-4 text-[#00E5CC]" />
+                            Official Payment QR Code &amp; UPI Settings
+                          </h4>
+                          <span className="text-[10px] text-[#00E5CC] font-bold">REGISTRATION GATEWAY</span>
+                        </div>
+
+                        <p className="text-xs text-white/50 leading-relaxed font-sans">
+                          Upload the exact UPI QR Code image (PhonePe / Google Pay / Paytm / Bank QR) on which users should make registration payments.
+                        </p>
+
+                        <div className="grid sm:grid-cols-12 gap-5 items-start">
+                          {/* QR Upload & Preview */}
+                          <div className="sm:col-span-4 space-y-2 text-center">
+                            <div className="p-3 rounded-2xl bg-black border border-white/15 aspect-square flex flex-col items-center justify-center relative overflow-hidden group">
+                              {heroConfigDraft.paymentQrImage ? (
+                                <img
+                                  src={heroConfigDraft.paymentQrImage}
+                                  alt="Official Payment QR"
+                                  className="w-full h-full object-contain rounded-xl"
+                                />
+                              ) : (
+                                <div className="space-y-1 text-white/40 text-xs">
+                                  <QrCode className="w-10 h-10 mx-auto text-white/20" />
+                                  <span>No Custom QR Uploaded</span>
+                                  <span className="text-[9px] block text-white/30">(Default UPI QR Active)</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex gap-2 justify-center">
+                              <label className="px-3.5 py-1.5 rounded-full bg-[#00E5CC]/15 border border-[#00E5CC]/30 text-[#00E5CC] text-xs font-bold hover:bg-[#00E5CC] hover:text-black transition-colors cursor-pointer inline-flex items-center gap-1.5">
+                                <Upload className="w-3 h-3" /> Upload QR Image
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = () => {
+                                      if (typeof reader.result === 'string') {
+                                        setHeroConfigDraft((prev) => ({ ...prev, paymentQrImage: reader.result as string }));
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }}
+                                />
+                              </label>
+
+                              {heroConfigDraft.paymentQrImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => setHeroConfigDraft((prev) => ({ ...prev, paymentQrImage: '' }))}
+                                  className="px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* UPI Parameters */}
+                          <div className="sm:col-span-8 space-y-3 text-xs">
+                            <label className="space-y-1 block">
+                              <span className="text-white/60">Official Council UPI ID</span>
+                              <input
+                                value={heroConfigDraft.paymentUpiId || ''}
+                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, paymentUpiId: e.target.value })}
+                                placeholder="pieteceforum@okhdfcbank"
+                                className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-mono"
+                              />
+                            </label>
+
+                            <label className="space-y-1 block">
+                              <span className="text-white/60">Payee Account / Display Name</span>
+                              <input
+                                value={heroConfigDraft.paymentPayeeName || ''}
+                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, paymentPayeeName: e.target.value })}
+                                placeholder="PIET ECE COUNCIL"
+                                className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-mono"
+                              />
+                            </label>
+
+                            <label className="space-y-1 block">
+                              <span className="text-white/60">Payment Note &amp; Instructions</span>
+                              <textarea
+                                value={heroConfigDraft.paymentBankDetails || ''}
+                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, paymentBankDetails: e.target.value })}
+                                rows={2}
+                                placeholder="Scan using Google Pay, PhonePe, Paytm, or any UPI app and upload screenshot below."
+                                className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-sans text-xs"
+                              />
+                            </label>
+
+                            <div className="pt-2 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  soundFx.playSuccess();
+                                  await onUpdateHeroConfig(heroConfigDraft);
+                                  setSiteConfigSavedMsg(true);
+                                  setTimeout(() => setSiteConfigSavedMsg(false), 3000);
+                                }}
+                                className="px-6 py-2.5 rounded-full bg-[#00E5CC] text-black font-bold text-xs hover:bg-white transition-all shadow-[0_0_20px_rgba(0,229,204,0.3)] cursor-pointer"
+                              >
+                                Save Payment Settings &rarr;
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -2052,19 +2169,30 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   {selectedProofPass.teamMembers && selectedProofPass.teamMembers.length > 0 ? (
                     <div className="grid gap-2.5">
                       {selectedProofPass.teamMembers.map((tm, idx) => (
-                        <div key={idx} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
+                        <div key={idx} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1.5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                             <div className="font-bold text-white flex items-center gap-2">
-                              <span className="w-4 h-4 rounded-full bg-[#00E5CC]/20 text-[#00E5CC] text-[10px] grid place-items-center">{idx + 2}</span>
-                              <span>{tm.name}</span>
+                              <span className="w-5 h-5 rounded-full bg-[#00E5CC]/20 text-[#00E5CC] text-[10px] font-bold grid place-items-center">{idx + 2}</span>
+                              <span className="text-xs">{tm.name}</span>
                             </div>
-                            <div className="text-[11px] text-white/50 mt-0.5">
+                            <span className="text-[10px] text-white/50 font-mono">
                               {tm.email} {tm.phone ? `• ${tm.phone}` : ''}
-                            </div>
+                            </span>
                           </div>
-                          <span className="text-[10px] text-white/40 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 self-start sm:self-auto">
-                            {tm.department || 'Department Member'}
-                          </span>
+
+                          <div className="flex flex-wrap gap-2 text-[10px] text-white/60 pt-0.5 border-t border-white/[0.04]">
+                            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/80">
+                              College: {tm.collegeName || selectedProofPass.collegeName || 'PIET'}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/80">
+                              Dept: {tm.department || 'ECE'}
+                            </span>
+                            {tm.year && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#00E5CC]/10 text-[#00E5CC] border border-[#00E5CC]/30 font-bold">
+                                {tm.year}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
