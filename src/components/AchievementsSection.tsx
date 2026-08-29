@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Trophy, Award, FileCheck2, Briefcase, ExternalLink, X, ShieldCheck,
   Stamp, Layers, Verified, Sparkles, CheckCircle2, ChevronRight, Hash
@@ -11,6 +12,34 @@ export const AchievementsSection: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [activeCategory, setActiveCategory] = useState<'All' | 'Competition' | 'Patent' | 'Academic' | 'Placement'>('All');
   const revealRef = useScrollReveal(0.08);
+
+  useEffect(() => {
+    if (selectedPatent || selectedItem) {
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.stop();
+      }
+      document.body.style.overflow = 'hidden';
+      const onEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setSelectedPatent(false);
+          setSelectedItem(null);
+        }
+      };
+      window.addEventListener('keydown', onEsc);
+      return () => {
+        if (typeof window !== 'undefined' && (window as any).__lenis) {
+          (window as any).__lenis.start();
+        }
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', onEsc);
+      };
+    } else {
+      if (typeof window !== 'undefined' && (window as any).__lenis) {
+        (window as any).__lenis.start();
+      }
+      document.body.style.overflow = '';
+    }
+  }, [selectedPatent, selectedItem]);
 
   const stats = [
     { label: 'CASH PRIZES WON', val: '₹1.5L+', sub: 'National Circuit' },
@@ -264,10 +293,10 @@ export const AchievementsSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Patent Dossier Lightbox */}
-      {selectedPatent && (
+      {/* Patent Dossier Lightbox — Rendered via createPortal */}
+      {selectedPatent && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#08080A]/90 backdrop-blur-[20px] animate-in fade-in duration-200"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-[#08080A]/90 backdrop-blur-[24px] animate-in fade-in duration-200"
           onClick={() => setSelectedPatent(false)}
         >
           <div
@@ -343,13 +372,14 @@ export const AchievementsSection: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* General Achievement Details Modal */}
-      {selectedItem && (
+      {/* General Achievement Details Modal — Rendered via createPortal */}
+      {selectedItem && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#08080A]/90 backdrop-blur-[20px] animate-in fade-in duration-200"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-[#08080A]/90 backdrop-blur-[24px] animate-in fade-in duration-200"
           onClick={() => setSelectedItem(null)}
         >
           <div
@@ -394,7 +424,8 @@ export const AchievementsSection: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );

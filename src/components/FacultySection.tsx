@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { BookOpen, FlaskConical, ArrowUpRight, GraduationCap, Shield, Cpu } from 'lucide-react';
 import { OptimizedImage } from './OptimizedImage';
 import { useScrollReveal } from './useScrollReveal';
@@ -54,20 +54,22 @@ export const FacultySection: React.FC = () => {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
           <div className="reveal max-w-[620px]">
-            <div className="inline-flex items-center gap-2.5 rounded-full bg-[rgba(255,74,21,0.08)] border border-[rgba(255,74,21,0.18)] px-3.5 py-1.5 backdrop-blur-xl">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)]" />
-              <span className="text-[10.5px] font-mono tracking-[0.16em] font-bold text-[#FF4A15]">05 — ACADEMIC BOARD & ADVISORS</span>
+            <div className="section-eyebrow-hud">
+              <Shield className="w-3.5 h-3.5 text-[#FF4A15]" /> 07 — ACADEMIC BOARD &amp; ADVISORS
+              <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-2.5 border-l border-[rgba(255,74,21,0.22)] text-white/40 tracking-[0.08em] normal-case">
+                ATELIER DOSSIERS · PIET ECE
+              </span>
             </div>
-            <h2 className="mt-5 font-display font-[800] tracking-[-0.05em] leading-[0.88] text-[32px] sm:text-[42px] lg:text-[52px] text-[#F5F3EF]">
-              Faculty <span className="font-serif italic font-[400] tracking-[-0.04em] text-[#FF4A15]">leadership</span>
-              <span className="block text-white/90"> &amp; labs.</span>
+            <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.88] text-[34px] sm:text-[44px] lg:text-[52px] text-[#F5F3EF]">
+              Faculty <span className="font-['Instrument_Serif'] italic font-[400] text-[#FF4A15]">leadership</span>
+              <span className="block text-white/90"> &amp; research labs.</span>
             </h2>
-            <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/35">
+            <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
               <span className="h-px w-8 bg-white/15" />
-              <span>ATELIER DOSSIERS — PRINCIPAL INVESTIGATORS — PIET ECE</span>
+              <span>PRINCIPAL INVESTIGATORS &amp; LAB DIRECTORS · PIET AUTONOMOUS</span>
             </div>
           </div>
-          <p className="reveal stagger-2 max-w-[360px] text-[13px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/30 pl-4">
+          <p className="reveal stagger-2 max-w-[380px] text-[13.5px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/40 pl-4">
             Academic mentors directing research laboratories, patent filings and the atelier&apos;s scholarly rigour — each dossier is a lab in itself.
           </p>
         </div>
