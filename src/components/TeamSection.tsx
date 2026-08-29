@@ -407,8 +407,8 @@ export const TeamSection: React.FC = () => {
                   className="group relative flex flex-col sm:flex-row sm:items-center gap-4 px-5 sm:px-6 py-4 hover:bg-white/[0.03] cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="relative w-[60px] h-[60px] rounded-[16px] overflow-hidden bg-white/[0.06] border border-white/[0.08] shrink-0 group-hover:border-[#FF4A15]/40 transition-colors">
-                      <OptimizedImage src={member.image} alt={member.name} className="w-full h-full object-cover" wrapperClassName="w-full h-full" />
+                    <div className="relative w-[60px] h-[72px] rounded-[16px] overflow-hidden bg-white/[0.06] border border-white/[0.08] shrink-0 group-hover:border-[#FF4A15]/40 transition-colors">
+                      <OptimizedImage src={member.image} alt={member.name} className="w-full h-full object-cover object-[center_10%]" wrapperClassName="w-full h-full" />
                       <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full border border-white/20 ${isSpace ? 'bg-[#F5F3EF]' : 'bg-[#FF4A15] shadow-[0_0_8px_rgba(255,74,21,0.6)]'}`} />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -453,21 +453,27 @@ export const TeamSection: React.FC = () => {
                 <div
                   key={member.name}
                   onClick={() => { soundFx.playLaser(); setSelectedMember(member); }}
-                  className="group relative bg-[#0F0F11] border border-white/[0.08] rounded-[24px] p-5 flex flex-col items-center text-center gap-3 cursor-pointer hover:border-[#FF4A15]/30 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 shadow-lg"
+                  className="group relative bg-[#0F0F11] border border-white/[0.08] rounded-[24px] p-4 sm:p-5 flex flex-col items-center text-center gap-3 cursor-pointer hover:border-[#FF4A15]/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 shadow-lg"
                 >
                   <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-[#FF4A15]/40 transition-colors" />
 
                   {/* Council dot */}
                   <span
-                    className={`absolute top-3.5 right-3.5 w-2.5 h-2.5 rounded-full border border-white/20 ${
+                    className={`absolute top-3.5 right-3.5 z-10 w-2.5 h-2.5 rounded-full border border-white/20 ${
                       isSpace ? 'bg-[#F5F3EF] shadow-[0_0_10px_rgba(245,243,239,0.35)]' : 'bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)]'
                     }`}
                     title={member.council}
                   />
 
-                  {/* Avatar */}
-                  <div className="relative w-[84px] h-[84px] rounded-[20px] overflow-hidden bg-white/[0.06] border border-white/10 group-hover:border-[#FF4A15]/30 transition-colors shadow-inner shrink-0">
-                    <OptimizedImage src={member.image} alt={member.name} className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500" wrapperClassName="w-full h-full" />
+                  {/* Portrait Showcase - Full visible upper body */}
+                  <div className="relative w-full aspect-[4/4.8] rounded-[20px] overflow-hidden bg-[#050507] border border-white/10 group-hover:border-[#FF4A15]/40 transition-colors shadow-inner shrink-0">
+                    <OptimizedImage
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full object-cover object-[center_10%] group-hover:scale-[1.05] transition-transform duration-500"
+                      wrapperClassName="w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11]/80 via-transparent to-transparent opacity-50 group-hover:opacity-30 transition-opacity" />
                   </div>
 
                   {/* Role Stamp */}
@@ -563,7 +569,7 @@ export const TeamSection: React.FC = () => {
               </div>
 
               {/* The Hero Cutout / Portrait Frame with dynamic entrance */}
-              <div className="relative my-6 group">
+              <div className="relative my-4 group flex flex-col items-center">
                 {/* Cybernetic Frame Ring */}
                 <div className="absolute -inset-3 rounded-[32px] border border-white/10 border-dashed animate-[spin_25s_linear_infinite] pointer-events-none opacity-60" />
                 
@@ -572,22 +578,22 @@ export const TeamSection: React.FC = () => {
                   selectedMember.council === 'SPACE' ? 'bg-gradient-to-b from-[#3b82f6]/30 to-transparent' : 'bg-gradient-to-b from-[#FF4A15]/35 to-transparent'
                 }`} />
 
-                {/* Member Cutout / Image */}
-                <div className="relative w-[190px] h-[230px] sm:w-[220px] sm:h-[260px] md:w-[240px] md:h-[290px] rounded-[24px] overflow-hidden bg-[#050507] border-2 border-white/20 shadow-[0_20px_48px_rgba(0,0,0,0.8)] animate-in slide-in-from-left duration-500">
+                {/* Member Cutout / Image - Full visible upper body */}
+                <div className="relative w-[210px] h-[280px] sm:w-[240px] sm:h-[320px] md:w-[260px] md:h-[350px] rounded-[24px] overflow-hidden bg-[#050507] border-2 border-white/20 shadow-[0_20px_48px_rgba(0,0,0,0.8)] animate-in slide-in-from-left duration-500">
                   <img
                     src={selectedMember.image}
                     alt={selectedMember.name}
-                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    className="w-full h-full object-cover object-[center_10%] transition-transform duration-700 group-hover:scale-105"
                   />
-                  {/* Subtle Lighting Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#08080A]/90 via-transparent to-transparent pointer-events-none" />
+                  {/* Soft Lighting Vignette */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                </div>
 
-                  {/* Cutout Bottom Label */}
-                  <div className="absolute bottom-2.5 inset-x-2.5 px-3 py-1.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 text-center shadow-lg">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.12em] font-bold text-white line-clamp-1">
-                      {selectedMember.role}
-                    </span>
-                  </div>
+                {/* Cutout Bottom Label (below image, does not cover body) */}
+                <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-center shadow-lg">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.12em] font-bold text-white">
+                    {selectedMember.role}
+                  </span>
                 </div>
               </div>
 
