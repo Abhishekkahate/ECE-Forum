@@ -1052,7 +1052,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <div className="flex flex-wrap gap-1.5 mt-2">
                                 {PRESET_BANNERS.map((p) => (
                                   <button
-                                    key={p.id}
+                                    key={p.label}
                                     type="button"
                                     onClick={() => setNewEvent({ ...newEvent, image: p.url })}
                                     className={`px-2.5 py-1 rounded-full text-[11px] border ${
