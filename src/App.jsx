@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lenis from 'lenis';
 import {
   Hexagon, Activity, Layers, Calendar, Image as ImageIcon,
   Trophy, BookOpen, Users, Send, Search, Command, ArrowUp,
-  Check, Sparkles
+  Check, Sparkles, ExternalLink, Ticket, Shield
 } from 'lucide-react';
 import { forumApi, DEFAULT_HERO_CONFIG } from './services/api';
+import { soundFx } from './utils/audio';
 import { RegisterPage } from './pages/RegisterPage';
 import { AdminPage } from './pages/AdminPage';
 import DeveloperPage from './pages/DeveloperPage';
@@ -20,6 +21,9 @@ import { DEFAULT_GALLERY_ITEMS } from './components/GallerySection';
 // --- MOBILE FLOATING GLASS DOCK (Mobile Bottom Quick Bar) ---
 function MobileDock() {
   const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const items = [
     { id: '#hero', label: 'Home', icon: Hexagon },
     { id: '#about', label: 'Atelier', icon: Layers },
@@ -29,15 +33,38 @@ function MobileDock() {
   ];
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 300);
+    const onScroll = () => setVisible(window.scrollY > 250);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const go = (id) => {
+  const go = (targetId) => {
     try { navigator.vibrate?.(8); } catch {}
-    document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' });
+    soundFx.playClick();
+
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        const el = document.querySelector(targetId);
+        if (el) {
+          if (window.__lenis) {
+            window.__lenis.scrollTo(el, { offset: -70, duration: 1.15 });
+          } else {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 180);
+    } else {
+      const el = document.querySelector(targetId);
+      if (el) {
+        if (window.__lenis) {
+          window.__lenis.scrollTo(el, { offset: -70, duration: 1.15 });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
   };
 
   return (
@@ -50,7 +77,7 @@ function MobileDock() {
       }}
     >
       <nav
-        className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full bg-[rgba(8,12,18,0.9)] backdrop-blur-3xl border border-white/[0.1] shadow-glass-xl"
+        className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full bg-[rgba(8,12,18,0.92)] backdrop-blur-3xl border border-white/[0.12] shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
         aria-label="Quick navigation"
       >
         {items.map((it) => {
@@ -66,11 +93,16 @@ function MobileDock() {
             </button>
           );
         })}
-        <span className="w-px h-5 bg-white/12 mx-0.5" />
+        <span className="w-px h-5 bg-white/15 mx-0.5" />
         <button
           onClick={() => {
             try { navigator.vibrate?.(8); } catch {}
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            soundFx.playClick();
+            if (window.__lenis) {
+              window.__lenis.scrollTo(0, { duration: 1.2 });
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }}
           aria-label="Back to top"
           className="w-10 h-10 rounded-full grid place-items-center text-[#FF4A15] hover:bg-white/10 transition-colors"
@@ -82,35 +114,78 @@ function MobileDock() {
   );
 }
 
-// --- COMMAND PALETTE (âŒ˜K / Ctrl+K) ---
+// --- COMMAND PALETTE (Ctrl+K / ⌘K) ---
 function CommandPalette({ open, setOpen }) {
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
 
   const items = [
-    { id: '#hero', label: 'Overview â€” Hero & Silicon Core', icon: Hexagon, kbd: '0' },
-    { id: '#about', label: 'Dual Council â€” SPACE Ã— SINC', icon: Layers, kbd: '1' },
-    { id: '#stats', label: 'Department Telemetry â€” Metrics', icon: Activity, kbd: '2' },
-    { id: '#events', label: 'Events & Registration â€” Live Calendar', icon: Calendar, kbd: '3' },
-    { id: '#gallery', label: 'Visual Archive â€” Labs & Hackathons', icon: ImageIcon, kbd: '4' },
-    { id: '#achievements', label: 'Prestige â€” Patents & Trophies', icon: Trophy, kbd: '5' },
-    { id: '#faculty', label: 'Academic Board â€” Faculty Leadership', icon: BookOpen, kbd: '6' },
-    { id: '#team', label: 'Command Council â€” 30 Student Leaders', icon: Users, kbd: '7' },
-    { id: '#contact', label: 'Dispatch & Coordinates â€” Contact', icon: Send, kbd: '8' },
+    { id: '#hero', label: 'Overview — Hero & Silicon Core', category: 'Section', icon: Hexagon, kbd: '0' },
+    { id: '#about', label: 'Dual Council — SPACE × SINC', category: 'Section', icon: Layers, kbd: '1' },
+    { id: '#stats', label: 'Department Telemetry — Metrics', category: 'Section', icon: Activity, kbd: '2' },
+    { id: '#events', label: 'Events & Registration — Live Calendar', category: 'Section', icon: Calendar, kbd: '3' },
+    { id: '#gallery', label: 'Visual Archive — Labs & Hackathons', category: 'Section', icon: ImageIcon, kbd: '4' },
+    { id: '#achievements', label: 'Prestige — Patents & Trophies', category: 'Section', icon: Trophy, kbd: '5' },
+    { id: '#faculty', label: 'Academic Board — Faculty Leadership', category: 'Section', icon: BookOpen, kbd: '6' },
+    { id: '#team', label: 'Command Council — 30 Student Leaders', category: 'Section', icon: Users, kbd: '7' },
+    { id: '#contact', label: 'Dispatch & Coordinates — Contact', category: 'Section', icon: Send, kbd: '8' },
+    { id: '/register', label: 'Registration Portal — Passes & Booking', category: 'Portal', icon: Ticket, kbd: 'R' },
+    { id: '/admin', label: 'Admin Command Center — Roster & Config', category: 'Portal', icon: Shield, kbd: 'A' },
+    { id: '/developer', label: 'Developer Specs & Architectural Dossier', category: 'Portal', icon: Sparkles, kbd: 'D' },
   ];
 
   const filtered = q.trim()
-    ? items.filter((i) => i.label.toLowerCase().includes(q.toLowerCase()))
+    ? items.filter((i) => (i.label + ' ' + i.category).toLowerCase().includes(q.toLowerCase()))
     : items;
 
   useEffect(() => {
     if (open) {
+      soundFx.playClick();
       setTimeout(() => inputRef.current?.focus(), 40);
       setSel(0);
       setQ('');
     }
   }, [open]);
+
+  const executeNavigate = (targetId) => {
+    setOpen(false);
+    soundFx.playSuccess();
+    try { navigator.vibrate?.(8); } catch {}
+
+    if (targetId.startsWith('/')) {
+      navigate(targetId);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        const el = document.querySelector(targetId);
+        if (el) {
+          if (window.__lenis) {
+            window.__lenis.scrollTo(el, { offset: -70, duration: 1.15 });
+          } else {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 180);
+    } else {
+      const el = document.querySelector(targetId);
+      if (el) {
+        if (window.__lenis) {
+          window.__lenis.scrollTo(el, { offset: -70, duration: 1.15 });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -124,43 +199,51 @@ function CommandPalette({ open, setOpen }) {
         setSel((s) => (s - 1 + filtered.length) % filtered.length);
       }
       if (e.key === 'Enter') {
+        e.preventDefault();
         const it = filtered[sel];
-        if (it) {
-          setOpen(false);
-          document.querySelector(it.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (it) executeNavigate(it.id);
+      }
+      if (e.key === 'Escape') {
+        setOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, filtered, sel, setOpen]);
+  }, [open, filtered, sel]);
 
   if (!open) return null;
 
   return (
     <div
-        className="fixed inset-0 z-[110] flex items-start justify-center pt-[12vh] sm:pt-[18vh] p-4 bg-black/80 backdrop-blur-3xl animate-in fade-in duration-150"
+      className="fixed inset-0 z-[110] flex items-start justify-center pt-[10vh] sm:pt-[15vh] p-4 bg-black/80 backdrop-blur-3xl animate-in fade-in duration-150"
       onClick={() => setOpen(false)}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[600px] rounded-[28px] bg-[rgba(10,14,20,0.97)] border border-white/[0.12] shadow-glass-xl overflow-hidden backdrop-blur-3xl"
+        className="relative w-full max-w-[620px] rounded-[28px] bg-[rgba(10,14,20,0.97)] border border-white/[0.14] shadow-[0_24px_80px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-3xl"
       >
-        <div className="flex items-center gap-3 px-5 h-[56px] border-b border-white/10">
-          <Search className="w-4 h-4 text-white/40 shrink-0" />
+        <div className="flex items-center gap-3 px-5 h-[60px] border-b border-white/10 bg-black/40">
+          <Search className="w-4 h-4 text-[#FF4A15] shrink-0" />
           <input
             ref={inputRef}
             value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Jump to sectionâ€¦ (type 'patent', 'team', 'events')"
-            className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/35 font-sans"
+            onChange={(e) => {
+              setQ(e.target.value);
+              setSel(0);
+            }}
+            placeholder="Type to search sections, events, portals... (e.g. 'events', 'admin')"
+            className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/40 font-sans"
           />
-          <span className="hidden sm:inline-flex items-center text-[10.5px] font-mono text-white/40 border border-white/10 rounded-full px-2 py-0.5">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-white/50 border border-white/10 rounded-full px-2 py-0.5 hover:text-white hover:border-white/20 transition-colors"
+          >
             ESC
-          </span>
+          </button>
         </div>
 
-        <div className="p-2 max-h-[50dvh] overflow-y-auto space-y-1">
+        <div className="p-2 max-h-[55dvh] overflow-y-auto space-y-1 custom-scrollbar">
           {filtered.length ? (
             filtered.map((it, idx) => {
               const Icon = it.icon;
@@ -169,37 +252,49 @@ function CommandPalette({ open, setOpen }) {
                 <button
                   key={it.id}
                   onMouseEnter={() => setSel(idx)}
-                  onClick={() => {
-                    setOpen(false);
-                    document.querySelector(it.id)?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className={`w-full text-left flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition-all ${
+                  onClick={() => executeNavigate(it.id)}
+                  className={`w-full text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl transition-all cursor-pointer ${
                     active
-                      ? 'bg-[#FF4A15] text-black font-semibold shadow-sm'
+                      ? 'bg-[#FF4A15] text-black font-semibold shadow-md translate-x-1'
                       : 'text-white/80 hover:bg-white/[0.06]'
                   }`}
                 >
                   <span
-                    className={`w-8 h-8 rounded-xl grid place-items-center border shrink-0 ${
-                      active ? 'bg-black/10 border-black/15 text-black' : 'bg-white/5 border-white/10 text-white/70'
+                    className={`w-8 h-8 rounded-xl grid place-items-center border shrink-0 transition-colors ${
+                      active ? 'bg-black/10 border-black/20 text-black' : 'bg-white/5 border-white/10 text-white/70'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
                   </span>
-                  <span className="flex-1 text-xs sm:text-sm truncate">{it.label}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs sm:text-sm font-medium truncate">{it.label}</div>
+                  </div>
                   <span
-                    className={`hidden sm:inline-flex w-6 h-6 rounded-full border text-[10px] font-mono font-bold items-center justify-center shrink-0 ${
-                      active ? 'border-black/20 text-black' : 'bg-white/5 border-white/10 text-white/35'
+                    className={`hidden sm:inline-flex px-2 py-0.5 rounded-full border text-[9.5px] font-mono font-bold items-center justify-center shrink-0 uppercase ${
+                      active ? 'border-black/30 text-black bg-black/5' : 'bg-white/5 border-white/10 text-white/40'
                     }`}
                   >
-                    {it.kbd}
+                    {it.category}
                   </span>
                 </button>
               );
             })
           ) : (
-            <div className="py-8 text-center text-xs font-mono text-white/40">No sections found for â€œ{q}â€</div>
+            <div className="py-12 text-center text-xs font-mono text-white/40">
+              No matching sections found for "{q}"
+            </div>
           )}
+        </div>
+
+        <div className="px-4 py-2.5 bg-black/60 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-white/40 font-mono">
+          <div className="flex items-center gap-2">
+            <span>↑↓ Navigate</span>
+            <span>·</span>
+            <span>↵ Select</span>
+            <span>·</span>
+            <span>ESC Close</span>
+          </div>
+          <span className="text-[#FF4A15] font-bold">ECE FORUM PORTAL</span>
         </div>
       </div>
     </div>
@@ -432,33 +527,63 @@ export default function App() {
     };
   }, []);
 
-  // Global Keyboard Shortcuts (âŒ˜K, Escape)
+  // Global Keyboard Shortcuts (Ctrl+K, ⌘K, 'K', '/', Escape)
   useEffect(() => {
     const onKey = (e) => {
+      const activeEl = document.activeElement;
+      const isTyping = activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.tagName === 'SELECT' ||
+        activeEl.isContentEditable
+      );
+
+      // Ctrl+K or ⌘K always toggles
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCmdOpen((o) => !o);
+        return;
       }
-      if (e.key === 'Escape' && cmdOpen) setCmdOpen(false);
+
+      // Escape closes
+      if (e.key === 'Escape' && cmdOpen) {
+        setCmdOpen(false);
+        return;
+      }
+
+      // Single 'k' or '/' when not in input field opens palette
+      if (!isTyping && (e.key === 'k' || e.key === 'K' || e.key === '/')) {
+        e.preventDefault();
+        setCmdOpen(true);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [cmdOpen]);
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
 
   return (
     <div className="relative min-h-screen bg-[#030508] text-white selection:bg-[#FF4A15]/30 selection:text-white overflow-x-clip">
       {/* Global Toast Alerts */}
       <GlobalToast toasts={toasts} />
 
-      {/* Floating âŒ˜K Trigger Button for Desktop */}
+      {/* Floating Interactive Navigation Trigger Button */}
       {!cmdOpen && (
         <button
-          onClick={() => setCmdOpen(true)}
-          className="hidden lg:flex fixed bottom-5 left-1/2 -translate-x-1/2 z-30 items-center gap-2 px-4 py-2 rounded-full bg-[rgba(8,12,18,0.9)] border border-white/[0.1] text-xs font-mono text-white/60 hover:text-white hover:border-[#FF4A15]/40 transition-all duration-300 shadow-glass-md backdrop-blur-3xl group"
+          type="button"
+          onClick={() => {
+            soundFx.playClick();
+            setCmdOpen(true);
+          }}
+          aria-label="Open Navigation Command Palette"
+          className="hidden md:inline-flex fixed bottom-5 left-1/2 -translate-x-1/2 z-30 items-center gap-2 px-4 py-2 rounded-full bg-[rgba(8,12,18,0.92)] border border-white/[0.14] text-xs font-mono text-white/80 hover:text-white hover:border-[#FF4A15]/60 hover:bg-[#121620] transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl group cursor-pointer"
         >
-          <Command className="w-3.5 h-3.5 text-[#FF4A15]" />
+          <Command className="w-3.5 h-3.5 text-[#FF4A15] group-hover:rotate-12 transition-transform" />
           <span>Press</span>
-          <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-white font-bold text-[10.5px]">âŒ˜ K</span>
+          <span className="px-2 py-0.5 rounded-full bg-white/10 text-[#00E5CC] font-bold text-[10.5px] border border-white/10 group-hover:bg-[#FF4A15] group-hover:text-black transition-colors">
+            {isMac ? '⌘ K' : 'Ctrl + K'}
+          </span>
           <span>to navigate</span>
         </button>
       )}
