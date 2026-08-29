@@ -64,12 +64,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
   const [isAddingGallery, setIsAddingGallery] = useState(false);
   const [galleryForm, setGalleryForm] = useState({ title: '', category: 'Workshop', type: 'image' as 'image' | 'video', url: '', caption: '' });
-  useEffect(() => { if (Array.isArray(galleryList)) setGalleryDraft(galleryList); }, [galleryList]);
+  const isGalleryModified = useRef(false);
+  useEffect(() => {
+    if (!isGalleryModified.current && Array.isArray(galleryList)) {
+      setGalleryDraft(galleryList);
+    }
+  }, [galleryList]);
 
   // Hero & Flagship Config State
-  const [heroConfigDraft, setHeroConfigDraft] = useState<SiteHeroConfig>(heroConfig);
+  const [heroConfigDraft, setHeroConfigDraft] = useState<SiteHeroConfig>(heroConfig || DEFAULT_HERO_CONFIG);
   const [siteConfigSavedMsg, setSiteConfigSavedMsg] = useState(false);
   const [adminCountdown, setAdminCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: false });
+  const isHeroDraftDirty = useRef(false);
+
+  const updateHeroField = (field: keyof SiteHeroConfig, val: any) => {
+    isHeroDraftDirty.current = true;
+    setHeroConfigDraft((prev) => ({ ...prev, [field]: val }));
+  };
+
+  const applyFlagshipDatePreset = (dateStr: string) => {
+    soundFx.playClick();
+    updateHeroField('flagshipTargetDate', dateStr);
+  };
+
+  const handleSaveHeroConfig = async () => {
+    soundFx.playSuccess();
+    isHeroDraftDirty.current = false;
+    await onUpdateHeroConfig(heroConfigDraft);
+    setSiteConfigSavedMsg(true);
+    setTimeout(() => setSiteConfigSavedMsg(false), 3500);
+  };
 
   // Format date for datetime-local picker
   const getDatetimeLocalValue = (dateStr?: string) => {
@@ -124,8 +148,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   }, [heroConfigDraft.flagshipTargetDate]);
 
   useEffect(() => {
-    if (heroConfig) setHeroConfigDraft(heroConfig);
+    if (!isHeroDraftDirty.current && heroConfig) {
+      setHeroConfigDraft(heroConfig);
+    }
   }, [heroConfig]);
+
+  useEffect(() => {
+    api.getSiteHeroConfig().then((cfg) => {
+      if (cfg && !isHeroDraftDirty.current) {
+        setHeroConfigDraft(cfg);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Passes & Attendee Roster State
   const [passes, setPasses] = useState<EventPass[]>([]);
@@ -438,11 +472,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-  // Flagship date presets
-  const applyFlagshipDatePreset = (presetISO: string) => {
-    soundFx.playClick();
-    setHeroConfigDraft((prev) => ({ ...prev, flagshipTargetDate: presetISO }));
-  };
+
 
   // Filtered passes calculation
   const eventPasses = passes.filter((p) =>
@@ -1710,7 +1740,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Session Badge</span>
                             <input
                               value={heroConfigDraft.heroSession}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, heroSession: e.target.value })}
+                              onChange={(e) => updateHeroField('heroSession', e.target.value)}
                               placeholder="2026—27"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
@@ -1720,7 +1750,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Forum Header Title</span>
                             <input
                               value={heroConfigDraft.heroForumTitle}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, heroForumTitle: e.target.value })}
+                              onChange={(e) => updateHeroField('heroForumTitle', e.target.value)}
                               placeholder="SPACE &times; SINC"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
@@ -1730,7 +1760,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Flagship Main Title</span>
                             <input
                               value={heroConfigDraft.flagshipTitle}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, flagshipTitle: e.target.value })}
+                              onChange={(e) => updateHeroField('flagshipTitle', e.target.value)}
                               placeholder="SPACE & SINC Installation"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
@@ -1740,7 +1770,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Flagship Subtitle</span>
                             <input
                               value={heroConfigDraft.flagshipSubTitle}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, flagshipSubTitle: e.target.value })}
+                              onChange={(e) => updateHeroField('flagshipSubTitle', e.target.value)}
                               placeholder="& TARANG 2K26"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
@@ -1750,7 +1780,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Flagship Description</span>
                             <textarea
                               value={heroConfigDraft.flagshipDescription}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, flagshipDescription: e.target.value })}
+                              onChange={(e) => updateHeroField('flagshipDescription', e.target.value)}
                               rows={2}
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-sans text-xs"
                             />
@@ -1765,7 +1795,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <input
                                 type="datetime-local"
                                 value={getDatetimeLocalValue(heroConfigDraft.flagshipTargetDate)}
-                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, flagshipTargetDate: e.target.value })}
+                                onChange={(e) => updateHeroField('flagshipTargetDate', e.target.value)}
                                 className="w-full px-3.5 py-2 rounded-xl bg-[#121216] border border-white/20 text-white font-mono text-xs focus:border-[#FF4A15] outline-none"
                               />
                             </label>
@@ -1818,7 +1848,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Venue</span>
                             <input
                               value={heroConfigDraft.flagshipTargetVenue}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, flagshipTargetVenue: e.target.value })}
+                              onChange={(e) => updateHeroField('flagshipTargetVenue', e.target.value)}
                               placeholder="AUDITORIUM, PIET"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
@@ -1828,20 +1858,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <span className="text-white/60">Button Call-To-Action</span>
                             <input
                               value={heroConfigDraft.flagshipButtonText}
-                              onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, flagshipButtonText: e.target.value })}
+                              onChange={(e) => updateHeroField('flagshipButtonText', e.target.value)}
                               placeholder="Register for Flagship"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
                           </label>
 
                           <button
-                            onClick={async () => {
-                              soundFx.playSuccess();
-                              await onUpdateHeroConfig(heroConfigDraft);
-                              setSiteConfigSavedMsg(true);
-                              setTimeout(() => setSiteConfigSavedMsg(false), 3000);
-                            }}
-                            className="w-full py-3 rounded-full bg-[#FF4A15] text-white font-bold text-xs shadow-[0_0_25px_rgba(255,74,21,0.35)] hover:bg-white hover:text-black transition-all"
+                            type="button"
+                            onClick={handleSaveHeroConfig}
+                            className="w-full py-3 rounded-full bg-[#FF4A15] text-white font-bold text-xs shadow-[0_0_25px_rgba(255,74,21,0.35)] hover:bg-white hover:text-black transition-all cursor-pointer"
                           >
                             Save Hero &amp; Flagship Live &rarr;
                           </button>
@@ -1954,7 +1980,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                     const reader = new FileReader();
                                     reader.onload = () => {
                                       if (typeof reader.result === 'string') {
-                                        setHeroConfigDraft((prev) => ({ ...prev, paymentQrImage: reader.result as string }));
+                                        updateHeroField('paymentQrImage', reader.result as string);
                                       }
                                     };
                                     reader.readAsDataURL(file);
@@ -1965,7 +1991,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               {heroConfigDraft.paymentQrImage && (
                                 <button
                                   type="button"
-                                  onClick={() => setHeroConfigDraft((prev) => ({ ...prev, paymentQrImage: '' }))}
+                                  onClick={() => updateHeroField('paymentQrImage', '')}
                                   className="px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors"
                                 >
                                   Remove
@@ -1980,7 +2006,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <span className="text-white/60">Official Council UPI ID</span>
                               <input
                                 value={heroConfigDraft.paymentUpiId || ''}
-                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, paymentUpiId: e.target.value })}
+                                onChange={(e) => updateHeroField('paymentUpiId', e.target.value)}
                                 placeholder="pieteceforum@okhdfcbank"
                                 className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-mono"
                               />
@@ -1990,7 +2016,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <span className="text-white/60">Payee Account / Display Name</span>
                               <input
                                 value={heroConfigDraft.paymentPayeeName || ''}
-                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, paymentPayeeName: e.target.value })}
+                                onChange={(e) => updateHeroField('paymentPayeeName', e.target.value)}
                                 placeholder="PIET ECE COUNCIL"
                                 className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-mono"
                               />
@@ -2000,7 +2026,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <span className="text-white/60">Payment Note &amp; Instructions</span>
                               <textarea
                                 value={heroConfigDraft.paymentBankDetails || ''}
-                                onChange={(e) => setHeroConfigDraft({ ...heroConfigDraft, paymentBankDetails: e.target.value })}
+                                onChange={(e) => updateHeroField('paymentBankDetails', e.target.value)}
                                 rows={2}
                                 placeholder="Scan using Google Pay, PhonePe, Paytm, or any UPI app and upload screenshot below."
                                 className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-sans text-xs"
@@ -2010,12 +2036,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <div className="pt-2 flex justify-end">
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  soundFx.playSuccess();
-                                  await onUpdateHeroConfig(heroConfigDraft);
-                                  setSiteConfigSavedMsg(true);
-                                  setTimeout(() => setSiteConfigSavedMsg(false), 3000);
-                                }}
+                                onClick={handleSaveHeroConfig}
                                 className="px-6 py-2.5 rounded-full bg-[#00E5CC] text-black font-bold text-xs hover:bg-white transition-all shadow-[0_0_20px_rgba(0,229,204,0.3)] cursor-pointer"
                               >
                                 Save Payment Settings &rarr;

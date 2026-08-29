@@ -366,31 +366,43 @@ export default function App() {
         ]);
 
         if (Array.isArray(remoteEvents)) {
-          setEventsList(
-            remoteEvents.map((e) => ({
-              id: e.id,
-              title: e.title,
-              category: e.category,
-              status: e.status,
-              date: e.date,
-              time: e.time || '10:00 AM IST',
-              venue: e.venue,
-              description: e.description,
-              badge: e.badge || 'EVENT',
-              price: Number(e.price) || 0,
-              totalSeats: e.totalSeats || 100,
-              seatsRemaining: Math.floor((e.totalSeats || 100) * 0.4),
-              image: e.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80',
-              participationType: e.participationType || 'both',
-              minTeamSize: e.minTeamSize || 2,
-              maxTeamSize: e.maxTeamSize || 5,
-              requiredTeamSize: e.requiredTeamSize || undefined,
-            }))
-          );
+          const formatted = remoteEvents.map((e) => ({
+            id: e.id,
+            title: e.title,
+            category: e.category,
+            status: e.status,
+            date: e.date,
+            time: e.time || '10:00 AM IST',
+            venue: e.venue,
+            description: e.description,
+            badge: e.badge || 'EVENT',
+            price: Number(e.price) || 0,
+            totalSeats: e.totalSeats || 100,
+            seatsRemaining: Math.floor((e.totalSeats || 100) * 0.4),
+            image: e.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80',
+            participationType: e.participationType || 'both',
+            minTeamSize: e.minTeamSize || 2,
+            maxTeamSize: e.maxTeamSize || 5,
+            requiredTeamSize: e.requiredTeamSize || undefined,
+            paymentQr: e.paymentQr || undefined,
+            upiId: e.upiId || undefined,
+            payeeName: e.payeeName || undefined,
+            paymentInstructions: e.paymentInstructions || undefined,
+          }));
+          setEventsList((prev) => (JSON.stringify(prev) === JSON.stringify(formatted) ? prev : formatted));
         }
-        if (typeof remoteAnn === 'string' && remoteAnn) setAnnouncement(remoteAnn);
-        if (remoteHero && typeof remoteHero === 'object') setHeroConfig((prev) => ({ ...prev, ...remoteHero }));
-        if (Array.isArray(remoteGallery) && remoteGallery.length) setGalleryList(remoteGallery);
+        if (typeof remoteAnn === 'string' && remoteAnn) {
+          setAnnouncement((prev) => (prev === remoteAnn ? prev : remoteAnn));
+        }
+        if (remoteHero && typeof remoteHero === 'object') {
+          setHeroConfig((prev) => {
+            const next = { ...prev, ...remoteHero };
+            return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+          });
+        }
+        if (Array.isArray(remoteGallery) && remoteGallery.length) {
+          setGalleryList((prev) => (JSON.stringify(prev) === JSON.stringify(remoteGallery) ? prev : remoteGallery));
+        }
       } catch (err) {
         console.warn('Backend sync note:', err);
       }
