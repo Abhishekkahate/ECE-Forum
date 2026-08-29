@@ -207,7 +207,7 @@ export const AchievementsSection: React.FC = () => {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full bg-[#0F0F11] border border-white/[0.06] w-fit mb-8 reveal">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.06] w-full sm:w-fit mb-8 reveal overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap">
           {(['All', 'Competition', 'Patent', 'Academic', 'Placement'] as const).map((cat) => {
             const count = cat === 'All' ? items.length : items.filter((i) => i.category === cat).length;
             const active = activeCategory === cat;
@@ -218,7 +218,7 @@ export const AchievementsSection: React.FC = () => {
                   soundFx.playClick();
                   setActiveCategory(cat);
                 }}
-                className={`px-4 py-2 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                className={`px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs font-mono transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                   active
                     ? 'bg-[#FF4A15] text-white font-bold shadow-[0_4px_14px_rgba(255,74,21,0.35)]'
                     : 'text-white/50 hover:text-white'

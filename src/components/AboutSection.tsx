@@ -94,12 +94,12 @@ export const AboutSection: React.FC = () => {
           </div>
 
         {/* Council Interactive Switcher */}
-        <div className="flex justify-center sm:justify-start mb-8 reveal">
-          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-full bg-[#0F0F11] border border-white/[0.08] backdrop-blur-xl">
+        <div className="flex justify-start mb-8 reveal overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.08] backdrop-blur-xl shrink-0">
             {[
-              { id: 'both', label: 'Dual Council Architecture', icon: Layers },
-              { id: 'space', label: 'SPACE (Academic & Research)', icon: BookOpen },
-              { id: 'sinc', label: 'SINC (Hardware & Innovation)', icon: Cpu },
+              { id: 'both', label: 'Dual Council', fullLabel: 'Dual Council Architecture', icon: Layers },
+              { id: 'space', label: 'SPACE Council', fullLabel: 'SPACE (Academic & Research)', icon: BookOpen },
+              { id: 'sinc', label: 'SINC Council', fullLabel: 'SINC (Hardware & Innovation)', icon: Cpu },
             ].map((tab) => {
               const Icon = tab.icon;
               const active = activeCouncilTab === tab.id;
@@ -110,14 +110,15 @@ export const AboutSection: React.FC = () => {
                     soundFx.playClick();
                     setActiveCouncilTab(tab.id as any);
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs font-mono transition-all cursor-pointer whitespace-nowrap ${
                     active
                       ? 'bg-[#FF4A15] text-white font-bold shadow-[0_4px_16px_rgba(255,74,21,0.35)]'
                       : 'text-white/50 hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">{tab.fullLabel}</span>
+                  <span className="sm:hidden">{tab.label}</span>
                 </button>
               );
             })}

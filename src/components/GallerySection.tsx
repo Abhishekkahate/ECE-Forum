@@ -202,7 +202,7 @@ export const GallerySection: React.FC<{ galleryItems?: GalleryItem[] }> = ({ gal
 
         {/* Category Filters */}
         <div className="reveal stagger-1 flex flex-wrap items-center justify-between gap-3 mb-8">
-          <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full bg-[#0F0F11] border border-white/[0.06]">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.06] w-full sm:w-fit overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap">
             {categories.map((cat) => {
               const count = cat === 'All' ? activeItems.length : activeItems.filter((i) => i.category === cat).length;
               const isActive = activeCategory === cat;
@@ -210,7 +210,7 @@ export const GallerySection: React.FC<{ galleryItems?: GalleryItem[] }> = ({ gal
                 <button
                   key={cat}
                   onClick={() => { soundFx.playClick(); setActiveCategory(cat); setLightboxIndex(null); }}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-mono border transition-all duration-300 ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs font-mono border transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer ${
                     isActive
                       ? 'bg-[#FF4A15] text-white border-[#FF4A15] font-bold shadow-[0_6px_18px_rgba(255,74,21,0.35)]'
                       : 'bg-transparent border-transparent text-white/50 hover:text-white hover:bg-white/[0.06]'

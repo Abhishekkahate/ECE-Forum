@@ -235,14 +235,14 @@ export const TeamSection: React.FC = () => {
 
         {/* Primary Council Navigation Bar */}
         <div className="reveal mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2 rounded-[22px] bg-[#0F0F11] border border-white/[0.08] backdrop-blur-2xl">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap w-full sm:w-auto">
             <button
               onClick={() => {
                 soundFx.playClick();
                 setCouncilTab('All');
                 setSubWingFilter('All Wings');
               }}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 councilTab === 'All'
                   ? 'bg-[#FF4A15] text-white shadow-[0_4px_20px_rgba(255,74,21,0.4)]'
                   : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
@@ -261,7 +261,7 @@ export const TeamSection: React.FC = () => {
                 setCouncilTab('SPACE');
                 setSubWingFilter('All Wings');
               }}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 councilTab === 'SPACE'
                   ? 'bg-[#F5F3EF] text-[#08080A] shadow-[0_4px_16px_rgba(245,243,239,0.2)]'
                   : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
@@ -280,7 +280,7 @@ export const TeamSection: React.FC = () => {
                 setCouncilTab('SINC');
                 setSubWingFilter('All Wings');
               }}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 councilTab === 'SINC'
                   ? 'bg-[#FF4A15] text-white shadow-[0_4px_20px_rgba(255,74,21,0.4)]'
                   : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
@@ -361,7 +361,7 @@ export const TeamSection: React.FC = () => {
         </div>
 
         {/* Sub-Wing Filters */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-full bg-[#0F0F11] border border-white/[0.06] w-fit mb-8 reveal">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.06] w-full sm:w-fit mb-8 reveal overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap">
           {subWings.map((w) => {
             const active = subWingFilter === w || (w === 'All Wings' && subWingFilter === 'All');
             return (
@@ -371,7 +371,7 @@ export const TeamSection: React.FC = () => {
                   soundFx.playClick();
                   setSubWingFilter(w);
                 }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl sm:rounded-full text-xs font-mono transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                   active
                     ? 'bg-[#FF4A15] text-white font-bold shadow-md'
                     : 'text-white/50 hover:text-white'
@@ -548,11 +548,11 @@ export const TeamSection: React.FC = () => {
             </button>
 
             {/* ── LEFT COLUMN: Animated Member Cutout & Stage ── */}
-            <div className="md:w-[380px] lg:w-[410px] shrink-0 relative overflow-hidden bg-gradient-to-b from-[#18181F] via-[#101014] to-[#08080A] border-b md:border-b-0 md:border-r border-white/[0.08] p-6 sm:p-8 flex flex-col justify-between items-center text-center">
+            <div className="md:w-[380px] lg:w-[410px] shrink-0 relative overflow-hidden bg-gradient-to-b from-[#18181F] via-[#101014] to-[#08080A] border-b md:border-b-0 md:border-r border-white/[0.08] p-4 sm:p-6 md:p-8 flex flex-col justify-between items-center text-center">
               {/* Glowing Aura / Holographic Grid Background */}
               <div className="absolute inset-0 editorial-grid opacity-[0.08] pointer-events-none" />
               <div
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] rounded-full blur-[70px] pointer-events-none opacity-40 transition-all duration-700 ${
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[340px] h-[300px] sm:h-[340px] rounded-full blur-[70px] pointer-events-none opacity-40 transition-all duration-700 ${
                   selectedMember.council === 'SPACE' ? 'bg-[#3b82f6]/30' : 'bg-[#FF4A15]/40'
                 }`}
               />
@@ -569,17 +569,17 @@ export const TeamSection: React.FC = () => {
               </div>
 
               {/* The Hero Cutout / Portrait Frame with dynamic entrance */}
-              <div className="relative my-4 group flex flex-col items-center">
+              <div className="relative my-3 sm:my-4 group flex flex-col items-center">
                 {/* Cybernetic Frame Ring */}
-                <div className="absolute -inset-3 rounded-[32px] border border-white/10 border-dashed animate-[spin_25s_linear_infinite] pointer-events-none opacity-60" />
+                <div className="absolute -inset-2.5 sm:-inset-3 rounded-[28px] sm:rounded-[32px] border border-white/10 border-dashed animate-[spin_25s_linear_infinite] pointer-events-none opacity-60" />
                 
                 {/* Glow Backdrop */}
-                <div className={`absolute -inset-1 rounded-[28px] blur-md opacity-75 transition-colors ${
+                <div className={`absolute -inset-1 rounded-[24px] sm:rounded-[28px] blur-md opacity-75 transition-colors ${
                   selectedMember.council === 'SPACE' ? 'bg-gradient-to-b from-[#3b82f6]/30 to-transparent' : 'bg-gradient-to-b from-[#FF4A15]/35 to-transparent'
                 }`} />
 
                 {/* Member Cutout / Image - Full visible upper body */}
-                <div className="relative w-[210px] h-[280px] sm:w-[240px] sm:h-[320px] md:w-[260px] md:h-[350px] rounded-[24px] overflow-hidden bg-[#050507] border-2 border-white/20 shadow-[0_20px_48px_rgba(0,0,0,0.8)] animate-in slide-in-from-left duration-500">
+                <div className="relative w-[180px] h-[240px] sm:w-[220px] sm:h-[290px] md:w-[260px] md:h-[350px] rounded-[22px] sm:rounded-[24px] overflow-hidden bg-[#050507] border-2 border-white/20 shadow-[0_20px_48px_rgba(0,0,0,0.8)] animate-in slide-in-from-left duration-500">
                   <img
                     src={selectedMember.image}
                     alt={selectedMember.name}
@@ -590,28 +590,28 @@ export const TeamSection: React.FC = () => {
                 </div>
 
                 {/* Cutout Bottom Label (below image, does not cover body) */}
-                <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-center shadow-lg">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.12em] font-bold text-white">
+                <div className="mt-2.5 sm:mt-3 inline-flex items-center gap-1.5 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-center shadow-lg">
+                  <span className="text-[9.5px] sm:text-[10px] font-mono uppercase tracking-[0.12em] font-bold text-white">
                     {selectedMember.role}
                   </span>
                 </div>
               </div>
 
               {/* Prev / Next Quick Nav Controls */}
-              <div className="w-full pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 relative z-10">
+              <div className="w-full pt-2.5 sm:pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 relative z-10">
                 <button
                   onClick={handlePrevMember}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/[0.12] text-xs font-mono transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/[0.12] text-xs font-mono transition-all cursor-pointer"
                   title="Previous Leader (←)"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Prev
                 </button>
-                <span className="text-[9.5px] font-mono text-white/30 tracking-[0.12em]">
+                <span className="text-[9px] sm:text-[9.5px] font-mono text-white/30 tracking-[0.12em]">
                   LEADERSHIP ROSTER
                 </span>
                 <button
                   onClick={handleNextMember}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/[0.12] text-xs font-mono transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/[0.12] text-xs font-mono transition-all cursor-pointer"
                   title="Next Leader (→)"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
@@ -620,7 +620,7 @@ export const TeamSection: React.FC = () => {
             </div>
 
             {/* ── RIGHT COLUMN: High-Tech Leader Intelligence Dossier ── */}
-            <div className="flex-1 p-6 sm:p-8 md:p-9 flex flex-col justify-between space-y-6 animate-in slide-in-from-right duration-500 delay-75">
+            <div className="flex-1 p-5 sm:p-7 md:p-9 flex flex-col justify-between space-y-5 animate-in slide-in-from-right duration-500 delay-75">
               <div>
                 {/* Header Sub-Pills */}
                 <div className="flex flex-wrap items-center gap-2">

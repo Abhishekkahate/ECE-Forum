@@ -344,7 +344,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
 
         {/* Filter & Search */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-8 reveal stagger-2">
-          <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-full bg-[#0F0F11] border border-white/[0.06] w-fit max-w-full">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.06] w-full sm:w-fit overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap">
             {categories.map((cat) => {
               const count =
                 cat === 'All'
@@ -355,7 +355,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 <button
                   key={cat}
                   onClick={() => { soundFx.playClick(); setFilter(cat); }}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-mono border transition-all duration-300 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs font-mono border transition-all duration-300 cursor-pointer shrink-0 whitespace-nowrap ${
                     isActive
                       ? 'bg-[#FF4A15] text-white border-[#FF4A15] font-bold shadow-[0_6px_18px_rgba(255,74,21,0.28)]'
                       : 'bg-transparent border-transparent text-white/50 hover:text-white hover:bg-white/[0.05]'
