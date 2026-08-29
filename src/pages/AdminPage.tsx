@@ -6,7 +6,7 @@ import {
   LogOut, Trash2, Search, Upload, Image as ImageIcon, Sparkles,
   Check, CheckCircle2, Sliders, Edit3, FileDown, Tag, Copy, Activity,
   Eye, ExternalLink, AlertTriangle, X, CheckSquare, Layers, Clock, ShieldCheck, DollarSign,
-  User, Phone, Mail, School, Building2, Download, QrCode
+  User, Phone, Mail, School, Building2, Download, QrCode, Star
 } from 'lucide-react';
 import { AdminLogin } from '../components/AdminLogin';
 import { type EventItem } from '../components/EventsSection';
@@ -28,28 +28,29 @@ interface AdminPageProps {
 }
 
 const PRESET_BANNERS = [
-  { id: 'inst', label: 'Installation Ceremony', url: '/event_images/inst.webp' },
-  { id: 'tarang', label: 'TARANG Tech Fiesta', url: '/event_images/tarang.webp' },
-  { id: 'iot', label: 'Embedded & IoT Lab', url: 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&w=800&q=80' },
-  { id: 'vlsi', label: 'VLSI & Silicon Chip', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80' },
-  { id: 'robotics', label: 'Robotics & AI Lab', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80' },
+  { label: 'Cyber Tech Keynote', url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&q=80' },
+  { label: 'Robotics & Hardware Arena', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&q=80' },
+  { label: 'Cleanroom Semiconductor Lab', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=1200&q=80' },
+  { label: 'Code & Circuit Sprint', url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80' },
+  { label: 'Antenna & RF Microwave Lab', url: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=1200&q=80' },
 ];
 
 const PRESET_GALLERY_IMAGES = [
-  { label: 'Autonomous Robotics', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80', cat: 'Project Expo' },
-  { label: 'PCB Micro-Soldering Lab', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80', cat: 'Workshop' },
-  { label: '24-Hour Hardware Hackathon', url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80', cat: 'Hackathon' },
-  { label: 'Semiconductor Cleanroom', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80', cat: 'Industrial Visit' },
-  { label: 'FPGA Verilog Synthesis', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80', cat: 'Workshop' },
+  { label: 'Autonomous Rover Lab', cat: 'Project Expo', url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80' },
+  { label: 'PCB Surface Soldering', cat: 'Workshop', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&q=80' },
+  { label: 'National Hardware Hackathon', cat: 'Hackathon', url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&q=80' },
+  { label: 'Silicon Cleanroom Tour', cat: 'Industrial Visit', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&q=80' },
+  { label: 'FPGA Verilog Synthesis', cat: 'Workshop', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+  { label: 'LoRa Mesh Drone Field Test', cat: 'Project Expo', url: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=800&q=80' },
 ];
 
 export const AdminPage: React.FC<AdminPageProps> = ({
-  eventsList = [],
+  eventsList,
   onAddEvent,
   onUpdateEvents,
   onUpdateAnnouncement = () => {},
-  currentAnnouncement = 'Registration Open for SPACE & SINC Forum Installation & TARANG 2K26 Fiesta!',
-  heroConfig = DEFAULT_HERO_CONFIG,
+  currentAnnouncement = '',
+  heroConfig,
   onUpdateHeroConfig = () => {},
   galleryList = DEFAULT_GALLERY_ITEMS,
   onUpdateGallery = () => {},
@@ -58,12 +59,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'registrations' | 'coupons' | 'gallery' | 'siteContent' | 'announcements' | 'admins'>('overview');
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('ALL');
   
-  // Gallery state
+  // Gallery state (multi-photo event albums)
   const [galleryDraft, setGalleryDraft] = useState<GalleryItem[]>(galleryList || DEFAULT_GALLERY_ITEMS);
   const [gallerySavedMsg, setGallerySavedMsg] = useState(false);
   const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
   const [isAddingGallery, setIsAddingGallery] = useState(false);
-  const [galleryForm, setGalleryForm] = useState({ title: '', category: 'Workshop', type: 'image' as 'image' | 'video', url: '', caption: '' });
+  const [galleryForm, setGalleryForm] = useState<{
+    title: string;
+    category: string;
+    type: 'image' | 'video';
+    url: string;
+    images: string[];
+    caption: string;
+  }>({
+    title: '',
+    category: 'Workshop',
+    type: 'image',
+    url: '',
+    images: [],
+    caption: '',
+  });
+  const [newPhotoUrlInput, setNewPhotoUrlInput] = useState('');
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const isGalleryModified = useRef(false);
   useEffect(() => {
     if (!isGalleryModified.current && Array.isArray(galleryList)) {
@@ -1568,32 +1585,103 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   {/* GALLERY TAB */}
                   {activeTab === 'gallery' && (
                     <div className="space-y-4">
-                      <div className="flex flex-wrap gap-2">
-                        {PRESET_GALLERY_IMAGES.map((p) => (
+                      {/* Hidden multi-file input */}
+                      <input
+                        type="file"
+                        ref={galleryFileInputRef}
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          soundFx.playClick();
+                          const fileArray = Array.from(files);
+                          let loadedCount = 0;
+                          const newLoaded: string[] = [];
+
+                          fileArray.forEach((file) => {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const result = event.target?.result as string;
+                              if (result) {
+                                newLoaded.push(result);
+                              }
+                              loadedCount++;
+                              if (loadedCount === fileArray.length) {
+                                setGalleryForm((prev) => {
+                                  const combined = [...prev.images, ...newLoaded];
+                                  return {
+                                    ...prev,
+                                    images: combined,
+                                    url: prev.url || combined[0] || '',
+                                  };
+                                });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                          if (e.target) e.target.value = '';
+                        }}
+                      />
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap gap-2">
+                          {PRESET_GALLERY_IMAGES.map((p) => (
+                            <button
+                              key={p.url}
+                              onClick={() => {
+                                setGalleryForm({
+                                  title: p.label,
+                                  category: p.cat,
+                                  type: 'image',
+                                  url: p.url,
+                                  images: [p.url],
+                                  caption: p.label,
+                                });
+                                setIsAddingGallery(true);
+                              }}
+                              className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono hover:bg-[#FF4A15] hover:text-white transition-colors cursor-pointer"
+                            >
+                              + {p.label}
+                            </button>
+                          ))}
+                        </div>
+                        {!isAddingGallery && (
                           <button
-                            key={p.url}
+                            type="button"
                             onClick={() => {
-                              setGalleryForm({ title: p.label, category: p.cat, type: 'image', url: p.url, caption: p.label });
+                              soundFx.playClick();
+                              setEditingGalleryId(null);
+                              setGalleryForm({ title: '', category: 'Workshop', type: 'image', url: '', images: [], caption: '' });
                               setIsAddingGallery(true);
                             }}
-                            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono hover:bg-[#FF4A15] hover:text-white transition-colors"
+                            className="px-4 py-2 rounded-full bg-[#FF4A15] text-white text-xs font-mono font-bold hover:bg-[#FF4A15]/80 transition-colors flex items-center gap-1.5 cursor-pointer shadow-lg"
                           >
-                            + {p.label}
+                            <Plus className="w-4 h-4" /> Create Event Album / Photos
                           </button>
-                        ))}
+                        )}
                       </div>
+
                       {isAddingGallery && (
                         <form
                           onSubmit={async (e) => {
                             e.preventDefault();
+                            soundFx.playSuccess();
+                            const allImgs = galleryForm.images.length
+                              ? galleryForm.images
+                              : (galleryForm.url ? [galleryForm.url] : ['https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80']);
+
                             const newItem: GalleryItem = {
-                              id: `ARCH-${Date.now()}`,
-                              title: galleryForm.title || 'Untitled',
+                              id: editingGalleryId || `ARCH-${Date.now()}`,
+                              title: galleryForm.title || 'Untitled Event',
                               category: galleryForm.category,
                               type: galleryForm.type,
-                              url: galleryForm.url || 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80',
+                              url: galleryForm.url || allImgs[0],
+                              images: allImgs,
                               caption: galleryForm.caption || galleryForm.title,
                             };
+
                             let updated: GalleryItem[];
                             if (editingGalleryId) {
                               updated = galleryDraft.map((g) => (g.id === editingGalleryId ? { ...newItem, id: editingGalleryId } : g));
@@ -1604,23 +1692,66 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             setGalleryDraft(updated);
                             await onUpdateGallery(updated);
                             setIsAddingGallery(false);
-                            setGalleryForm({ title: '', category: 'Workshop', type: 'image', url: '', caption: '' });
+                            setGalleryForm({ title: '', category: 'Workshop', type: 'image', url: '', images: [], caption: '' });
                             setGallerySavedMsg(true);
                             setTimeout(() => setGallerySavedMsg(false), 2500);
                           }}
                           autoComplete="off"
-                          className="p-5 rounded-[20px] bg-[#121216] border border-white/10 space-y-3 font-mono"
+                          className="p-5 sm:p-6 rounded-[24px] bg-[#121216] border border-white/10 space-y-4 font-mono shadow-2xl"
                         >
+                          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                            <div className="flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4 text-[#FF4A15]" />
+                              <span className="text-sm font-bold text-white">
+                                {editingGalleryId ? 'Edit Event Album & Photos' : 'Add Single / Multi-Photo Event Gallery'}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-[#00E5CC]">
+                              📷 {galleryForm.images.length} Photos Attached
+                            </span>
+                          </div>
+
+                          {/* Quick Link from Event List */}
+                          <div className="space-y-1">
+                            <label className="text-xs text-white/50">Autofill from Registered Event (Optional)</label>
+                            <select
+                              onChange={(e) => {
+                                const ev = eventsList.find((x) => x.id === e.target.value);
+                                if (ev) {
+                                  setGalleryForm((prev) => {
+                                    const combined = ev.image ? Array.from(new Set([...prev.images, ev.image])) : prev.images;
+                                    return {
+                                      ...prev,
+                                      title: ev.title,
+                                      category: ev.category || 'Workshop',
+                                      caption: `Memories and highlights from ${ev.title}`,
+                                      url: prev.url || ev.image || '',
+                                      images: combined,
+                                    };
+                                  });
+                                }
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white text-xs"
+                            >
+                              <option value="">-- Select an event to autofill name &amp; category --</option>
+                              {eventsList.map((ev) => (
+                                <option key={ev.id} value={ev.id}>
+                                  {ev.title} ({ev.category})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
                           <div className="grid sm:grid-cols-2 gap-3 text-xs">
                             <label className="space-y-1">
-                              <span className="text-white/60">Title</span>
+                              <span className="text-white/60">Event Title *</span>
                               <input
                                 required
                                 autoComplete="off"
                                 spellCheck={false}
                                 value={galleryForm.title}
                                 onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
-                                placeholder="Robotics Expo 2026"
+                                placeholder="e.g. TARANG 2K26 Hardware Hackathon"
                                 className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white"
                               />
                             </label>
@@ -1638,92 +1769,242 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               </select>
                             </label>
                             <label className="space-y-1 sm:col-span-2">
-                              <span className="text-white/60">Image URL</span>
-                              <input
-                                required
-                                autoComplete="off"
-                                spellCheck={false}
-                                value={galleryForm.url}
-                                onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
-                                placeholder="https://images.unsplash.com/..."
-                                className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white"
-                              />
-                            </label>
-                            <label className="space-y-1 sm:col-span-2">
-                              <span className="text-white/60">Caption</span>
+                              <span className="text-white/60">Event Caption / Summary</span>
                               <input
                                 autoComplete="off"
                                 spellCheck={false}
                                 value={galleryForm.caption}
                                 onChange={(e) => setGalleryForm({ ...galleryForm, caption: e.target.value })}
-                                placeholder="Short descriptive caption"
+                                placeholder="Short descriptive highlights or outcomes of the event"
                                 className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white"
                               />
                             </label>
                           </div>
-                          <div className="flex justify-end gap-2">
+
+                          {/* Multi-Photo Upload & Add Section */}
+                          <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <Upload className="w-3.5 h-3.5 text-[#FF4A15]" /> Add Event Photos (Multiple Supported)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => galleryFileInputRef.current?.click()}
+                                className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#FF4A15] hover:text-white border border-white/10 text-xs font-mono text-white transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <Upload className="w-3.5 h-3.5" /> Upload Photos from Device
+                              </button>
+                            </div>
+
+                            {/* Or add via URL */}
+                            <div className="flex gap-2">
+                              <input
+                                value={newPhotoUrlInput}
+                                onChange={(e) => setNewPhotoUrlInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (newPhotoUrlInput.trim()) {
+                                      const urls = newPhotoUrlInput.split(/[\n,]+/).map((u) => u.trim()).filter(Boolean);
+                                      setGalleryForm((prev) => {
+                                        const combined = [...prev.images, ...urls];
+                                        return { ...prev, images: combined, url: prev.url || combined[0] || '' };
+                                      });
+                                      setNewPhotoUrlInput('');
+                                    }
+                                  }
+                                }}
+                                placeholder="Paste image URL (or comma-separated URLs) and press Add"
+                                className="flex-1 px-3 py-2 rounded-xl bg-black border border-white/10 text-white text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (newPhotoUrlInput.trim()) {
+                                    const urls = newPhotoUrlInput.split(/[\n,]+/).map((u) => u.trim()).filter(Boolean);
+                                    setGalleryForm((prev) => {
+                                      const combined = [...prev.images, ...urls];
+                                      return { ...prev, images: combined, url: prev.url || combined[0] || '' };
+                                    });
+                                    setNewPhotoUrlInput('');
+                                  }
+                                }}
+                                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white hover:text-black text-white text-xs font-bold transition-colors cursor-pointer"
+                              >
+                                + Add URL
+                              </button>
+                            </div>
+
+                            {/* Photos Album Grid Preview */}
+                            {galleryForm.images.length > 0 ? (
+                              <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                                <div className="flex items-center justify-between text-[11px] text-white/50">
+                                  <span>Album Photos ({galleryForm.images.length}):</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setGalleryForm((prev) => ({ ...prev, images: [], url: '' }))}
+                                    className="text-[#FF3B30] hover:underline"
+                                  >
+                                    Clear all photos
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 max-h-[220px] overflow-y-auto custom-scrollbar p-1">
+                                  {galleryForm.images.map((imgUrl, pIdx) => {
+                                    const isCover = (galleryForm.url || galleryForm.images[0]) === imgUrl;
+                                    return (
+                                      <div
+                                        key={pIdx}
+                                        className={`group relative rounded-xl overflow-hidden aspect-[4/3] bg-black border-2 transition-all ${
+                                          isCover ? 'border-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.5)]' : 'border-white/10'
+                                        }`}
+                                      >
+                                        <img src={imgUrl} alt={`Photo ${pIdx + 1}`} className="w-full h-full object-cover" />
+                                        {isCover && (
+                                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-[#FF4A15] text-white text-[9px] font-bold flex items-center gap-0.5">
+                                            <Star className="w-2.5 h-2.5 fill-white" /> Cover
+                                          </span>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
+                                          {!isCover && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                soundFx.playClick();
+                                                setGalleryForm((prev) => ({ ...prev, url: imgUrl }));
+                                              }}
+                                              className="px-2 py-0.5 rounded bg-white text-black text-[9.5px] font-bold hover:bg-[#FF4A15] hover:text-white transition-colors"
+                                            >
+                                              Set Cover
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              soundFx.playLaser();
+                                              setGalleryForm((prev) => {
+                                                const filtered = prev.images.filter((_, i) => i !== pIdx);
+                                                return {
+                                                  ...prev,
+                                                  images: filtered,
+                                                  url: prev.url === imgUrl ? (filtered[0] || '') : prev.url,
+                                                };
+                                              });
+                                            }}
+                                            className="px-2 py-0.5 rounded bg-[#FF3B30] text-white text-[9.5px] font-bold hover:bg-white hover:text-[#FF3B30] transition-colors"
+                                          >
+                                            Remove
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="py-6 text-center text-xs text-white/40 border border-dashed border-white/10 rounded-xl">
+                                No photos added yet. Upload files from your device or paste image URLs.
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex justify-end gap-2 pt-2">
                             <button
                               type="button"
                               onClick={() => {
                                 setIsAddingGallery(false);
                                 setEditingGalleryId(null);
                               }}
-                              className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs"
+                              className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs hover:bg-white/10 transition-colors cursor-pointer"
                             >
                               Cancel
                             </button>
-                            <button type="submit" className="px-6 py-2 rounded-full bg-[#FF4A15] text-white font-bold text-xs">
-                              {editingGalleryId ? 'Update' : 'Add'} Photo
+                            <button
+                              type="submit"
+                              className="px-6 py-2 rounded-full bg-[#FF4A15] text-white font-bold text-xs hover:bg-[#FF4A15]/80 transition-colors shadow-lg cursor-pointer"
+                            >
+                              {editingGalleryId ? 'Update Event Album' : 'Save Event Album'}
                             </button>
                           </div>
                         </form>
                       )}
+
                       {gallerySavedMsg && (
                         <div className="p-2.5 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30 text-[#00FF88] text-xs font-mono flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" /> Gallery saved &amp; synchronized live.
+                          <CheckCircle2 className="w-4 h-4" /> Gallery synchronized &amp; updated live.
                         </div>
                       )}
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[520px] overflow-auto p-1">
-                        {galleryDraft.map((g) => (
-                          <div key={g.id} className="group relative rounded-[20px] overflow-hidden bg-[#121216] border border-white/[0.08]">
-                            <img src={g.url} alt={g.title} className="w-full h-36 object-cover" />
-                            <div className="p-3 space-y-0.5 font-mono">
-                              <div className="text-xs font-bold text-white truncate">{g.title}</div>
-                              <div className="text-[10px] text-white/40">{g.category}</div>
+
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-h-[550px] overflow-auto p-1 custom-scrollbar">
+                        {galleryDraft.map((g) => {
+                          const count = g.images && g.images.length ? g.images.length : (g.url ? 1 : 0);
+                          return (
+                            <div key={g.id} className="group relative rounded-[20px] overflow-hidden bg-[#121216] border border-white/[0.08] hover:border-white/20 transition-all">
+                              <div className="relative aspect-[16/10] bg-black">
+                                <img src={g.url} alt={g.title} className="w-full h-full object-cover" />
+                                <div className="absolute top-2 left-2 flex items-center gap-1">
+                                  {count > 1 && (
+                                    <span className="px-2 py-0.5 rounded-full bg-[#FF4A15] text-white text-[10px] font-bold shadow-md flex items-center gap-1">
+                                      📷 {count} Photos
+                                    </span>
+                                  )}
+                                  <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur border border-white/10 text-white/70 text-[10px]">
+                                    {g.category}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="p-3 space-y-1 font-mono">
+                                <div className="text-xs font-bold text-white truncate">{g.title}</div>
+                                <div className="text-[11px] text-white/40 truncate">{g.caption || 'No caption'}</div>
+                              </div>
+                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingGalleryId(g.id);
+                                    setGalleryForm({
+                                      title: g.title,
+                                      category: g.category,
+                                      type: g.type,
+                                      url: g.url,
+                                      images: g.images && g.images.length ? g.images : (g.url ? [g.url] : []),
+                                      caption: g.caption || '',
+                                    });
+                                    setIsAddingGallery(true);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-white text-black grid place-items-center hover:bg-[#FF4A15] hover:text-white transition-colors cursor-pointer shadow-md"
+                                  title="Edit event album"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    soundFx.playLaser();
+                                    const updated = galleryDraft.filter((x) => x.id !== g.id);
+                                    setGalleryDraft(updated);
+                                    await onUpdateGallery(updated);
+                                  }}
+                                  className="w-7 h-7 rounded-full bg-[#FF3B30] text-white grid place-items-center hover:bg-white hover:text-[#FF3B30] border border-white/10 transition-colors cursor-pointer shadow-md"
+                                  title="Delete event album"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
-                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => {
-                                  setEditingGalleryId(g.id);
-                                  setGalleryForm({ title: g.title, category: g.category, type: g.type, url: g.url, caption: g.caption || '' });
-                                  setIsAddingGallery(true);
-                                }}
-                                className="w-7 h-7 rounded-full bg-white text-black grid place-items-center hover:bg-[#FF4A15] hover:text-white transition-colors"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  const updated = galleryDraft.filter((x) => x.id !== g.id);
-                                  setGalleryDraft(updated);
-                                  await onUpdateGallery(updated);
-                                }}
-                                className="w-7 h-7 rounded-full bg-[#FF3B30] text-white grid place-items-center hover:bg-white hover:text-[#FF3B30] border border-white/10"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
+
                       <div className="flex justify-end">
                         <button
+                          type="button"
                           onClick={async () => {
+                            soundFx.playSuccess();
                             await onUpdateGallery(galleryDraft);
                             setGallerySavedMsg(true);
                             setTimeout(() => setGallerySavedMsg(false), 2000);
                           }}
-                          className="px-6 py-2.5 rounded-full bg-white text-black font-mono font-bold text-xs hover:bg-[#FF4A15] hover:text-white transition-colors shadow-lg"
+                          className="px-6 py-2.5 rounded-full bg-white text-black font-mono font-bold text-xs hover:bg-[#FF4A15] hover:text-white transition-colors shadow-lg cursor-pointer"
                         >
                           Publish Gallery Live &rarr;
                         </button>
