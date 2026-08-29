@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Shield, VolumeX, Menu, X, Ticket, LogOut, ChevronDown, ArrowUpRight, Search, Command } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { passService } from '../services/passService';
@@ -159,7 +159,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                     <a
                       key={link.label}
                       href={link.href}
-                      onClick={() => { soundFx.playClick(); setActiveLink(link.href); }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        soundFx.playClick();
+                        setActiveLink(link.href);
+                        const el = document.querySelector(link.href);
+                        if (el) {
+                          if ((window as any).__lenis) {
+                            (window as any).__lenis.scrollTo(el, { offset: -70, duration: 1.15 });
+                          } else {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }
+                      }}
                       aria-current={isActive ? 'page' : undefined}
                       className={`group relative px-2.5 xl:px-3 py-2 rounded-full text-[11px] font-mono tracking-[0.06em] uppercase flex items-center gap-1.5 transition-all ${isActive ? 'text-[#F5F3EF] bg-white/[0.06] border border-white/[0.08]' : 'text-white/50 hover:text-white hover:bg-white/[0.04] border border-transparent'}`}
                     >

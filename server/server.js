@@ -258,12 +258,21 @@ app.get('/api/passes', async (req, res) => {
             userName: p.user_name,
             userEmail: p.user_email,
             userPhoto: p.user_photo,
+            collegeName: p.college_name || 'PIET, Nagpur',
             department: p.department,
             year: p.year,
             phone: p.phone,
+            registrationType: p.registration_type || (p.team_name ? 'team' : 'individual'),
+            teamName: p.team_name || '',
+            teamMembers: p.team_members || [],
             paymentId: p.payment_id,
             amount: Number(p.amount),
+            originalAmount: p.original_amount ? Number(p.original_amount) : Number(p.amount),
+            discountAmount: p.discount_amount ? Number(p.discount_amount) : 0,
+            couponCode: p.coupon_code || '',
             paymentStatus: p.payment_status,
+            paymentScreenshot: p.payment_screenshot || undefined,
+            transactionId: p.transaction_id || undefined,
             status: p.status,
             checkedInAt: p.checked_in_at,
             checkedInBy: p.checked_in_by,
@@ -349,7 +358,7 @@ app.post('/api/passes', async (req, res) => {
 
   if (supabase) {
     try {
-      await supabase.from('passes').insert([
+      await supabase.from('passes').upsert([
         {
           pass_id: newPass.passId,
           event_id: newPass.eventId,
@@ -360,12 +369,21 @@ app.post('/api/passes', async (req, res) => {
           user_name: newPass.userName,
           user_email: newPass.userEmail,
           user_photo: newPass.userPhoto,
+          college_name: newPass.collegeName || 'PIET, Nagpur',
           department: newPass.department,
           year: newPass.year,
           phone: newPass.phone,
+          registration_type: newPass.registrationType || (newPass.teamName ? 'team' : 'individual'),
+          team_name: newPass.teamName || null,
+          team_members: newPass.teamMembers || [],
           payment_id: newPass.paymentId,
           amount: newPass.amount,
-          payment_status: newPass.paymentStatus,
+          original_amount: newPass.originalAmount || newPass.amount,
+          discount_amount: newPass.discountAmount || 0,
+          coupon_code: newPass.couponCode || null,
+          payment_status: newPass.paymentStatus || 'PAID',
+          payment_screenshot: newPass.paymentScreenshot || null,
+          transaction_id: newPass.transactionId || null,
           status: newPass.status,
           checked_in_at: newPass.checkedInAt,
           checked_in_by: newPass.checkedInBy,
@@ -560,6 +578,67 @@ app.post('/api/passes/:passId/toggle-status', async (req, res) => {
   db.passes[passIndex] = pass;
   writeLocalDb(db);
   res.json(pass);
+});
+
+// Delete Pass
+app.delete('/api/passes/:passId', async (req, res) => {
+  const { passId } = req.params;
+  const cleanId = (passId || '').trim();
+
+  if (supabase) {
+    try {
+      await supabase.from('passes').delete().eq('pass_id', cleanId);
+    } catch (err) {
+      console.warn('Supabase pass delete error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  db.passes = (db.passes || []).filter((p) => p.passId.toUpperCase() !== cleanId.toUpperCase());
+  writeLocalDb(db);
+
+  res.json({ success: true, deletedPassId: cleanId });
+});
+
+// ── Hero & Site Content ──────────────────────────────────────────────────
+app.get('/api/site-content', async (req, res) => {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'hero_config')
+        .maybeSingle();
+
+      if (!error && data && data.value) {
+        return res.json(data.value);
+      }
+    } catch (err) {
+      console.warn('Supabase site-content fetch error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  res.json(db.heroConfig || {});
+});
+
+app.post('/api/site-content', async (req, res) => {
+  const heroConfig = req.body;
+  if (supabase) {
+    try {
+      await supabase
+        .from('site_settings')
+        .upsert({ key: 'hero_config', value: heroConfig, updated_at: new Date().toISOString() });
+    } catch (err) {
+      console.warn('Supabase site-content save error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  db.heroConfig = heroConfig;
+  writeLocalDb(db);
+
+  res.json({ success: true, heroConfig });
 });
 
 // ── Announcements ──────────────────────────────────────────────────────────

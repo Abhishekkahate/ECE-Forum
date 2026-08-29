@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, ChevronRight, ShieldCheck, Timer, Share2, Check, Sparkles, ArrowUpRight, Search, Hash, Layers } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { useScrollReveal } from './useScrollReveal';
@@ -21,6 +21,9 @@ export interface EventItem {
   seatsRemaining?: number;
   totalSeats?: number;
   participationType?: 'individual_only' | 'team_only' | 'both';
+  minTeamSize?: number;
+  maxTeamSize?: number;
+  requiredTeamSize?: number;
 }
 
 interface EventsSectionProps {
@@ -43,10 +46,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     if (!str) return Date.now() + 14 * 24 * 60 * 60 * 1000;
     try {
       const normalized = str.includes('+') || str.includes('Z') ? str : `${str}+05:30`;
-      const time = new Date(normalized).getTime();
+      let time = new Date(normalized).getTime();
       if (!isNaN(time)) return time;
-      const fallbackTime = new Date(str).getTime();
-      return !isNaN(fallbackTime) ? fallbackTime : Date.now() + 14 * 24 * 60 * 60 * 1000;
+      time = new Date(str).getTime();
+      return !isNaN(time) ? time : Date.now() + 14 * 24 * 60 * 60 * 1000;
     } catch {
       return Date.now() + 14 * 24 * 60 * 60 * 1000;
     }
@@ -57,7 +60,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
 
   useEffect(() => {
     const calc = () => {
-      const diff = targetDate - Date.now();
+      const currentTarget = parseTargetDate(heroConfig.flagshipTargetDate);
+      const diff = currentTarget - Date.now();
       if (diff > 0) {
         setTimeLeft({
           days: Math.floor(diff / 86400000),
@@ -72,7 +76,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     calc();
     const id = setInterval(calc, 1000);
     return () => clearInterval(id);
-  }, [targetDate]);
+  }, [heroConfig.flagshipTargetDate]);
 
   const activeEvents = eventsList ?? [];
   const filteredEvents = activeEvents.filter((evt) => {

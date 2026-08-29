@@ -41,61 +41,62 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="space-y-6 max-w-md mx-auto py-4">
+    <div className="space-y-6 max-w-md mx-auto py-2">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-lime via-blue-500 to-amber p-0.5 shadow-lime mx-auto flex items-center justify-center">
-          <div className="w-full h-full bg-midnight rounded-[14px] flex items-center justify-center">
-            <Shield className="w-8 h-8 text-lime animate-pulse" />
-          </div>
+        <div className="w-14 h-14 rounded-2xl bg-[#FF4A15]/10 border border-[#FF4A15]/30 text-[#FF4A15] shadow-[0_0_30px_rgba(255,74,21,0.2)] mx-auto flex items-center justify-center">
+          <Shield className="w-7 h-7 text-[#FF4A15]" />
         </div>
 
-        <h3 className="font-space font-extrabold text-2xl text-white">
+        <h3 className="font-[Syne] font-[800] text-xl text-[#F5F3EF]">
           Admin Portal Authentication
         </h3>
-        <p className="text-xs font-mono text-slate-400">
-          Restricted Access · Authorized Council Organizers Only
+        <p className="text-xs font-mono text-white/40">
+          Restricted Access &bull; Authorized Council Organizers Only
         </p>
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center space-x-2 animate-in fade-in duration-150">
+        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-center space-x-2 animate-in fade-in duration-150">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+      <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4 font-mono text-xs">
         {/* Email */}
-        <div className="space-y-1">
-          <label className="text-slate-300 flex items-center space-x-1">
-            <Mail className="w-3.5 h-3.5 text-lime" />
+        <div className="space-y-1.5">
+          <label className="text-white/70 flex items-center space-x-1.5">
+            <Mail className="w-3.5 h-3.5 text-[#FF4A15]" />
             <span>Admin Email Address *</span>
           </label>
           <input
             type="email"
             required
+            autoComplete="off"
+            spellCheck={false}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@ece-forum.org"
-            className="w-full bg-midnight border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-lime"
+            placeholder="admin@ece.com"
+            className="w-full bg-[#08080A] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-[#FF4A15]"
           />
         </div>
 
         {/* Password */}
-        <div className="space-y-1">
-          <label className="text-slate-300 flex items-center space-x-1">
-            <KeyRound className="w-3.5 h-3.5 text-amber" />
+        <div className="space-y-1.5">
+          <label className="text-white/70 flex items-center space-x-1.5">
+            <KeyRound className="w-3.5 h-3.5 text-[#FFD60A]" />
             <span>Password *</span>
           </label>
           <input
             type="password"
             required
+            autoComplete="off"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full bg-midnight border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-lime"
+            className="w-full bg-[#08080A] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-[#FF4A15]"
           />
         </div>
 
@@ -103,7 +104,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-lime via-blue-500 to-lime font-space font-bold text-xs text-midnight shadow-lime hover:opacity-90 transition-all flex items-center justify-center space-x-2 mt-6 cursor-pointer disabled:opacity-50"
+          className="w-full py-3.5 rounded-xl bg-[#FF4A15] text-white font-[Syne] font-[800] text-xs shadow-[0_0_20px_rgba(255,74,21,0.35)] hover:bg-white hover:text-black transition-all flex items-center justify-center space-x-2 mt-6 cursor-pointer disabled:opacity-50"
         >
           {isLoading ? (
             <>
@@ -118,7 +119,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
           )}
         </button>
 
-        <div className="pt-2 text-center text-[10px] text-slate-500 font-mono">
+        <div className="pt-2 text-center text-[10px] text-white/35 font-mono">
           🔒 Secured with Supabase Cloud &amp; Role-Based Access Control
         </div>
       </form>

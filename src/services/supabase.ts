@@ -125,12 +125,21 @@ export const supabaseDb = {
       user_name: pass.userName || pass.user_name || 'Attendee',
       user_email: (pass.userEmail || pass.user_email || '').trim().toLowerCase(),
       user_photo: pass.userPhoto || pass.user_photo || null,
+      college_name: pass.collegeName || pass.college_name || 'PIET, Nagpur',
       department: pass.department || 'Electronics & Communication Engineering',
       year: pass.year || '3rd Year',
       phone: pass.phone || '',
+      registration_type: pass.registrationType || pass.registration_type || (pass.teamName ? 'team' : 'individual'),
+      team_name: pass.teamName || pass.team_name || null,
+      team_members: pass.teamMembers || pass.team_members || [],
       payment_id: pass.paymentId || pass.payment_id || 'FREE_PASS',
       amount: Number(pass.amount) || 0,
+      original_amount: Number(pass.originalAmount || pass.original_amount || pass.amount) || 0,
+      discount_amount: Number(pass.discountAmount || pass.discount_amount) || 0,
+      coupon_code: pass.couponCode || pass.coupon_code || null,
       payment_status: pass.paymentStatus || pass.payment_status || 'PAID',
+      payment_screenshot: pass.paymentScreenshot || pass.payment_screenshot || null,
+      transaction_id: pass.transactionId || pass.transaction_id || null,
       status: pass.status || 'CONFIRMED',
       checked_in_at: pass.checkedInAt || pass.checked_in_at || null,
       checked_in_by: pass.checkedInBy || pass.checked_in_by || null,
@@ -153,6 +162,20 @@ export const supabaseDb = {
     } catch (err) {
       console.warn('Supabase insertPass exception:', err);
       return null;
+    }
+  },
+
+  async deletePass(passId: string) {
+    try {
+      const { error } = await supabase
+        .from('passes')
+        .delete()
+        .eq('pass_id', passId);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.warn('Supabase deletePass error:', err);
+      return false;
     }
   },
 

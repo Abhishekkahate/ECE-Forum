@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
@@ -28,7 +28,11 @@ export const ScrollToTopFab: React.FC = () => {
     <button
       onClick={() => {
         soundFx.playLaser();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if ((window as any).__lenis) {
+          (window as any).__lenis.scrollTo(0, { duration: 1.2 });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }}
       aria-label="Back to top"
       className="fixed z-40 w-12 h-12 rounded-full bg-[rgba(12,12,14,0.88)] backdrop-blur-2xl border border-white/[0.10] text-[#F5F3EF] grid place-items-center shadow-[0_16px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-[#FF4A15]/40 hover:bg-[#FF4A15] hover:text-white hover:shadow-[0_0_30px_rgba(255,74,21,0.45),0_16px_40px_rgba(0,0,0,0.5)] transition-all duration-300 group max-lg:hidden"

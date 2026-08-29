@@ -63,47 +63,64 @@ h1, h2, h3, h4 { font-family: 'Syne', 'Space Grotesk', sans-serif; letter-spacin
 *:focus:not(:focus-visible) { outline: none; }
 * { -webkit-tap-highlight-color: transparent; }
 
-/* ─── Surfaces — grain (visible, not hidden) ─── */
+/* ─── Surfaces — GPU-accelerated grain & texture ─── */
 .grain {
-  position: fixed; inset: 0; pointer-events: none; opacity: 0.042; z-index: 9999;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
-  mix-blend-mode: soft-light;
-  will-change: opacity;
+  position: fixed; inset: 0; pointer-events: none; opacity: 0.03; z-index: 9999;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 0);
+  background-size: 24px 24px;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
-.ambient-noise { position: fixed; inset: 0; pointer-events: none; opacity: 0.042; z-index: 9999; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E"); mix-blend-mode: soft-light; }
-@media (max-width: 768px) { .grain, .ambient-noise { opacity: 0.018 !important; } }
-@media (prefers-reduced-motion: reduce) { .grain, .ambient-noise { opacity: 0.015 !important; } }
-/* content-visibility for below-fold sections — huge perf win */
-section[id] { content-visibility: auto; contain-intrinsic-size: 1px 900px; }
-/* keep above-fold hero eager */
-#hero { content-visibility: visible; contain-intrinsic-size: auto; }
+.ambient-noise {
+  position: fixed; inset: 0; pointer-events: none; opacity: 0.02; z-index: 9999;
+  background-image: radial-gradient(rgba(255, 74, 21, 0.08) 1px, transparent 0);
+  background-size: 32px 32px;
+  transform: translate3d(0, 0, 0);
+}
+@media (max-width: 768px) { .grain, .ambient-noise { opacity: 0.015 !important; } }
+@media (prefers-reduced-motion: reduce) { .grain, .ambient-noise { opacity: 0.01 !important; } }
+
+/* Section acceleration */
+section[id] {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+#hero {
+  position: relative;
+}
+
 .editorial-grid {
   background-image:
     linear-gradient(rgba(245,243,239,0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(245,243,239,0.05) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse at center, black 45%, transparent 82%);
+  transform: translate3d(0, 0, 0);
 }
 
-/* ─── Mesh blobs — atelier precision, not aurora party ─── */
-@keyframes mesh-drift-a { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(24px,-18px,0) scale(1.04)} }
-@keyframes mesh-drift-b { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-20px,14px,0) scale(0.98)} }
+/* ─── Mesh blobs — atelier precision, GPU accelerated ─── */
+@keyframes mesh-drift-a { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(20px,-14px,0) scale(1.03)} }
+@keyframes mesh-drift-b { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-16px,12px,0) scale(0.98)} }
 .mesh-blob {
-  position: absolute; border-radius: 9999px; filter: blur(72px); pointer-events: none; z-index: 0; opacity: 0.5; mix-blend-mode: screen;
+  position: absolute; border-radius: 9999px; filter: blur(60px); pointer-events: none; z-index: 0; opacity: 0.45; mix-blend-mode: screen;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 .mesh-blob-signal { background: radial-gradient(circle at 35% 30%, rgba(255,74,21,0.18), rgba(255,74,21,0.06) 42%, transparent 72%); animation: mesh-drift-a 18s ease-in-out infinite; }
 .mesh-blob-cyan { background: radial-gradient(circle at 50% 50%, rgba(0,229,204,0.12), transparent 68%); animation: mesh-drift-b 22s ease-in-out infinite; }
 .mesh-blob-violet { background: radial-gradient(circle at 50% 50%, rgba(122,92,255,0.10), transparent 70%); animation: mesh-drift-a 20s ease-in-out infinite reverse; }
 /* compat aliases */
-.hero-orb { position: absolute; border-radius: 9999px; filter: blur(60px); pointer-events: none; z-index: 0; opacity: 0.5; mix-blend-mode: screen; }
-.aurora-orb { position: absolute; border-radius: 9999px; filter: blur(60px); pointer-events: none; z-index: 0; opacity: 0.5; mix-blend-mode: screen; }
+.hero-orb { position: absolute; border-radius: 9999px; filter: blur(50px); pointer-events: none; z-index: 0; opacity: 0.45; mix-blend-mode: screen; transform: translate3d(0,0,0); }
+.aurora-orb { position: absolute; border-radius: 9999px; filter: blur(50px); pointer-events: none; z-index: 0; opacity: 0.45; mix-blend-mode: screen; transform: translate3d(0,0,0); }
 .aurora-orb-blue { background: radial-gradient(circle, rgba(0,229,204,0.12), transparent 70%); }
 .aurora-orb-violet { background: radial-gradient(circle, rgba(122,92,255,0.10), transparent 70%); }
 .aurora-orb-cyan { background: radial-gradient(circle, rgba(0,229,204,0.12), transparent 70%); }
 .aurora-orb-teal { background: radial-gradient(circle, rgba(0,229,204,0.09), transparent 70%); }
 /* perf: scale down heavy blobs on mobile, don't hide */
-@media (max-width: 768px) { .mesh-blob, .hero-orb, .aurora-orb { filter: blur(48px) !important; opacity: 0.22 !important; transform: scale(0.72) !important; } }
-@media (max-width: 768px) { .glass, .glass-strong, .glass-panel, .glass-card-premium { backdrop-filter: blur(14px) saturate(1.15) !important; -webkit-backdrop-filter: blur(14px) saturate(1.15) !important; } }
+@media (max-width: 768px) { .mesh-blob, .hero-orb, .aurora-orb { filter: blur(36px) !important; opacity: 0.2 !important; transform: scale(0.7) !important; } }
+@media (max-width: 768px) { .glass, .glass-strong, .glass-panel, .glass-card-premium { backdrop-filter: blur(12px) saturate(1.1) !important; -webkit-backdrop-filter: blur(12px) saturate(1.1) !important; } }
 @media (prefers-reduced-motion: reduce) { .conic-border::before { animation: none !important; } .shimmer::after, .beam::after, .btn-sheen::after { animation: none !important; } }
 
 /* ─── Glass / Panel system — precise, not frosted-over ─── */
@@ -191,32 +208,67 @@ section[id] { content-visibility: auto; contain-intrinsic-size: 1px 900px; }
 .btn-glass:hover { background: rgba(245,243,239,0.11); border-color: rgba(245,243,239,0.16); transform: translateY(-2px); }
 .btn-cyber-primary { composes: btn-accent; background:#F5F3EF; color:#08080A; box-shadow: 0 10px 30px -10px rgba(245,243,239,0.45); }
 
-/* ─── Reveal — critical, supports both .in-view and legacy .revealed ─── */
+/* ─── Reveal & Scrolling Effects ─── */
 .reveal {
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.9s var(--ease-out-expo), transform 0.9s var(--ease-out-expo);
+  transform: translate3d(0, 24px, 0);
+  transition: opacity 0.85s var(--ease-out-expo), transform 0.85s var(--ease-out-expo);
   will-change: opacity, transform;
+  backface-visibility: hidden;
 }
-.reveal.in-view, .reveal.revealed { opacity: 1; transform: translateY(0); }
-.reveal-left { opacity:0; transform: translateX(-24px); transition: opacity 0.9s var(--ease-out-expo), transform 0.9s var(--ease-out-expo); }
-.reveal-left.in-view, .reveal-left.revealed { opacity:1; transform: translateX(0); }
-.reveal-scale { opacity:0; transform: scale(0.94); transition: opacity 0.9s var(--ease-out-expo), transform 0.9s var(--ease-out-expo); }
-.reveal-scale.in-view, .reveal-scale.revealed { opacity:1; transform: scale(1); }
-.reveal.stagger-1, .reveal-left.stagger-1, .reveal-scale.stagger-1 { transition-delay: 70ms; }
-.reveal.stagger-2 { transition-delay: 140ms; }
-.reveal.stagger-3 { transition-delay: 210ms; }
-.reveal.stagger-4 { transition-delay: 280ms; }
-.stagger-5 { transition-delay: 350ms; }
-.stagger-6 { transition-delay: 420ms; }
+.reveal.in-view, .reveal.revealed { opacity: 1; transform: translate3d(0, 0, 0); }
+
+.reveal-left {
+  opacity: 0;
+  transform: translate3d(-28px, 0, 0);
+  transition: opacity 0.85s var(--ease-out-expo), transform 0.85s var(--ease-out-expo);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+.reveal-left.in-view, .reveal-left.revealed { opacity: 1; transform: translate3d(0, 0, 0); }
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.95) translate3d(0, 16px, 0);
+  transition: opacity 0.85s var(--ease-out-expo), transform 0.85s var(--ease-out-expo);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+.reveal-scale.in-view, .reveal-scale.revealed { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+
+.reveal.stagger-1, .reveal-left.stagger-1, .reveal-scale.stagger-1 { transition-delay: 60ms; }
+.reveal.stagger-2 { transition-delay: 120ms; }
+.reveal.stagger-3 { transition-delay: 180ms; }
+.reveal.stagger-4 { transition-delay: 240ms; }
+.stagger-5 { transition-delay: 300ms; }
+.stagger-6 { transition-delay: 360ms; }
+
+/* Micro-animations and scroll depth */
+@keyframes float-breathing {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -6px, 0); }
+}
+.float-slow {
+  animation: float-breathing 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.scroll-glow {
+  transition: box-shadow 0.6s var(--ease-out-expo), border-color 0.4s ease;
+}
+.scroll-glow:hover {
+  box-shadow: 0 0 35px rgba(255, 74, 21, 0.22), 0 16px 40px -10px rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 74, 21, 0.4);
+}
+
 /* Fail-safe: never leave page blank if IO fails */
 @media (prefers-reduced-motion: no-preference) {
   .reveal { animation: _reveal-fallback 0.01s forwards; animation-delay: 3.2s; }
   .reveal.in-view, .reveal.revealed { animation: none; }
-  @keyframes _reveal-fallback { to { opacity:1; transform: translateY(0); } }
+  @keyframes _reveal-fallback { to { opacity: 1; transform: translate3d(0, 0, 0); } }
 }
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .reveal-left, .reveal-scale { opacity:1; transform:none; transition:none; animation:none; }
+  .reveal, .reveal-left, .reveal-scale { opacity: 1; transform: none; transition: none; animation: none; }
   .mesh-blob, .hero-orb, .aurora-orb { animation: none !important; }
 }
 

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lenis from 'lenis';
@@ -323,20 +323,20 @@ export default function App() {
 
   // Lenis Hardware-Accelerated Smooth Momentum Scroll
   useEffect(() => {
-    const isTouchDevice =
-      typeof window !== 'undefined' &&
-      (window.matchMedia('(max-width: 1024px)').matches ||
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0);
-
-    if (isTouchDevice) return;
-
     const lenis = new Lenis({
-      duration: 1.1,
+      duration: 1.15,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
       smoothWheel: true,
-      syncTouch: false,
+      wheelMultiplier: 0.95,
+      touchMultiplier: 1.5,
+      infinite: false,
     });
+
+    if (typeof window !== 'undefined') {
+      window.__lenis = lenis;
+    }
 
     let rafId;
     function raf(time) {
@@ -348,6 +348,9 @@ export default function App() {
     return () => {
       cancelAnimationFrame(rafId);
       lenis.destroy();
+      if (typeof window !== 'undefined') {
+        delete window.__lenis;
+      }
     };
   }, []);
 
@@ -362,7 +365,7 @@ export default function App() {
           forumApi.getGalleryItems().catch(() => null),
         ]);
 
-        if (Array.isArray(remoteEvents) && remoteEvents.length) {
+        if (Array.isArray(remoteEvents)) {
           setEventsList(
             remoteEvents.map((e) => ({
               id: e.id,
@@ -379,6 +382,9 @@ export default function App() {
               seatsRemaining: Math.floor((e.totalSeats || 100) * 0.4),
               image: e.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80',
               participationType: e.participationType || 'both',
+              minTeamSize: e.minTeamSize || 2,
+              maxTeamSize: e.maxTeamSize || 5,
+              requiredTeamSize: e.requiredTeamSize || undefined,
             }))
           );
         }
@@ -391,8 +397,27 @@ export default function App() {
     };
 
     loadData();
+
+    const handleHeroUpdate = (e) => {
+      if (e.detail) setHeroConfig((prev) => ({ ...prev, ...e.detail }));
+    };
+
+    const handleEventsUpdate = (e) => {
+      if (e.detail?.deletedId) {
+        setEventsList((prev) => prev.filter((item) => item.id !== e.detail.deletedId));
+      }
+      loadData();
+    };
+
+    window.addEventListener('ece_hero_config_updated', handleHeroUpdate);
+    window.addEventListener('ece_events_updated', handleEventsUpdate);
+
     const iv = setInterval(loadData, 10000);
-    return () => clearInterval(iv);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('ece_hero_config_updated', handleHeroUpdate);
+      window.removeEventListener('ece_events_updated', handleEventsUpdate);
+    };
   }, []);
 
   // Global Keyboard Shortcuts (âŒ˜K, Escape)

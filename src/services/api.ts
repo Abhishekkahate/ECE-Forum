@@ -15,6 +15,9 @@ export interface ApiEvent {
   price: number;
   totalSeats: number;
   participationType?: 'individual_only' | 'team_only' | 'both';
+  minTeamSize?: number;
+  maxTeamSize?: number;
+  requiredTeamSize?: number;
 }
 
 export interface ApiPass {
@@ -29,11 +32,20 @@ export interface ApiPass {
   userPhoto?: string;
   rollNumber?: string;
   department: string;
+  collegeName?: string;
   year: string;
   phone: string;
   paymentId: string;
   amount: number;
+  originalAmount?: number;
+  discountAmount?: number;
+  couponCode?: string;
+  registrationType?: 'individual' | 'team';
+  teamName?: string;
+  teamMembers?: any[];
   paymentStatus: 'PAID' | 'FREE';
+  paymentScreenshot?: string;
+  transactionId?: string;
   status: 'CONFIRMED' | 'CHECKED_IN';
   checkedInAt?: string;
   checkedInBy?: string;
@@ -72,6 +84,9 @@ export const forumApi = {
           price: Number(e.price) || 0,
           totalSeats: e.total_seats || 100,
           participationType: e.participation_type || e.participationType || 'both',
+          minTeamSize: e.min_team_size || e.minTeamSize || 2,
+          maxTeamSize: e.max_team_size || e.maxTeamSize || 5,
+          requiredTeamSize: e.required_team_size || e.requiredTeamSize || undefined,
         }));
         try {
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
@@ -91,6 +106,9 @@ export const forumApi = {
           const formatted = backendEvents.map((e: any) => ({
             ...e,
             participationType: e.participation_type || e.participationType || 'both',
+            minTeamSize: e.min_team_size || e.minTeamSize || 2,
+            maxTeamSize: e.max_team_size || e.maxTeamSize || 5,
+            requiredTeamSize: e.required_team_size || e.requiredTeamSize || undefined,
           }));
           try {
             localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
@@ -128,6 +146,9 @@ export const forumApi = {
       price: Number(eventData.price) || 0,
       totalSeats: Number(eventData.totalSeats) || 100,
       participationType: eventData.participationType || 'both',
+      minTeamSize: eventData.minTeamSize || 2,
+      maxTeamSize: eventData.maxTeamSize || 5,
+      requiredTeamSize: eventData.requiredTeamSize || undefined,
     };
 
     // 1. Immediately update localStorage cache
@@ -170,13 +191,16 @@ export const forumApi = {
 
     // 3. Render / Local Backend Fallback
     try {
-      const res = await fetch(`${API_BASE}/events`, {
+      await fetch(`${API_BASE}/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fullEvent),
       });
-      if (res.ok) return await res.json();
     } catch {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ece_events_updated'));
+    }
 
     return fullEvent;
   },
@@ -204,6 +228,11 @@ export const forumApi = {
       await fetch(`${API_BASE}/events/${eventId}`, { method: 'DELETE' });
     } catch {}
 
+    // 4. Notify all components immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ece_events_updated', { detail: { deletedId: eventId } }));
+    }
+
     return true;
   },
 
@@ -228,7 +257,15 @@ export const forumApi = {
           phone: p.phone,
           paymentId: p.payment_id,
           amount: Number(p.amount),
+          originalAmount: p.original_amount ? Number(p.original_amount) : Number(p.amount),
+          discountAmount: p.discount_amount ? Number(p.discount_amount) : 0,
+          couponCode: p.coupon_code || '',
+          registrationType: p.registration_type || 'individual',
+          teamName: p.team_name || '',
+          teamMembers: p.team_members || [],
           paymentStatus: p.payment_status,
+          paymentScreenshot: p.payment_screenshot || p.paymentScreenshot || undefined,
+          transactionId: p.transaction_id || p.transactionId || undefined,
           status: p.status,
           checkedInAt: p.checked_in_at,
           checkedInBy: p.checked_in_by,
@@ -251,6 +288,22 @@ export const forumApi = {
     } catch {}
 
     return [];
+  },
+
+  async deletePass(passId: string): Promise<boolean> {
+    try {
+      await supabaseDb.deletePass(passId);
+    } catch {}
+
+    try {
+      await fetch(`${API_BASE}/passes/${passId}`, { method: 'DELETE' });
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ece_passes_updated'));
+    }
+
+    return true;
   },
 
   async createPass(passData: Partial<ApiPass>): Promise<ApiPass | null> {
@@ -440,6 +493,10 @@ export const forumApi = {
     try {
       localStorage.setItem('ece_hero_flagship_config', JSON.stringify(config));
     } catch {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ece_hero_config_updated', { detail: config }));
+    }
 
     const supaOk = await supabaseDb.setSiteSettings(config, 'hero_flagship');
     return Boolean(supaOk);

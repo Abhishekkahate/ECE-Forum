@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Mail, MapPin, Send, Globe, ArrowUpRight, ArrowUp, Sparkles, Cpu, Layers, Verified, Radio } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { useScrollReveal } from './useScrollReveal';
@@ -94,10 +94,12 @@ export const ContactFooter: React.FC = () => {
                 <p className="mt-1.5 text-[12px] leading-relaxed font-mono text-white/55">
                   Hackathon alerts, workshop registrations &amp; atelier dispatches — one email, zero spam.
                 </p>
-                <form onSubmit={handleSubscribe} className="mt-4 relative">
+                <form onSubmit={handleSubscribe} autoComplete="off" className="mt-4 relative">
                   <input
                     type="email"
                     required
+                    autoComplete="off"
+                    spellCheck={false}
                     placeholder="student@piet.edu"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

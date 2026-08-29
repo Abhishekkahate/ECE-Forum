@@ -31,6 +31,8 @@ export interface EventPass {
   teamName?: string;
   teamMembers?: TeamMember[];
   paymentStatus: 'PAID' | 'FREE';
+  paymentScreenshot?: string;
+  transactionId?: string;
   status: 'CONFIRMED' | 'CHECKED_IN';
   checkedInAt?: string;
   checkedInBy?: string;
@@ -50,7 +52,7 @@ export interface VerificationResult {
 import { supabaseDb } from './supabase';
 
 const PASSES_STORAGE_KEY = 'ece_forum_registered_passes_v1';
-const API_BASE_URL = 'https://ece-forum-backend.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 class PassService {
   private passes: EventPass[] = [];
@@ -95,6 +97,8 @@ class PassService {
           teamName: p.team_name || '',
           teamMembers: p.team_members || [],
           paymentStatus: p.payment_status,
+          paymentScreenshot: p.payment_screenshot || p.paymentScreenshot || undefined,
+          transactionId: p.transaction_id || p.transactionId || undefined,
           status: p.status,
           checkedInAt: p.checked_in_at,
           checkedInBy: p.checked_in_by,
@@ -384,6 +388,35 @@ class PassService {
       message: `Verified successfully! Welcome, ${updatedPass.userName}.`,
       timestamp,
     };
+  }
+
+  public updatePassStatus(passId: string, status: 'CONFIRMED' | 'CHECKED_IN', checkedInBy?: string) {
+    const passIndex = this.passes.findIndex((p) => p.passId.toUpperCase() === passId.toUpperCase());
+    if (passIndex !== -1) {
+      this.passes[passIndex] = {
+        ...this.passes[passIndex],
+        status,
+        checkedInAt: status === 'CHECKED_IN' ? `${new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : undefined,
+        checkedInBy: status === 'CHECKED_IN' ? (checkedInBy || 'Admin') : undefined,
+      };
+      this.saveToStorage(true);
+    }
+  }
+
+  public async deletePass(passId: string): Promise<boolean> {
+    const cleanId = passId.trim().toUpperCase();
+    this.passes = this.passes.filter((p) => p.passId.toUpperCase() !== cleanId);
+    this.saveToStorage(true);
+    try {
+      await supabaseDb.deletePass(passId);
+    } catch {}
+    try {
+      await fetch(`${API_BASE_URL}/passes/${encodeURIComponent(passId)}`, { method: 'DELETE' });
+    } catch {}
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ece_passes_updated'));
+    }
+    return true;
   }
 
   public getEventStats(eventId?: string) {
