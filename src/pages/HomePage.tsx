@@ -2,7 +2,6 @@ import React, { useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { HeroSection } from '../components/HeroSection';
-import { MarqueeTicker } from '../components/MarqueeTicker';
 import { ScrollToTopFab } from '../components/ScrollToTopFab';
 import { GoogleAuthModal } from '../components/GoogleAuthModal';
 import { MyPassesModal } from '../components/MyPassesModal';
@@ -123,7 +122,6 @@ export const HomePage: React.FC<HomePageProps> = ({
           onExploreEvents={() => scrollToSection('#events')}
           onJoinCommunity={() => scrollToSection('#about')}
         />
-        <MarqueeTicker customAnnouncement={announcement} />
         <Suspense fallback={<SectionFallback />}>
           <AboutSection />
           <StatsSection />
