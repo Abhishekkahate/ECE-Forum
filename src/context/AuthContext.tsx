@@ -136,11 +136,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async (customData?: Partial<UserProfile>): Promise<UserProfile | void> => {
     // If Supabase OAuth is configured and user initiated real Google SSO:
     if (isSupabaseConfigured && supabase && !customData?.email) {
-      // Store return URL to handle vercel.app → localhost redirect fix
+      // Store return URL to handle origin redirects
       try { localStorage.setItem('ece_auth_return_url', window.location.href); localStorage.setItem('ece_auth_origin', window.location.origin); } catch {}
-      // Use current origin + pathname as redirect — must be whitelisted in Supabase Dashboard > Auth > URL Configuration
-      // If not whitelisted, Supabase will fallback to Site URL (ece-at-pce.vercel.app) — we handle that via post-auth redirect below
-      const redirectUrl = window.location.origin + window.location.pathname;
+      const redirectUrl = window.location.origin;
       const { error, data } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -152,7 +150,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Supabase OAuth error:', error);
         throw error;
       }
-      // data.url contains the Google OAuth URL — let Supabase handle redirect
       return;
     }
 
