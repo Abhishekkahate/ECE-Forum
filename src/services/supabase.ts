@@ -1,8 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const SUPABASE_PROJECT_URL = 'https://puetnlqzbodjweobwgtr.supabase.co';
+const SUPABASE_PROJECT_URL = 'https://whygrfjcibyhuoedtsor.supabase.co';
 const SUPABASE_PROJECT_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZXRubHF6Ym9kandlb2J3Z3RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwMzcsImV4cCI6MjEwMjU1MDAzN30.olYvw1D7VKz54smMjvDoR2g6FJJIje_GMBEoF2Tz0zI';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoeWdyZmpjaWJ5aHVvZWR0c29yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNzc4ODMsImV4cCI6MjEwMzY1Mzg4M30.BXlEbix-uxJjaFhHRz3m-OWdTmE1OXmGiRXWdxYW6fg';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_PROJECT_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_PROJECT_ANON_KEY;
