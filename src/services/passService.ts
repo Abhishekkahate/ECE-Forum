@@ -249,6 +249,13 @@ class PassService {
       'passId' | 'status' | 'registeredAt' | 'qrData' | 'securityHash'
     >
   ): EventPass {
+    // Prevent duplicate pass creation if already registered
+    const existing = this.findExistingPass(data.userEmail, data.eventId);
+    if (existing) {
+      console.warn(`[PassService] Pass already exists for ${data.userEmail} on event ${data.eventId}: ${existing.passId}`);
+      return existing;
+    }
+
     const passId = this.generateUniquePassId();
     const securityHash = this.generateSecurityHash(passId, data.userEmail);
     const registeredAt = new Date().toLocaleString('en-IN', {

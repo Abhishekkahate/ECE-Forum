@@ -324,10 +324,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
     if (!selectedEvent) return;
 
     // 1. Prevent duplicate registration for primary registrant
-    if (existingUserPass) {
+    const activeExistingPass = existingUserPass || (userEffectiveEmail && selectedEvent ? passService.findExistingPass(userEffectiveEmail, selectedEvent.id) : null);
+    if (activeExistingPass) {
       soundFx.playLaser();
-      setFormValidationWarning(`You have already registered for ${selectedEvent.title} (Pass ID: #${existingUserPass.passId}). Duplicate registrations are not allowed.`);
-      setGeneratedPass(existingUserPass);
+      setFormValidationWarning(`You have already registered for ${selectedEvent.title} (Pass ID: #${activeExistingPass.passId}). Duplicate registrations for the same event are not allowed.`);
+      setGeneratedPass(activeExistingPass);
       return;
     }
 
@@ -394,10 +395,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       }
     }
 
-    // 3. Payment Processing / Proof Validation
+    // 3. Strict Mandatory Payment Proof Validation (For Paid Events)
     if (finalPayableAmount > 0) {
-      if (!paymentScreenshot && !transactionId) {
-        setFormValidationWarning('Please scan the UPI QR code, complete payment, and upload your payment successful screenshot or enter your Transaction UTR reference.');
+      if (!paymentScreenshot) {
+        soundFx.playLaser();
+        setFormValidationWarning('⚠️ Payment Screenshot is strictly mandatory. Please scan the UPI QR code, complete payment, and upload your payment successful screenshot before submitting.');
+        if (fileInputRef.current) {
+          fileInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         return;
       }
       completeRegistration(
@@ -642,10 +647,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Registration Form & UPI Payment (7 cols) */}
+            {/* RIGHT COLUMN: Registration Form & UPI Payment or Existing Pass Display (7 cols) */}
             <div className="lg:col-span-7 space-y-6">
               
-              {!generatedPass ? (
+              {!(generatedPass || existingUserPass) ? (
                 <div className="p-6 sm:p-8 rounded-[28px] bg-[#0F0F12] border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.7)] space-y-6 relative overflow-hidden">
                   
                   {/* Glowing Accent Top Border */}
@@ -656,7 +661,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                       Registration Form
                     </h3>
                     <p className="text-xs font-mono text-white/40 mt-1">
-                      Complete participant dossier, configure team members, and verify payment proof.
+                      Complete participant dossier, configure team members, and upload mandatory payment proof.
                     </p>
                   </div>
 
@@ -721,186 +726,51 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                     </div>
                   )}
 
-                  {/* STEP 2: Participation Mode Selector */}
-                  <div className="space-y-2">
-                    <label className="text-white/60 text-xs font-mono block">Registration Format:</label>
-
-                    {selectedEvent?.participationType === 'individual_only' ? (
-                      <div className="p-4 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-white/5 text-white flex items-center justify-center shrink-0">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <strong className="text-white text-xs font-[Syne] block">Individual Solo Pass</strong>
-                            <span className="text-[10px] text-white/40 block font-mono">
-                              This event admits solo participants (1 Attendee &bull; ₹{perPersonPrice}).
-                            </span>
-                          </div>
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-white/10 text-white border border-white/20">
-                          SOLO
-                        </span>
-                      </div>
-                    ) : selectedEvent?.participationType === 'team_only' ? (
-                      <div className="p-4 rounded-2xl bg-[#00E5CC]/10 border border-[#00E5CC]/30 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-[#00E5CC]/20 text-[#00E5CC] flex items-center justify-center shrink-0">
-                            <Users className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <strong className="text-white text-xs font-[Syne] block">Team Pass Mandatory</strong>
-                            <span className="text-[10px] text-white/60 block font-mono">
-                              {selectedEvent.requiredTeamSize
-                                ? `Requires a team of exactly ${selectedEvent.requiredTeamSize} members.`
-                                : `Requires a team of ${selectedEvent.minTeamSize || 2} to ${selectedEvent.maxTeamSize || 5} members.`}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-[#00E5CC]/20 text-[#00E5CC] border border-[#00E5CC]/40">
-                          TEAM ONLY
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            soundFx.playClick();
-                            setRegType('individual');
-                            setTeamMembers([]);
-                          }}
-                          className={`p-3.5 rounded-2xl border text-left font-mono transition-all cursor-pointer flex items-center gap-3 ${
-                            regType === 'individual'
-                              ? 'bg-[#FF4A15] border-[#FF4A15] text-white shadow-[0_0_20px_rgba(255,74,21,0.25)]'
-                              : 'bg-black/50 border-white/10 text-white/50 hover:text-white'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${regType === 'individual' ? 'bg-black text-white' : 'bg-white/5 text-white/50'}`}>
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <strong className="font-[Syne] block text-xs">Individual</strong>
-                            <span className="text-[10px] opacity-70 block">1 Participant (₹{perPersonPrice})</span>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            soundFx.playClick();
-                            setRegType('team');
-                          }}
-                          className={`p-3.5 rounded-2xl border text-left font-mono transition-all cursor-pointer flex items-center gap-3 ${
-                            regType === 'team'
-                              ? 'bg-[#FF4A15] border-[#FF4A15] text-white shadow-[0_0_20px_rgba(255,74,21,0.25)]'
-                              : 'bg-black/50 border-white/10 text-white/50 hover:text-white'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${regType === 'team' ? 'bg-black text-white' : 'bg-white/5 text-white/50'}`}>
-                            <Users className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <strong className="font-[Syne] block text-xs">Team Pass</strong>
-                            <span className="text-[10px] opacity-70 block">
-                              {selectedEvent.requiredTeamSize ? `Mandatory ${selectedEvent.requiredTeamSize} Members` : '2 to 5 Members'}
-                            </span>
-                          </div>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Form Warnings */}
+                  {/* Form Validation Warning Notice */}
                   {formValidationWarning && (
-                    <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
-                      <div>
-                        <strong className="block font-bold">Validation Alert:</strong>
+                    <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono flex items-start gap-3 shadow-[0_0_20px_rgba(245,158,11,0.15)] animate-in fade-in duration-200">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <strong className="block text-white font-bold">Action Required:</strong>
                         <span>{formValidationWarning}</span>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 3: Registration Form Details */}
-                  <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5 font-mono text-xs">
+                  <form onSubmit={handleSubmit} className="space-y-6">
                     
-                    {/* Team Details (If Team Mode) */}
-                    {regType === 'team' && (
-                      <div className="p-4 rounded-2xl bg-black/60 border border-[#00E5CC]/30 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-mono font-bold text-[#00E5CC] flex items-center gap-1.5 uppercase">
-                            <Users className="w-4 h-4" />
-                            <span>Team Information</span>
-                          </span>
-                          <span className="text-[10px] text-white/50">
-                            Team Size: <strong className="text-white">{1 + teamMembers.length} Members</strong>{' '}
-                            {selectedEvent.requiredTeamSize && `(Mandatory ${selectedEvent.requiredTeamSize})`}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px]">Team Name *</label>
-                          <input
-                            type="text"
-                            required
-                            autoComplete="off"
-                            spellCheck={false}
-                            value={teamName}
-                            onChange={(e) => setTeamName(e.target.value)}
-                            placeholder="e.g. Silicon Mavericks"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#00E5CC] text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Primary Attendee / Team Leader Profile */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2">
-                        <User className="w-3.5 h-3.5 text-[#FF4A15]" />
-                        <span className="text-[11px] font-bold text-white uppercase">
-                          {regType === 'team' ? '1. Team Leader Details (Primary Registrant)' : 'Participant Details'}
+                    {/* Primary Attendee Fields */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                        <span className="text-xs font-mono font-bold text-[#FF4A15] uppercase tracking-wider flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5" />
+                          <span>{regType === 'team' ? '1. Team Leader / Contact Person' : 'Participant Details'}</span>
                         </span>
+                        <span className="text-[10px] font-mono text-white/40">* Required fields</span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px]">Full Name *</label>
-                          <input
-                            type="text"
-                            required
-                            autoComplete="off"
-                            spellCheck={false}
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Enter Full Name"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px]">Email Address *</label>
-                          <input
-                            type="email"
-                            required
-                            autoComplete="off"
-                            spellCheck={false}
-                            disabled={Boolean(user?.email)}
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            placeholder="Enter Email Address"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono disabled:opacity-60 disabled:cursor-not-allowed"
-                          />
-                        </div>
+                      {/* Full Name */}
+                      <div>
+                        <label className="text-xs text-white/60 font-mono block mb-1">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          autoComplete="name"
+                          spellCheck={false}
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="Your official full name"
+                          className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#FF4A15] transition-colors"
+                        />
                       </div>
 
-                      {/* College & Department */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px] flex items-center gap-1">
-                            <Building2 className="w-3 h-3 text-[#FF4A15]" />
-                            <span>College / Institution Name *</span>
+                      {/* College Name & Department */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="text-xs text-white/60 font-mono block mb-1">
+                            College / Institute *
                           </label>
                           <input
                             type="text"
@@ -909,15 +779,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                             spellCheck={false}
                             value={formData.collegeName}
                             onChange={(e) => setFormData({ ...formData, collegeName: e.target.value })}
-                            placeholder="Enter College / Institution Name"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono"
+                            placeholder="College Name (e.g. PIET)"
+                            className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#FF4A15] transition-colors"
                           />
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px] flex items-center gap-1">
-                            <School className="w-3 h-3 text-[#00E5CC]" />
-                            <span>Department / Branch *</span>
+                        <div>
+                          <label className="text-xs text-white/60 font-mono block mb-1">
+                            Department / Branch *
                           </label>
                           <input
                             type="text"
@@ -926,22 +795,25 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                             spellCheck={false}
                             value={formData.department}
                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                            placeholder="Enter Department / Branch"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono"
+                            placeholder="e.g. ECE, CSE, IT, EE"
+                            className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#FF4A15] transition-colors"
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px]">Academic Year *</label>
+                      {/* Academic Year & Phone */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                          <label className="text-xs text-white/60 font-mono block mb-1">
+                            Academic Year *
+                          </label>
                           <select
                             required
                             value={formData.year}
                             onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono cursor-pointer"
+                            className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#FF4A15] transition-colors cursor-pointer"
                           >
-                            <option value="">-- Select Academic Year * --</option>
+                            <option value="">-- Select Year --</option>
                             <option value="1st Year">1st Year (FE)</option>
                             <option value="2nd Year">2nd Year (SE)</option>
                             <option value="3rd Year">3rd Year (TE)</option>
@@ -950,71 +822,80 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                           </select>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-white/70 text-[11px] flex items-center gap-1">
-                            <Phone className="w-3 h-3 text-[#00FF88]" />
-                            <span>Phone / WhatsApp Number *</span>
+                        <div>
+                          <label className="text-xs text-white/60 font-mono block mb-1">
+                            WhatsApp / Mobile Phone *
                           </label>
                           <input
                             type="tel"
                             required
-                            autoComplete="off"
+                            autoComplete="tel"
                             spellCheck={false}
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="Enter 10-digit mobile number"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#FF4A15] text-xs font-mono"
+                            placeholder="+91..."
+                            className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#FF4A15] transition-colors"
                           />
                         </div>
                       </div>
                     </div>
 
-                    {/* Additional Team Members List (If Team Mode) */}
+                    {/* Team Configuration (If Team Pass) */}
                     {regType === 'team' && (
-                      <div className="space-y-4 pt-2">
-                        <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
-                          <span className="text-[11px] font-bold text-[#00E5CC] uppercase flex items-center gap-1.5">
+                      <div className="space-y-4 pt-2 border-t border-white/[0.06]">
+                        <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                          <span className="text-xs font-mono font-bold text-[#00E5CC] uppercase tracking-wider flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" />
-                            <span>
-                              Teammate Dossiers ({teamMembers.length}{' '}
-                              {selectedEvent.requiredTeamSize ? `of ${selectedEvent.requiredTeamSize - 1} Required` : 'Members'})
-                            </span>
+                            <span>Team Information ({1 + teamMembers.length} Members Total)</span>
                           </span>
-
-                          {!selectedEvent.requiredTeamSize && teamMembers.length < 4 && (
+                          {!selectedEvent.requiredTeamSize && (
                             <button
                               type="button"
                               onClick={handleAddTeamMember}
-                              className="px-3.5 py-1.5 rounded-full bg-[#00E5CC]/20 hover:bg-[#00E5CC]/30 text-[#00E5CC] border border-[#00E5CC]/40 text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                              className="text-[11px] font-mono font-bold text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer"
                             >
-                              <UserPlus className="w-3.5 h-3.5" />
-                              <span>+ Add Teammate</span>
+                              <UserPlus className="w-3 h-3" /> Add Member
                             </button>
                           )}
                         </div>
 
+                        <div>
+                          <label className="text-xs text-white/60 font-mono block mb-1">
+                            Team Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            autoComplete="off"
+                            spellCheck={false}
+                            value={teamName}
+                            onChange={(e) => setTeamName(e.target.value)}
+                            placeholder="e.g. Cyber Ninjas, ECE Titans"
+                            className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#00E5CC]"
+                          />
+                        </div>
+
+                        {/* Teammates List */}
                         {teamMembers.map((member, idx) => (
-                          <div
-                            key={idx}
-                            className="p-4 rounded-2xl bg-black/60 border border-white/[0.08] space-y-3 hover:border-[#00E5CC]/40 transition-colors"
-                          >
+                          <div key={idx} className="p-4 rounded-2xl bg-black/50 border border-white/10 space-y-3 font-mono">
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-mono text-[#00E5CC] font-bold uppercase">
-                                Teammate #{idx + 2} {selectedEvent.requiredTeamSize && '(Mandatory Member)'}
+                              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <span className="w-5 h-5 rounded-full bg-[#00E5CC]/20 text-[#00E5CC] text-[10px] grid place-items-center">
+                                  {idx + 2}
+                                </span>
+                                <span>Team Member #{idx + 2}</span>
                               </span>
                               {!selectedEvent.requiredTeamSize && (
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveTeamMember(idx)}
-                                  className="w-8 h-8 grid place-items-center rounded-full text-white/40 hover:text-red-400 hover:bg-red-500/10 cursor-pointer transition-colors"
-                                  title="Remove Member"
+                                  className="text-white/40 hover:text-red-400 p-1"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
 
-                            {/* Name and Email */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <label className="text-[10px] text-white/50 block mb-1">Full Name *</label>
@@ -1025,7 +906,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                                   spellCheck={false}
                                   value={member.name}
                                   onChange={(e) => handleUpdateTeamMember(idx, 'name', e.target.value)}
-                                  placeholder="Full Name"
+                                  placeholder="Member Name"
                                   className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
                                 />
                               </div>
@@ -1035,72 +916,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                                 <input
                                   type="email"
                                   required
-                                  autoComplete="off"
+                                  autoComplete="email"
                                   spellCheck={false}
                                   value={member.email}
                                   onChange={(e) => handleUpdateTeamMember(idx, 'email', e.target.value)}
-                                  placeholder="member@college.edu"
-                                  className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
-                                />
-                              </div>
-                            </div>
-
-                            {/* College and Department */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-[10px] text-white/50 block mb-1">College / Institution</label>
-                                <input
-                                  type="text"
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                  value={member.collegeName || ''}
-                                  onChange={(e) => handleUpdateTeamMember(idx, 'collegeName', e.target.value)}
-                                  placeholder="College Name"
-                                  className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] text-white/50 block mb-1">Department / Branch</label>
-                                <input
-                                  type="text"
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                  value={member.department || ''}
-                                  onChange={(e) => handleUpdateTeamMember(idx, 'department', e.target.value)}
-                                  placeholder="Department (e.g. ECE, CSE)"
-                                  className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Year and Phone */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-[10px] text-white/50 block mb-1">Academic Year</label>
-                                <select
-                                  value={member.year || ''}
-                                  onChange={(e) => handleUpdateTeamMember(idx, 'year', e.target.value)}
-                                  className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC] cursor-pointer"
-                                >
-                                  <option value="">-- Select Year --</option>
-                                  <option value="1st Year">1st Year (FE)</option>
-                                  <option value="2nd Year">2nd Year (SE)</option>
-                                  <option value="3rd Year">3rd Year (TE)</option>
-                                  <option value="4th Year">4th Year (BE)</option>
-                                  <option value="Faculty / Alumni">Faculty / Alumni</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] text-white/50 block mb-1">Phone / WhatsApp</label>
-                                <input
-                                  type="tel"
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                  value={member.phone || ''}
-                                  onChange={(e) => handleUpdateTeamMember(idx, 'phone', e.target.value)}
-                                  placeholder="+91..."
+                                  placeholder="member@email.com"
                                   className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-[#00E5CC]"
                                 />
                               </div>
@@ -1176,45 +996,39 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                               </div>
                             </div>
 
-                            {activeInstructions && (
-                              <p className="text-[11px] text-[#00E5CC] leading-relaxed p-2 rounded-xl bg-[#00E5CC]/10 border border-[#00E5CC]/20">
-                                {activeInstructions}
-                              </p>
-                            )}
-
                             <div className="space-y-1 text-[11px] text-white/70">
                               <p className="flex items-center gap-1.5 text-white/90">
                                 <span className="w-4 h-4 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold grid place-items-center">1</span>
-                                Scan via Google Pay, PhonePe, Paytm, or BHIM.
+                                Scan with Google Pay, PhonePe, Paytm, or BHIM.
                               </p>
                               <p className="flex items-center gap-1.5 text-white/90">
                                 <span className="w-4 h-4 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold grid place-items-center">2</span>
-                                Pay <strong>₹{finalPayableAmount}</strong> and take a screenshot.
+                                Pay <strong>₹{finalPayableAmount}</strong> and take a screenshot of confirmation.
                               </p>
-                              <p className="flex items-center gap-1.5 text-white/90">
-                                <span className="w-4 h-4 rounded-full bg-[#FF4A15]/20 text-[#FF4A15] text-[10px] font-bold grid place-items-center">3</span>
-                                Upload the payment confirmation screenshot below.
+                              <p className="flex items-center gap-1.5 text-white/90 font-bold text-amber-300">
+                                <span className="w-4 h-4 rounded-full bg-amber-500/30 text-amber-300 text-[10px] font-bold grid place-items-center">3</span>
+                                Upload the screenshot below (* MANDATORY for Admin Approval).
                               </p>
                             </div>
                           </div>
                         </div>
 
-                        {/* Screenshot Upload Dropzone */}
+                        {/* Mandatory Screenshot Upload Dropzone */}
                         <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                          <label className="text-white/80 text-[11px] flex items-center justify-between font-bold">
+                          <label className="text-white/90 text-[11px] flex items-center justify-between font-bold">
                             <span className="flex items-center gap-1.5">
                               <ImageIcon className="w-3.5 h-3.5 text-[#00E5CC]" />
-                              <span>Upload Payment Successful Screenshot *</span>
+                              <span>Upload Payment Screenshot Proof <strong className="text-red-400 font-bold">* MANDATORY</strong></span>
                             </span>
-                            <span className="text-[10px] text-white/40 font-normal">JPG, PNG, WEBP (Max 10MB)</span>
+                            <span className="text-[10px] text-amber-400 font-normal">Required for Admin Pass Approval</span>
                           </label>
 
                           <div
                             onClick={() => fileInputRef.current?.click()}
                             className={`p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-2 ${
                               paymentScreenshot
-                                ? 'bg-[#00E5CC]/5 border-[#00E5CC]/40 text-white'
-                                : 'bg-black/40 border-white/15 hover:border-[#FF4A15]/60 text-white/60 hover:text-white'
+                                ? 'bg-[#00E5CC]/5 border-[#00E5CC]/50 text-white'
+                                : 'bg-black/40 border-amber-500/30 hover:border-[#FF4A15]/80 text-white/60 hover:text-white'
                             }`}
                           >
                             <input
@@ -1235,7 +1049,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                                 <div className="text-left min-w-0 flex-1">
                                   <div className="font-bold text-xs text-white truncate">{screenshotFileName || 'Payment_Proof.png'}</div>
                                   <div className="text-[10px] text-[#00FF88] flex items-center gap-1 mt-0.5">
-                                    <CheckCircle2 className="w-3 h-3" /> Ready for verification
+                                    <CheckCircle2 className="w-3 h-3" /> Screenshot Attached — Ready for Admin Verification
                                   </div>
                                 </div>
                                 <button
@@ -1252,34 +1066,18 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                               </div>
                             ) : (
                               <>
-                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 grid place-items-center text-white/60">
-                                  <Upload className="w-5 h-5 text-[#FF4A15]" />
+                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 grid place-items-center text-amber-300">
+                                  <Upload className="w-5 h-5 text-amber-400" />
                                 </div>
                                 <div className="text-xs font-mono font-bold text-white">
-                                  Click or Drop Payment Screenshot Here
+                                  Click or Drop Payment Screenshot Here <span className="text-red-400">*</span>
                                 </div>
-                                <div className="text-[10px] text-white/40 font-mono">
-                                  Capture the transaction screen showing amount &amp; reference ID
+                                <div className="text-[10px] text-amber-200/70 font-mono">
+                                  Screenshot must show UPI transaction reference, date, and amount ₹{finalPayableAmount}
                                 </div>
                               </>
                             )}
                           </div>
-                        </div>
-
-                        {/* Optional Transaction Reference Number Input */}
-                        <div className="space-y-1 pt-1">
-                          <label className="text-white/60 text-[10px]">
-                            Transaction ID / UTR Number (Optional, for faster verification):
-                          </label>
-                          <input
-                            type="text"
-                            autoComplete="off"
-                            spellCheck={false}
-                            value={transactionId}
-                            onChange={(e) => setTransactionId(e.target.value)}
-                            placeholder="e.g. 423819208392 or UPI Ref"
-                            className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs font-mono focus:border-[#FF4A15] outline-none"
-                          />
                         </div>
                       </div>
                     ) : (
@@ -1289,7 +1087,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                         <div>
                           <strong className="font-[Syne] font-bold text-white text-xs block">Free Admission / Promo Waiver Applied</strong>
                           <span className="text-[10px] font-mono text-white/70">
-                            No payment required. Your pass will be instantly issued upon confirmation.
+                            No payment required. Your pass registration will be submitted for Admin approval.
                           </span>
                         </div>
                       </div>
@@ -1299,21 +1097,21 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                     <div className="pt-2">
                       <button
                         type="submit"
-                        disabled={paymentProcessing}
-                        className="w-full py-4 rounded-full bg-[#FF4A15] text-white font-[Syne] font-[800] text-sm tracking-wider shadow-[0_0_30px_rgba(255,74,21,0.35)] hover:bg-white hover:text-black transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                        disabled={paymentProcessing || (finalPayableAmount > 0 && !paymentScreenshot)}
+                        className="w-full py-4 rounded-full bg-[#FF4A15] text-white font-[Syne] font-[800] text-sm tracking-wider shadow-[0_0_30px_rgba(255,74,21,0.35)] hover:bg-white hover:text-black transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {paymentProcessing ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Generating Verified Pass...</span>
+                            <span>Submitting for Admin Verification...</span>
                           </>
                         ) : (
                           <>
                             <ShieldCheck className="w-4 h-4" />
                             <span>
                               {finalPayableAmount > 0
-                                ? `Submit Payment Proof & Generate Pass (₹${finalPayableAmount})`
-                                : `Generate Instant Free Pass (${regType === 'team' ? `${totalAttendees} Attendees` : 'Solo'})`}
+                                ? (paymentScreenshot ? `Submit Payment Proof & Request Pass Approval (₹${finalPayableAmount})` : `Upload Screenshot to Submit (₹${finalPayableAmount})`)
+                                : `Generate Free Pass (${regType === 'team' ? `${totalAttendees} Attendees` : 'Solo'})`}
                             </span>
                             <ChevronRight className="w-4 h-4" />
                           </>
@@ -1325,31 +1123,56 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
 
                 </div>
               ) : (
-                /* Pass Generation Success Showcase */
+                /* Pass Showcase (Rendered for freshly generated pass OR existing enrolled pass) */
                 <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-                  <div className="p-4 rounded-2xl bg-[#00FF88]/15 border border-[#00FF88]/40 text-[#00FF88] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <CheckCircle2 className="w-5 h-5 text-[#00FF88] shrink-0" />
-                      <div className="min-w-0">
-                        <strong className="font-[Syne] font-bold block text-sm text-white truncate">
-                          {generatedPass.registrationType === 'team'
-                            ? `Team "${generatedPass.teamName}" Registered Successfully!`
-                            : 'Registration Confirmed & Pass Active!'}
-                        </strong>
-                        <span className="text-[11px] font-mono text-white/70 break-words">
-                          {generatedPass.registrationType === 'team'
-                            ? `Admitting ${1 + (generatedPass.teamMembers?.length || 0)} team members under Pass #${generatedPass.passId}`
-                            : `Unique entry pass #${generatedPass.passId} generated.`}
-                        </span>
+                  {existingUserPass && !generatedPass ? (
+                    <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
+                        <div className="min-w-0">
+                          <strong className="font-[Syne] font-bold block text-sm text-white truncate">
+                            Already Enrolled in {selectedEvent.title}
+                          </strong>
+                          <span className="text-[11px] font-mono text-white/70 break-words">
+                            You hold Pass #{existingUserPass.passId}. Duplicate pass generation for the same event is disabled.
+                          </span>
+                        </div>
                       </div>
+                      <span className={`shrink-0 text-xs font-mono font-bold px-3 py-1.5 rounded-full ${
+                        existingUserPass.status === 'CONFIRMED'
+                          ? 'bg-emerald-500 text-black'
+                          : existingUserPass.status === 'CHECKED_IN'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-amber-400 text-black animate-pulse'
+                      }`}>
+                        {existingUserPass.status === 'CONFIRMED'
+                          ? '✅ VERIFIED BY ADMIN'
+                          : existingUserPass.status === 'CHECKED_IN'
+                          ? '🟢 CHECKED IN'
+                          : '⏳ PENDING ADMIN APPROVAL'}
+                      </span>
                     </div>
-                    <span className="shrink-0 text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-[#00FF88] text-black">
-                      PASS ACTIVE
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
+                        <div className="min-w-0">
+                          <strong className="font-[Syne] font-bold block text-sm text-white truncate">
+                            Registration Submitted — Awaiting Admin Verification
+                          </strong>
+                          <span className="text-[11px] font-mono text-white/70 break-words">
+                            Pass #{generatedPass?.passId} is issued as UNVERIFIED. Gate Scanner entry is locked until manually approved by an Admin.
+                          </span>
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-xs font-mono font-bold px-3 py-1.5 rounded-full bg-amber-400 text-black animate-pulse">
+                        ⏳ UNVERIFIED (PENDING)
+                      </span>
+                    </div>
+                  )}
 
                   {/* Render Holographic Pass Card */}
-                  <PassCard pass={generatedPass} />
+                  <PassCard pass={generatedPass || existingUserPass!} />
 
                   {/* Post-Registration Actions */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
@@ -1361,23 +1184,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                       className="px-5 py-3 rounded-full bg-[#101014] border border-white/20 hover:border-[#FF4A15] text-white font-mono text-xs flex items-center gap-2 cursor-pointer transition-colors"
                     >
                       <Ticket className="w-4 h-4 text-[#FFD60A]" />
-                      <span>View in "My Passes"</span>
+                      <span>View All in "My Passes"</span>
                     </button>
 
-                    <button
-                      onClick={() => {
-                        soundFx.playClick();
-                        setGeneratedPass(null);
-                        setTeamMembers([]);
-                        setTeamName('');
-                        setPaymentScreenshot('');
-                        setScreenshotFileName('');
-                        setTransactionId('');
-                      }}
-                      className="px-6 py-3 rounded-full bg-[#FF4A15] text-white font-[Syne] font-bold text-xs shadow-[0_0_20px_rgba(255,74,21,0.3)] hover:opacity-95 cursor-pointer"
+                    <Link
+                      to="/#events"
+                      onClick={() => soundFx.playClick()}
+                      className="px-6 py-3 rounded-full bg-[#FF4A15] text-white font-[Syne] font-bold text-xs shadow-[0_0_20px_rgba(255,74,21,0.3)] hover:opacity-95 cursor-pointer flex items-center gap-1.5"
                     >
-                      Register for Another Event
-                    </button>
+                      <span>Explore Other Events</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 </div>
               )}
