@@ -50,7 +50,11 @@ export interface ApiPass {
   paymentStatus: 'PAID' | 'FREE';
   paymentScreenshot?: string;
   transactionId?: string;
-  status: 'CONFIRMED' | 'CHECKED_IN';
+  status: 'UNVERIFIED' | 'CONFIRMED' | 'CHECKED_IN' | 'REJECTED';
+  adminVerified?: boolean;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  rejectionReason?: string;
   checkedInAt?: string;
   checkedInBy?: string;
   registeredAt: string;
@@ -59,7 +63,7 @@ export interface ApiPass {
 
 export interface VerificationResponse {
   success: boolean;
-  status: 'VALID' | 'ALREADY_CHECKED_IN' | 'INVALID';
+  status: 'VALID' | 'ALREADY_CHECKED_IN' | 'UNVERIFIED' | 'INVALID';
   pass?: ApiPass;
   message: string;
   timestamp: string;

@@ -33,7 +33,11 @@ export interface EventPass {
   paymentStatus: 'PAID' | 'FREE';
   paymentScreenshot?: string;
   transactionId?: string;
-  status: 'CONFIRMED' | 'CHECKED_IN';
+  status: 'UNVERIFIED' | 'CONFIRMED' | 'CHECKED_IN' | 'REJECTED';
+  adminVerified?: boolean;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  rejectionReason?: string;
   checkedInAt?: string;
   checkedInBy?: string;
   registeredAt: string;
@@ -43,7 +47,7 @@ export interface EventPass {
 
 export interface VerificationResult {
   success: boolean;
-  status: 'VALID' | 'ALREADY_CHECKED_IN' | 'INVALID';
+  status: 'VALID' | 'ALREADY_CHECKED_IN' | 'UNVERIFIED' | 'INVALID';
   pass?: EventPass;
   message: string;
   timestamp: string;
@@ -99,7 +103,11 @@ class PassService {
           paymentStatus: p.payment_status,
           paymentScreenshot: p.payment_screenshot || p.paymentScreenshot || undefined,
           transactionId: p.transaction_id || p.transactionId || undefined,
-          status: p.status,
+          status: (p.status || 'UNVERIFIED') as 'UNVERIFIED' | 'CONFIRMED' | 'CHECKED_IN' | 'REJECTED',
+          adminVerified: p.admin_verified !== undefined ? Boolean(p.admin_verified) : (p.status === 'CONFIRMED' || p.status === 'CHECKED_IN'),
+          verifiedAt: p.verified_at,
+          verifiedBy: p.verified_by,
+          rejectionReason: p.rejection_reason,
           checkedInAt: p.checked_in_at,
           checkedInBy: p.checked_in_by,
           registeredAt: p.registered_at,
@@ -114,6 +122,7 @@ class PassService {
             hash: p.security_hash,
             date: p.event_date,
             venue: p.event_venue,
+            verified: p.status === 'CONFIRMED' || p.status === 'CHECKED_IN',
           }),
           securityHash: p.security_hash,
         }));
@@ -259,12 +268,14 @@ class PassService {
       hash: securityHash,
       date: data.eventDate,
       venue: data.eventVenue,
+      verified: false,
     });
 
     const newPass: EventPass = {
       ...data,
       passId,
-      status: 'CONFIRMED',
+      status: 'UNVERIFIED',
+      adminVerified: false,
       registeredAt,
       qrData: qrPayload,
       securityHash,
@@ -285,6 +296,116 @@ class PassService {
     }).catch(() => {});
 
     return newPass;
+  }
+
+  public async confirmPass(passId: string, verifiedBy = 'Admin'): Promise<EventPass | null> {
+    const passIndex = this.passes.findIndex((p) => p.passId.toUpperCase() === passId.toUpperCase());
+    if (passIndex === -1) return null;
+
+    const current = this.passes[passIndex];
+    const verifiedAt = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+    const updated: EventPass = {
+      ...current,
+      status: 'CONFIRMED',
+      adminVerified: true,
+      verifiedAt,
+      verifiedBy,
+      rejectionReason: undefined,
+      qrData: JSON.stringify({
+        passId: current.passId,
+        name: current.userName,
+        email: current.userEmail,
+        event: current.eventTitle,
+        college: current.collegeName || undefined,
+        team: current.teamName || undefined,
+        members: current.teamMembers?.length ? current.teamMembers.length + 1 : 1,
+        hash: current.securityHash,
+        date: current.eventDate,
+        venue: current.eventVenue,
+        verified: true,
+      }),
+    };
+
+    this.passes[passIndex] = updated;
+    this.saveToStorage(true);
+
+    // Supabase update
+    supabaseDb.insertPass(updated).catch(() => {});
+    fetch(`${API_BASE_URL}/passes/${encodeURIComponent(passId)}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verifiedBy, verifiedAt }),
+    }).catch(() => {});
+
+    return updated;
+  }
+
+  public async rejectPass(passId: string, reason = 'Proof rejected by Admin', verifiedBy = 'Admin'): Promise<EventPass | null> {
+    const passIndex = this.passes.findIndex((p) => p.passId.toUpperCase() === passId.toUpperCase());
+    if (passIndex === -1) return null;
+
+    const current = this.passes[passIndex];
+    const updated: EventPass = {
+      ...current,
+      status: 'REJECTED',
+      adminVerified: false,
+      rejectionReason: reason,
+      verifiedBy,
+    };
+
+    this.passes[passIndex] = updated;
+    this.saveToStorage(true);
+    supabaseDb.insertPass(updated).catch(() => {});
+    return updated;
+  }
+
+  public async unverifyPass(passId: string): Promise<EventPass | null> {
+    const passIndex = this.passes.findIndex((p) => p.passId.toUpperCase() === passId.toUpperCase());
+    if (passIndex === -1) return null;
+
+    const current = this.passes[passIndex];
+    const updated: EventPass = {
+      ...current,
+      status: 'UNVERIFIED',
+      adminVerified: false,
+      verifiedAt: undefined,
+      verifiedBy: undefined,
+      checkedInAt: undefined,
+      checkedInBy: undefined,
+    };
+
+    this.passes[passIndex] = updated;
+    this.saveToStorage(true);
+    supabaseDb.insertPass(updated).catch(() => {});
+    return updated;
+  }
+
+  public async confirmAllPendingPasses(verifiedBy = 'Admin'): Promise<number> {
+    let count = 0;
+    const now = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+    this.passes = this.passes.map((p) => {
+      if (p.status === 'UNVERIFIED' || p.adminVerified === false) {
+        count++;
+        const updated: EventPass = {
+          ...p,
+          status: 'CONFIRMED',
+          adminVerified: true,
+          verifiedAt: now,
+          verifiedBy,
+          rejectionReason: undefined,
+        };
+        supabaseDb.insertPass(updated).catch(() => {});
+        return updated;
+      }
+      return p;
+    });
+
+    if (count > 0) {
+      this.saveToStorage(true);
+    }
+    return count;
   }
 
   public async verifyAndCheckInPass(
@@ -319,7 +440,7 @@ class PassService {
       }
     } catch {}
 
-    // Local fallback
+    // Local verification
     if (!rawScanInput || !rawScanInput.trim()) {
       return {
         success: false,
@@ -356,6 +477,29 @@ class PassService {
 
     const currentPass = this.passes[passIndex];
 
+    // Check if pass is rejected
+    if (currentPass.status === 'REJECTED') {
+      return {
+        success: false,
+        status: 'INVALID',
+        pass: currentPass,
+        message: `ENTRY DENIED: Pass was REJECTED by Admin (${currentPass.rejectionReason || 'Invalid proof'}).`,
+        timestamp,
+      };
+    }
+
+    // Check if pass is unverified by admin
+    if (currentPass.status === 'UNVERIFIED' || currentPass.adminVerified === false) {
+      return {
+        success: false,
+        status: 'UNVERIFIED',
+        pass: currentPass,
+        message: `ENTRY DENIED: Pass is NOT verified by Admin yet. Please get Admin verification/approval before gate entry.`,
+        timestamp,
+      };
+    }
+
+    // Check if already checked in
     if (currentPass.status === 'CHECKED_IN') {
       return {
         success: false,
@@ -390,16 +534,26 @@ class PassService {
     };
   }
 
-  public updatePassStatus(passId: string, status: 'CONFIRMED' | 'CHECKED_IN', checkedInBy?: string) {
+  public updatePassStatus(
+    passId: string,
+    status: 'UNVERIFIED' | 'CONFIRMED' | 'CHECKED_IN' | 'REJECTED',
+    checkedInBy?: string
+  ) {
     const passIndex = this.passes.findIndex((p) => p.passId.toUpperCase() === passId.toUpperCase());
     if (passIndex !== -1) {
+      const current = this.passes[passIndex];
       this.passes[passIndex] = {
-        ...this.passes[passIndex],
+        ...current,
         status,
-        checkedInAt: status === 'CHECKED_IN' ? `${new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : undefined,
+        adminVerified: status === 'CONFIRMED' || status === 'CHECKED_IN',
+        checkedInAt:
+          status === 'CHECKED_IN'
+            ? `${new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            : undefined,
         checkedInBy: status === 'CHECKED_IN' ? (checkedInBy || 'Admin') : undefined,
       };
       this.saveToStorage(true);
+      supabaseDb.insertPass(this.passes[passIndex]).catch(() => {});
     }
   }
 
@@ -424,14 +578,18 @@ class PassService {
       ? this.passes.filter((p) => p.eventId === eventId)
       : this.passes;
     const total = list.length;
+    const unverified = list.filter((p) => p.status === 'UNVERIFIED' || p.adminVerified === false).length;
     const checkedIn = list.filter((p) => p.status === 'CHECKED_IN').length;
-    const pending = total - checkedIn;
+    const confirmed = list.filter((p) => p.status === 'CONFIRMED').length;
+    const rejected = list.filter((p) => p.status === 'REJECTED').length;
     const revenue = list.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
     return {
       total,
+      unverified,
+      confirmed,
       checkedIn,
-      pending,
+      rejected,
       revenue,
       checkInPercentage: total > 0 ? Math.round((checkedIn / total) * 100) : 0,
     };

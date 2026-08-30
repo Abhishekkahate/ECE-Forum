@@ -183,6 +183,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [selectedProofPass, setSelectedProofPass] = useState<EventPass | null>(null);
   const [deletingPassId, setDeletingPassId] = useState<string | null>(null);
   const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
+  const [passStatusFilter, setPassStatusFilter] = useState<'ALL' | 'UNVERIFIED' | 'CONFIRMED' | 'CHECKED_IN' | 'REJECTED'>('ALL');
+  const [verifyingPassId, setVerifyingPassId] = useState<string | null>(null);
+  const [verifySuccessMsg, setVerifySuccessMsg] = useState<string | null>(null);
 
   // Admins & Organizers
   const [adminsList, setAdminsList] = useState<{ id: string; name: string; email: string; role: string; created_at?: string }[]>([]);
@@ -469,6 +472,70 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  // Confirm / Verify Pass
+  const handleConfirmPass = async (passId: string) => {
+    try {
+      soundFx.playSuccess();
+      setVerifyingPassId(passId);
+      await passService.confirmPass(passId, currentUser?.email || 'Admin');
+      refreshLivePasses();
+      setVerifySuccessMsg(`Pass ${passId} verified & confirmed. Scanner gate entry unlocked!`);
+      setTimeout(() => setVerifySuccessMsg(null), 3500);
+      if (selectedProofPass && selectedProofPass.passId === passId) {
+        setSelectedProofPass((prev) => prev ? ({ ...prev, status: 'CONFIRMED', adminVerified: true, verifiedAt: new Date().toLocaleString('en-IN') }) : null);
+      }
+    } catch {
+      refreshLivePasses();
+    } finally {
+      setVerifyingPassId(null);
+    }
+  };
+
+  // Reject Pass
+  const handleRejectPass = async (passId: string, reason?: string) => {
+    try {
+      soundFx.playLaser();
+      await passService.rejectPass(passId, reason || 'Payment/Identity proof rejected by Admin', currentUser?.email || 'Admin');
+      refreshLivePasses();
+      setVerifySuccessMsg(`Pass ${passId} marked as REJECTED.`);
+      setTimeout(() => setVerifySuccessMsg(null), 3500);
+      if (selectedProofPass && selectedProofPass.passId === passId) {
+        setSelectedProofPass((prev) => prev ? ({ ...prev, status: 'REJECTED', adminVerified: false, rejectionReason: reason }) : null);
+      }
+    } catch {
+      refreshLivePasses();
+    }
+  };
+
+  // Unverify / Revert Pass to Pending
+  const handleUnverifyPass = async (passId: string) => {
+    try {
+      soundFx.playClick();
+      await passService.unverifyPass(passId);
+      refreshLivePasses();
+      setVerifySuccessMsg(`Pass ${passId} reverted to unverified.`);
+      setTimeout(() => setVerifySuccessMsg(null), 3500);
+      if (selectedProofPass && selectedProofPass.passId === passId) {
+        setSelectedProofPass((prev) => prev ? ({ ...prev, status: 'UNVERIFIED', adminVerified: false }) : null);
+      }
+    } catch {
+      refreshLivePasses();
+    }
+  };
+
+  // Confirm All Pending Passes Batch
+  const handleConfirmAllPending = async () => {
+    try {
+      soundFx.playSuccess();
+      const count = await passService.confirmAllPendingPasses(currentUser?.email || 'Admin');
+      refreshLivePasses();
+      setVerifySuccessMsg(`${count} pending passes successfully verified and approved!`);
+      setTimeout(() => setVerifySuccessMsg(null), 4000);
+    } catch {
+      refreshLivePasses();
+    }
+  };
+
   // Toggle Check-in status
   const handleToggleCheckIn = async (passId: string) => {
     soundFx.playSuccess();
@@ -498,14 +565,33 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     }
   };
 
-
+  // Pass status counts
+  const pendingPassesCount = passes.filter((p) => p.status === 'UNVERIFIED' || p.adminVerified === false).length;
+  const confirmedPassesCount = passes.filter((p) => p.status === 'CONFIRMED').length;
+  const checkedInPassesCount = passes.filter((p) => p.status === 'CHECKED_IN').length;
+  const rejectedPassesCount = passes.filter((p) => p.status === 'REJECTED').length;
 
   // Filtered passes calculation
-  const eventPasses = passes.filter((p) =>
-    selectedEventFilter === 'ALL'
-      ? true
-      : p.eventId === selectedEventFilter || p.eventTitle.toLowerCase().trim() === selectedEventFilter.toLowerCase().trim()
-  );
+  const eventPasses = passes.filter((p) => {
+    const matchesEvent =
+      selectedEventFilter === 'ALL'
+        ? true
+        : p.eventId === selectedEventFilter || p.eventTitle.toLowerCase().trim() === selectedEventFilter.toLowerCase().trim();
+
+    const isUnverified = p.status === 'UNVERIFIED' || p.adminVerified === false;
+    const matchesStatus =
+      passStatusFilter === 'ALL'
+        ? true
+        : passStatusFilter === 'UNVERIFIED'
+        ? isUnverified
+        : passStatusFilter === 'CONFIRMED'
+        ? p.status === 'CONFIRMED'
+        : passStatusFilter === 'CHECKED_IN'
+        ? p.status === 'CHECKED_IN'
+        : p.status === 'REJECTED';
+
+    return matchesEvent && matchesStatus;
+  });
 
   const filteredPasses = eventPasses.filter(
     (p) =>
@@ -1241,155 +1327,287 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-2.5">
-                        <select
-                          value={selectedEventFilter}
-                          onChange={(e) => setSelectedEventFilter(e.target.value)}
-                          className="px-3.5 py-2.5 rounded-full bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FF4A15]/60 outline-none"
-                        >
-                          <option value="ALL">All Events ({passes.length})</option>
-                          {eventsList.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.title} ({passes.filter((p) => p.eventId === e.id).length})
-                            </option>
-                          ))}
-                        </select>
-                        <div className="relative flex-1 min-w-[200px]">
-                          <Search className="w-4 h-4 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                          <input
-                            autoComplete="off"
-                            spellCheck={false}
-                            value={searchFilter}
-                            onChange={(e) => setSearchFilter(e.target.value)}
-                            placeholder="Search name, email, college, pass ID, UTR ref..."
-                            className="w-full pl-9 pr-3.5 py-2.5 rounded-full bg-black border border-white/10 text-xs text-white placeholder:text-white/30 focus:border-[#FF4A15]/60 outline-none font-mono"
-                          />
+                      {verifySuccessMsg && (
+                        <div className="p-3 rounded-xl bg-[#00FF88]/10 border border-[#00FF88]/30 text-[#00FF88] text-xs font-mono flex items-center justify-between gap-2 shadow-[0_0_20px_rgba(0,255,136,0.15)]">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-[#00FF88]" />
+                            <span>{verifySuccessMsg}</span>
+                          </div>
+                          <button onClick={() => setVerifySuccessMsg(null)} className="text-white/40 hover:text-white">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <button
-                          onClick={handleExportCSV}
-                          className="px-4 py-2.5 rounded-full bg-white text-black font-mono font-bold text-xs flex items-center gap-1.5 hover:bg-[#FF4A15] hover:text-white transition-colors"
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
-                        </button>
-                        <button
-                          onClick={handleExportExcel}
-                          className="px-4 py-2.5 rounded-full bg-[#FF4A15] text-white font-mono font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,74,21,0.3)]"
-                        >
-                          <FileDown className="w-3.5 h-3.5" /> XLS
-                        </button>
+                      )}
+
+                      {/* Pending Verification Callout Banner */}
+                      {pendingPassesCount > 0 && (
+                        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 grid place-items-center shrink-0">
+                              <AlertTriangle className="w-5 h-5 text-amber-400" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-amber-300 flex items-center gap-2">
+                                <span>{pendingPassesCount} Registration{pendingPassesCount > 1 ? 's' : ''} Pending Admin Verification</span>
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                              </div>
+                              <p className="text-[11px] text-amber-200/70 mt-0.5">
+                                Unverified passes cannot be scanned by the Gate Android Scanner. Review and confirm attendee credentials.
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={handleConfirmAllPending}
+                            className="shrink-0 px-4 py-2.5 rounded-full bg-[#00FF88] text-black font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-white transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Verify All ({pendingPassesCount})
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Filters: Event, Search, Status Pills, Exports */}
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2.5">
+                          <select
+                            value={selectedEventFilter}
+                            onChange={(e) => setSelectedEventFilter(e.target.value)}
+                            className="px-3.5 py-2.5 rounded-full bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FF4A15]/60 outline-none"
+                          >
+                            <option value="ALL">All Events ({passes.length})</option>
+                            {eventsList.map((e) => (
+                              <option key={e.id} value={e.id}>
+                                {e.title} ({passes.filter((p) => p.eventId === e.id).length})
+                              </option>
+                            ))}
+                          </select>
+                          <div className="relative flex-1 min-w-[200px]">
+                            <Search className="w-4 h-4 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                              autoComplete="off"
+                              spellCheck={false}
+                              value={searchFilter}
+                              onChange={(e) => setSearchFilter(e.target.value)}
+                              placeholder="Search name, email, college, pass ID, UTR ref..."
+                              className="w-full pl-9 pr-3.5 py-2.5 rounded-full bg-black border border-white/10 text-xs text-white placeholder:text-white/30 focus:border-[#FF4A15]/60 outline-none font-mono"
+                            />
+                          </div>
+                          <button
+                            onClick={handleExportCSV}
+                            className="px-4 py-2.5 rounded-full bg-white text-black font-mono font-bold text-xs flex items-center gap-1.5 hover:bg-[#FF4A15] hover:text-white transition-colors cursor-pointer"
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
+                          </button>
+                          <button
+                            onClick={handleExportExcel}
+                            className="px-4 py-2.5 rounded-full bg-[#FF4A15] text-white font-mono font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,74,21,0.3)] cursor-pointer"
+                          >
+                            <FileDown className="w-3.5 h-3.5" /> XLS
+                          </button>
+                        </div>
+
+                        {/* Status Switcher Tabs */}
+                        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/[0.08] font-mono text-xs">
+                          {[
+                            { id: 'ALL', label: `All Passes (${passes.length})` },
+                            { id: 'UNVERIFIED', label: `⏳ Pending Verification (${pendingPassesCount})`, alert: pendingPassesCount > 0 },
+                            { id: 'CONFIRMED', label: `✅ Verified (${confirmedPassesCount})` },
+                            { id: 'CHECKED_IN', label: `🟢 Checked In (${checkedInPassesCount})` },
+                            { id: 'REJECTED', label: `❌ Rejected (${rejectedPassesCount})` },
+                          ].map((tab) => (
+                            <button
+                              key={tab.id}
+                              onClick={() => {
+                                soundFx.playClick();
+                                setPassStatusFilter(tab.id as any);
+                              }}
+                              className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                                passStatusFilter === tab.id
+                                  ? tab.id === 'UNVERIFIED'
+                                    ? 'bg-amber-500 text-black font-bold shadow-md'
+                                    : 'bg-white text-black font-bold shadow-md'
+                                  : tab.alert
+                                  ? 'text-amber-300 bg-amber-500/15 border border-amber-500/30 font-bold'
+                                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              <span>{tab.label}</span>
+                              {tab.alert && passStatusFilter !== tab.id && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       <div className="rounded-[20px] bg-[#121216] border border-white/[0.08] overflow-hidden">
-                        <div className="max-h-[460px] overflow-auto">
+                        <div className="max-h-[480px] overflow-auto">
                           <table className="w-full text-xs font-mono">
                             <thead className="sticky top-0 bg-[#0A0A0C] border-b border-white/10 text-[10px] tracking-widest text-white/40 uppercase">
                               <tr>
                                 <th className="text-left p-3.5">Attendee / Team</th>
                                 <th className="text-left p-3.5">Event Info</th>
                                 <th className="text-left p-3.5">Fee &amp; Payment Proof</th>
-                                <th className="text-left p-3.5">Gate Status</th>
-                                <th className="text-right p-3.5">Actions</th>
+                                <th className="text-left p-3.5">Verification &amp; Gate Status</th>
+                                <th className="text-right p-3.5">Admin Actions</th>
                               </tr>
                             </thead>
                             <tbody>
-                                {filteredPasses.slice(0, 100).map((p) => (
-                                  <tr key={p.passId} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                                    <td className="p-3.5">
-                                      <div className="font-bold text-white flex items-center gap-2">
-                                        <span>{p.userName}</span>
-                                        {p.registrationType === 'team' && (
-                                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30 font-bold">
-                                            TEAM: {p.teamName || 'Team Pass'} ({p.teamMembers ? p.teamMembers.length + 1 : 1}p)
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="text-white/40 text-[11px] mt-0.5">
-                                        {p.userEmail} &bull; {p.phone || 'No phone'}
-                                      </div>
-                                      <div className="flex items-center gap-2.5 mt-1">
-                                        <span className="text-[10px] text-[#FF4A15] font-bold">{p.passId}</span>
-                                        <button
-                                          onClick={() => {
-                                            soundFx.playClick();
-                                            setSelectedProofPass(p);
-                                          }}
-                                          className="text-[10px] text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer font-bold"
-                                        >
-                                          <Eye className="w-3 h-3" /> View Dossier &amp; Proof
-                                        </button>
-                                      </div>
-                                    </td>
-                                    <td className="p-3.5">
-                                      <div className="truncate max-w-[200px] text-white font-medium">{p.eventTitle}</div>
-                                      <div className="text-white/40 text-[10px] truncate max-w-[200px]">{p.collegeName || 'PIET, Nagpur'}</div>
-                                      <div className="text-white/30 text-[10px]">{p.department} &bull; {p.year}</div>
-                                    </td>
-                                    <td className="p-3.5">
-                                      <div className="font-bold text-[#F5F3EF]">
-                                        {p.amount === 0 ? <span className="text-[#00FF88]">FREE PASS</span> : `₹${p.amount}`}
-                                      </div>
-                                      {p.paymentScreenshot ? (
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                          <img
-                                            src={p.paymentScreenshot}
-                                            alt="Payment Proof"
-                                            onClick={() => {
-                                              soundFx.playClick();
-                                              setSelectedProofPass(p);
-                                            }}
-                                            className="w-10 h-10 rounded-lg object-cover border border-white/20 hover:border-[#00E5CC] cursor-pointer shadow transition-all hover:scale-105 shrink-0 bg-black"
-                                          />
+                                {filteredPasses.slice(0, 100).map((p) => {
+                                  const isUnverified = p.status === 'UNVERIFIED' || p.adminVerified === false;
+                                  const isRejected = p.status === 'REJECTED';
+                                  const isCheckedIn = p.status === 'CHECKED_IN';
+                                  const isConfirmed = p.status === 'CONFIRMED' || (!isUnverified && !isRejected && !isCheckedIn);
+
+                                  return (
+                                    <tr key={p.passId} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                                      <td className="p-3.5">
+                                        <div className="font-bold text-white flex items-center gap-2">
+                                          <span>{p.userName}</span>
+                                          {p.registrationType === 'team' && (
+                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30 font-bold">
+                                              TEAM: {p.teamName || 'Team Pass'} ({p.teamMembers ? p.teamMembers.length + 1 : 1}p)
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-white/40 text-[11px] mt-0.5">
+                                          {p.userEmail} &bull; {p.phone || 'No phone'}
+                                        </div>
+                                        <div className="flex items-center gap-2.5 mt-1">
+                                          <span className="text-[10px] text-[#FF4A15] font-bold">{p.passId}</span>
                                           <button
                                             onClick={() => {
                                               soundFx.playClick();
                                               setSelectedProofPass(p);
                                             }}
-                                            className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30 hover:bg-[#00E5CC] hover:text-black transition-colors cursor-pointer"
+                                            className="text-[10px] text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer font-bold"
                                           >
-                                            <Eye className="w-3 h-3" /> Screenshot
+                                            <Eye className="w-3 h-3" /> View Dossier &amp; Proof
                                           </button>
                                         </div>
-                                      ) : p.transactionId ? (
-                                        <div className="text-[10px] text-[#FFD60A] font-bold mt-0.5 truncate max-w-[140px]">UTR: {p.transactionId}</div>
-                                      ) : (
-                                        <div className="text-[10px] text-white/30">Direct Gateway</div>
-                                      )}
-                                    </td>
-                                    <td className="p-3.5">
-                                      <span
-                                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                          p.status === 'CHECKED_IN'
-                                            ? 'bg-[#00FF88]/15 text-[#00FF88] border border-[#00FF88]/30'
-                                            : 'bg-[#FFD60A]/15 text-[#FFD60A] border border-[#FFD60A]/20'
-                                        }`}
-                                      >
-                                        {p.status === 'CHECKED_IN' ? 'CHECKED IN' : 'CONFIRMED'}
-                                      </span>
-                                      {p.checkedInAt && <div className="text-[9px] text-white/40 mt-1">{p.checkedInAt}</div>}
-                                    </td>
-                                    <td className="p-3.5 text-right">
-                                      <div className="flex items-center justify-end gap-1.5">
-                                        <button
-                                          onClick={() => handleToggleCheckIn(p.passId)}
-                                          className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                                            p.status === 'CHECKED_IN'
-                                              ? 'bg-white/10 text-white/60 hover:bg-white/20'
-                                              : 'bg-[#00FF88] text-black hover:bg-white'
+                                      </td>
+                                      <td className="p-3.5">
+                                        <div className="truncate max-w-[200px] text-white font-medium">{p.eventTitle}</div>
+                                        <div className="text-white/40 text-[10px] truncate max-w-[200px]">{p.collegeName || 'PIET, Nagpur'}</div>
+                                        <div className="text-white/30 text-[10px]">{p.department} &bull; {p.year}</div>
+                                      </td>
+                                      <td className="p-3.5">
+                                        <div className="font-bold text-[#F5F3EF]">
+                                          {p.amount === 0 ? <span className="text-[#00FF88]">FREE PASS</span> : `₹${p.amount}`}
+                                        </div>
+                                        {p.paymentScreenshot ? (
+                                          <div className="flex items-center gap-2 mt-1.5">
+                                            <img
+                                              src={p.paymentScreenshot}
+                                              alt="Payment Proof"
+                                              onClick={() => {
+                                                soundFx.playClick();
+                                                setSelectedProofPass(p);
+                                              }}
+                                              className="w-10 h-10 rounded-lg object-cover border border-white/20 hover:border-[#00E5CC] cursor-pointer shadow transition-all hover:scale-105 shrink-0 bg-black"
+                                            />
+                                            <button
+                                              onClick={() => {
+                                                soundFx.playClick();
+                                                setSelectedProofPass(p);
+                                              }}
+                                              className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30 hover:bg-[#00E5CC] hover:text-black transition-colors cursor-pointer"
+                                            >
+                                              <Eye className="w-3 h-3" /> Screenshot
+                                            </button>
+                                          </div>
+                                        ) : p.transactionId ? (
+                                          <div className="text-[10px] text-[#FFD60A] font-bold mt-0.5 truncate max-w-[140px]">UTR: {p.transactionId}</div>
+                                        ) : (
+                                          <div className="text-[10px] text-white/30">Direct Gateway</div>
+                                        )}
+                                      </td>
+                                      <td className="p-3.5">
+                                        <span
+                                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                                            isRejected
+                                              ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                                              : isUnverified
+                                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                                              : isCheckedIn
+                                              ? 'bg-[#00FF88]/15 text-[#00FF88] border border-[#00FF88]/30'
+                                              : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                                           }`}
                                         >
-                                          {p.status === 'CHECKED_IN' ? 'Undo' : 'Check-In'}
-                                        </button>
-                                        <button
-                                          onClick={() => setDeletingPassId(p.passId)}
-                                          className="w-7 h-7 rounded-full bg-[#FF3B30]/10 border border-[#FF3B30]/20 text-[#FF3B30] grid place-items-center hover:bg-[#FF3B30] hover:text-white transition-colors cursor-pointer"
-                                          title="Delete Pass"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
+                                          {isRejected
+                                            ? '❌ REJECTED'
+                                            : isUnverified
+                                            ? '⏳ UNVERIFIED (PENDING)'
+                                            : isCheckedIn
+                                            ? '🟢 CHECKED IN'
+                                            : '✅ CONFIRMED / VERIFIED'}
+                                        </span>
+                                        {p.verifiedAt && !isCheckedIn && !isUnverified && (
+                                          <div className="text-[9px] text-white/40 mt-1">Verified: {p.verifiedAt}</div>
+                                        )}
+                                        {p.checkedInAt && (
+                                          <div className="text-[9px] text-white/40 mt-1">{p.checkedInAt}</div>
+                                        )}
+                                      </td>
+                                      <td className="p-3.5 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                          {isUnverified ? (
+                                            <>
+                                              <button
+                                                onClick={() => handleConfirmPass(p.passId)}
+                                                disabled={verifyingPassId === p.passId}
+                                                className="px-3 py-1 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_10px_rgba(0,255,136,0.3)] disabled:opacity-50"
+                                                title="Confirm pass to unlock scanner entry"
+                                              >
+                                                {verifyingPassId === p.passId ? 'Confirming...' : '✓ Confirm Pass'}
+                                              </button>
+                                              <button
+                                                onClick={() => handleRejectPass(p.passId)}
+                                                className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+                                                title="Reject Pass"
+                                              >
+                                                Reject
+                                              </button>
+                                            </>
+                                          ) : isRejected ? (
+                                            <button
+                                              onClick={() => handleConfirmPass(p.passId)}
+                                              className="px-3 py-1 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer"
+                                            >
+                                              ✓ Re-Approve
+                                            </button>
+                                          ) : (
+                                            <>
+                                              <button
+                                                onClick={() => handleToggleCheckIn(p.passId)}
+                                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                                  isCheckedIn
+                                                    ? 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                    : 'bg-[#00FF88] text-black hover:bg-white shadow-[0_0_10px_rgba(0,255,136,0.2)]'
+                                                }`}
+                                              >
+                                                {isCheckedIn ? 'Undo' : 'Check-In'}
+                                              </button>
+                                              <button
+                                                onClick={() => handleUnverifyPass(p.passId)}
+                                                className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/5 border border-white/10 text-white/50 hover:text-amber-300 hover:border-amber-400 transition-all cursor-pointer"
+                                                title="Revert to Unverified"
+                                              >
+                                                Unverify
+                                              </button>
+                                            </>
+                                          )}
+                                          <button
+                                            onClick={() => setDeletingPassId(p.passId)}
+                                            className="w-7 h-7 rounded-full bg-[#FF3B30]/10 border border-[#FF3B30]/20 text-[#FF3B30] grid place-items-center hover:bg-[#FF3B30] hover:text-white transition-colors cursor-pointer"
+                                            title="Delete Pass"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               {filteredPasses.length === 0 && (
                                 <tr>
                                   <td colSpan={5} className="p-8 text-center text-white/30 font-mono">
@@ -2505,9 +2723,25 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               {/* Status and Summary Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-2xl bg-black/50 border border-white/[0.08] space-y-1">
-                  <span className="text-[10px] text-white/40 block uppercase">Gate Status</span>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedProofPass.status === 'CHECKED_IN' ? 'bg-[#00FF88]/20 text-[#00FF88] border border-[#00FF88]/40' : 'bg-[#FFD60A]/20 text-[#FFD60A] border border-[#FFD60A]/40'}`}>
-                    {selectedProofPass.status === 'CHECKED_IN' ? 'CHECKED IN' : 'CONFIRMED'}
+                  <span className="text-[10px] text-white/40 block uppercase">Admin &amp; Gate Status</span>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      selectedProofPass.status === 'REJECTED'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                        : selectedProofPass.status === 'UNVERIFIED' || selectedProofPass.adminVerified === false
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                        : selectedProofPass.status === 'CHECKED_IN'
+                        ? 'bg-[#00FF88]/20 text-[#00FF88] border border-[#00FF88]/40'
+                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    }`}
+                  >
+                    {selectedProofPass.status === 'REJECTED'
+                      ? 'REJECTED'
+                      : selectedProofPass.status === 'UNVERIFIED' || selectedProofPass.adminVerified === false
+                      ? '⏳ UNVERIFIED'
+                      : selectedProofPass.status === 'CHECKED_IN'
+                      ? 'CHECKED IN'
+                      : '✅ VERIFIED'}
                   </span>
                 </div>
 
@@ -2708,39 +2942,82 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               </div>
 
               {/* Action Buttons Footer */}
-              <div className="pt-2 flex flex-wrap gap-2 justify-between items-center border-t border-white/[0.08]">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      soundFx.playClick();
-                      handleToggleCheckIn(selectedProofPass.passId);
-                      setSelectedProofPass((prev) => prev ? ({
-                        ...prev,
-                        status: prev.status === 'CHECKED_IN' ? 'CONFIRMED' : 'CHECKED_IN',
-                        checkedInAt: prev.status === 'CHECKED_IN' ? undefined : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                      }) : null);
-                    }}
-                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      selectedProofPass.status === 'CHECKED_IN'
-                        ? 'bg-white/10 text-white hover:bg-white/20'
-                        : 'bg-[#00FF88] text-black hover:bg-white'
-                    }`}
-                  >
-                    {selectedProofPass.status === 'CHECKED_IN' ? 'Undo Check-In' : '✓ Check-In Attendee'}
-                  </button>
+              <div className="pt-3 flex flex-wrap gap-2.5 justify-between items-center border-t border-white/[0.08]">
+                <div className="flex flex-wrap gap-2 items-center">
+                  {selectedProofPass.status === 'UNVERIFIED' || selectedProofPass.adminVerified === false ? (
+                    <>
+                      <button
+                        onClick={() => handleConfirmPass(selectedProofPass.passId)}
+                        disabled={verifyingPassId === selectedProofPass.passId}
+                        className="px-4 py-2 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(0,255,136,0.35)] flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-black" />
+                        <span>{verifyingPassId === selectedProofPass.passId ? 'Confirming...' : '✓ Confirm & Verify Pass'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleRejectPass(selectedProofPass.passId)}
+                        className="px-3.5 py-2 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+                      >
+                        Reject Pass
+                      </button>
+                    </>
+                  ) : selectedProofPass.status === 'REJECTED' ? (
+                    <button
+                      onClick={() => handleConfirmPass(selectedProofPass.passId)}
+                      className="px-4 py-2 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(0,255,136,0.35)] flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-black" />
+                      <span>✓ Re-Approve &amp; Verify Pass</span>
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          soundFx.playClick();
+                          handleToggleCheckIn(selectedProofPass.passId);
+                          setSelectedProofPass((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  status: prev.status === 'CHECKED_IN' ? 'CONFIRMED' : 'CHECKED_IN',
+                                  checkedInAt:
+                                    prev.status === 'CHECKED_IN'
+                                      ? undefined
+                                      : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                                }
+                              : null
+                          );
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          selectedProofPass.status === 'CHECKED_IN'
+                            ? 'bg-white/10 text-white hover:bg-white/20'
+                            : 'bg-[#00FF88] text-black hover:bg-white shadow-[0_0_12px_rgba(0,255,136,0.3)]'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{selectedProofPass.status === 'CHECKED_IN' ? 'Undo Check-In' : 'Gate Check-In Attendee'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleUnverifyPass(selectedProofPass.passId)}
+                        className="px-3 py-2 rounded-full text-[11px] font-bold bg-white/5 border border-white/10 text-white/60 hover:text-amber-300 hover:border-amber-400 transition-all cursor-pointer"
+                      >
+                        Revert to Unverified
+                      </button>
+                    </>
+                  )}
 
                   <button
                     onClick={() => {
                       soundFx.playClick();
-                      const fullSummary = `ECE FORUM REGISTRATION\nPass ID: ${selectedProofPass.passId}\nEvent: ${selectedProofPass.eventTitle}\nAttendee: ${selectedProofPass.userName}\nEmail: ${selectedProofPass.userEmail}\nPhone: ${selectedProofPass.phone || 'N/A'}\nCollege: ${selectedProofPass.collegeName || 'PIET'}\nDepartment: ${selectedProofPass.department}\nType: ${selectedProofPass.registrationType || 'individual'}\nTeam Name: ${selectedProofPass.teamName || 'N/A'}\nTeammates: ${selectedProofPass.teamMembers?.map((m: any) => `${m.name} (${m.email})`).join(', ') || 'None'}\nAmount: ₹${selectedProofPass.amount}\nUTR: ${selectedProofPass.transactionId || 'N/A'}`;
+                      const fullSummary = `ECE FORUM REGISTRATION\nPass ID: ${selectedProofPass.passId}\nEvent: ${selectedProofPass.eventTitle}\nAttendee: ${selectedProofPass.userName}\nEmail: ${selectedProofPass.userEmail}\nPhone: ${selectedProofPass.phone || 'N/A'}\nCollege: ${selectedProofPass.collegeName || 'PIET'}\nDepartment: ${selectedProofPass.department}\nType: ${selectedProofPass.registrationType || 'individual'}\nTeam Name: ${selectedProofPass.teamName || 'N/A'}\nTeammates: ${selectedProofPass.teamMembers?.map((m: any) => `${m.name} (${m.email})`).join(', ') || 'None'}\nAmount: ₹${selectedProofPass.amount}\nUTR: ${selectedProofPass.transactionId || 'N/A'}\nStatus: ${selectedProofPass.status}`;
                       navigator.clipboard.writeText(fullSummary);
                       setCopiedProofField('summary');
                       setTimeout(() => setCopiedProofField(null), 2000);
                     }}
-                    className="px-3.5 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    <span>{copiedProofField === 'summary' ? 'Dossier Copied!' : 'Copy Full Summary'}</span>
+                    <span>{copiedProofField === 'summary' ? 'Dossier Copied!' : 'Copy Summary'}</span>
                   </button>
                 </div>
 

@@ -1,7 +1,7 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
-import { Download, Printer, ShieldCheck, CheckCircle2, QrCode as QrIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Download, Printer, ShieldCheck, CheckCircle2, QrCode as QrIcon, Sparkles, Loader2, AlertTriangle, Lock, ShieldAlert } from 'lucide-react';
 import { type EventPass } from '../services/passService';
 import { soundFx } from '../utils/audio';
 
@@ -70,16 +70,16 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     // Header
     ctx.fillStyle = '#00E5CC';
     ctx.font = 'bold 24px monospace';
-    ctx.fillText('â˜… OFFICIAL ENTRY PASS', 48, 80);
+    ctx.fillText('★ OFFICIAL ENTRY PASS', 48, 80);
 
     ctx.fillStyle = '#94A3B8';
     ctx.font = '20px monospace';
-    ctx.fillText('PIET â€¢ ECE Department Forum', 48, 115);
+    ctx.fillText('PIET • ECE Department Forum', 48, 115);
 
     // Status
-    ctx.fillStyle = passData.status === 'CHECKED_IN' ? '#10B981' : '#00E5CC';
+    ctx.fillStyle = passData.status === 'CHECKED_IN' ? '#10B981' : passData.status === 'UNVERIFIED' ? '#F59E0B' : '#00E5CC';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText(`[ ${passData.status} ]`, 680, 95);
+    ctx.fillText(`[ ${passData.status} ]`, 660, 95);
 
     // Event title
     ctx.fillStyle = '#FFFFFF';
@@ -89,9 +89,9 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     // Event meta
     ctx.fillStyle = '#94A3B8';
     ctx.font = '22px monospace';
-    ctx.fillText(`ðŸ“… ${passData.eventDate}  â€¢  â° ${passData.eventTime}`, 48, 230);
+    ctx.fillText(`📅 ${passData.eventDate}  •  ⏰ ${passData.eventTime}`, 48, 230);
     ctx.fillStyle = '#FFD60A';
-    ctx.fillText(`ðŸ“ ${passData.eventVenue}`, 48, 268);
+    ctx.fillText(`📍 ${passData.eventVenue}`, 48, 268);
 
     // Pass ID Box
     ctx.fillStyle = '#03060E';
@@ -140,11 +140,6 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
 
     ctx.fillStyle = '#64748B';
     ctx.font = '16px monospace';
-    ctx.fillText('EMAIL', 72, 575);
-    ctx.fillStyle = '#00E5CC';
-    ctx.font = 'bold 22px monospace';
-    ctx.fillText(passData.userEmail, 72, 608);
-
     ctx.fillStyle = '#64748B';
     ctx.font = '16px monospace';
     ctx.fillText('DEPARTMENT / YEAR', 72, 665);
@@ -479,6 +474,9 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
   };
 
   const isCheckedIn = pass.status === 'CHECKED_IN';
+  const isUnverified = pass.status === 'UNVERIFIED' || pass.adminVerified === false;
+  const isRejected = pass.status === 'REJECTED';
+  const isConfirmed = pass.status === 'CONFIRMED' || (pass.adminVerified && !isCheckedIn && !isRejected);
 
   return (
     <div className="space-y-4 max-w-md mx-auto">
@@ -498,7 +496,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-midnight border border-white/10">
               <img src="/space_logo.webp" alt="SPACE" className="w-6 h-6 object-contain" />
-              <span className="text-slate-600 text-[9px] font-mono">Ã—</span>
+              <span className="text-slate-600 text-[9px] font-mono">×</span>
               <img src="/sinc_logo.webp" alt="SINC" className="w-6 h-6 object-contain filter drop-shadow-[0_0_4px_rgba(0,242,254,0.6)]" />
             </div>
             <div>
@@ -506,46 +504,99 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <Sparkles className="w-2.5 h-2.5 text-amber" />
                 <span>OFFICIAL ENTRY PASS</span>
               </div>
-              <div className="text-[9px] font-mono text-slate-400">PIET â€¢ ECE Department Forum</div>
+              <div className="text-[9px] font-mono text-slate-400">PIET • ECE Department Forum</div>
             </div>
           </div>
 
           {/* Status Capsule */}
           <div
             className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase border flex items-center gap-1.5 ${
-              isCheckedIn
+              isRejected
+                ? 'bg-red-500/20 text-red-400 border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                : isUnverified
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                : isCheckedIn
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                : 'bg-lime/15 text-lime border-lime/40 shadow-[0_0_12px_rgba(0,242,254,0.2)]'
+                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                isCheckedIn ? 'bg-emerald-400 animate-none' : 'bg-lime animate-ping'
+                isRejected
+                  ? 'bg-red-400'
+                  : isUnverified
+                  ? 'bg-amber-400 animate-ping'
+                  : isCheckedIn
+                  ? 'bg-emerald-400 animate-none'
+                  : 'bg-emerald-400 animate-pulse'
               }`}
             />
-            <span>{isCheckedIn ? 'CHECKED IN' : 'CONFIRMED'}</span>
+            <span>
+              {isRejected
+                ? 'REJECTED'
+                : isUnverified
+                ? 'NOT VERIFIED'
+                : isCheckedIn
+                ? 'CHECKED IN'
+                : 'VERIFIED'}
+            </span>
           </div>
         </div>
 
         {/* Event Title Banner */}
-        <div className="space-y-1 mb-5">
+        <div className="space-y-1 mb-4">
           <h4 className="font-space font-extrabold text-lg text-white leading-tight">
             {pass.eventTitle}
           </h4>
           <p className="text-[11px] font-mono text-slate-400 flex items-center gap-2">
-            <span>ðŸ“… {pass.eventDate}</span>
-            <span>â€¢</span>
-            <span>â° {pass.eventTime}</span>
+            <span>📅 {pass.eventDate}</span>
+            <span>•</span>
+            <span>⏰ {pass.eventTime}</span>
           </p>
           <p className="text-[11px] font-mono text-amber">
-            ðŸ“ {pass.eventVenue}
+            📍 {pass.eventVenue}
           </p>
         </div>
+
+        {/* Verification Status Notification Box */}
+        {isUnverified && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 space-y-1.5 font-mono">
+            <div className="flex items-center gap-2 font-bold text-xs">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Pass Not Verified by Admin</span>
+            </div>
+            <p className="text-[10px] text-amber-200/80 leading-relaxed">
+              This pass is registered but <strong className="text-amber-100 font-bold underline">not yet verified by Admin</strong>. Department admin will confirm your details before event day. Scanner gate check-in is locked until approval.
+            </p>
+          </div>
+        )}
+
+        {isConfirmed && (
+          <div className="mb-4 p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between text-[11px] font-mono">
+            <div className="flex items-center gap-2 font-bold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Verified by Admin • Gate Entry Approved</span>
+            </div>
+            {pass.verifiedAt && <span className="text-[9px] text-emerald-400/60">{pass.verifiedAt}</span>}
+          </div>
+        )}
+
+        {isRejected && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 space-y-1 font-mono">
+            <div className="flex items-center gap-2 font-bold text-xs">
+              <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+              <span>Pass Rejected by Admin</span>
+            </div>
+            <p className="text-[10px] text-red-200/80">
+              Reason: {pass.rejectionReason || 'Proof discrepancy'}. Please visit admin desk.
+            </p>
+          </div>
+        )}
 
         {/* Pass ID Banner with Security Watermark */}
         <div className="p-3 rounded-2xl bg-midnight/90 border border-lime/30 flex items-center justify-between mb-4 relative overflow-hidden">
           <div className="absolute right-2 top-1 text-[24px] font-mono font-black text-white/[0.03] select-none pointer-events-none">
-            SPACEÂ·SINC
+            SPACE·SINC
           </div>
           <div>
             <span className="text-[9px] font-mono text-slate-400 block tracking-wider uppercase">
@@ -624,21 +675,29 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
 
           {/* High-Resolution Dynamic QR Code Frame */}
           <div className="col-span-5 flex flex-col items-center justify-center">
-            <div className="p-2 bg-white rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] relative group">
+            <div className="p-2 bg-white rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] relative group overflow-hidden">
               {qrDataUrl ? (
-                <img
-                  src={qrDataUrl}
-                  alt={`QR code for ${pass.passId}`}
-                  className="w-24 h-24 object-contain rounded-lg"
-                />
+                <div className="relative">
+                  <img
+                    src={qrDataUrl}
+                    alt={`QR code for ${pass.passId}`}
+                    className={`w-24 h-24 object-contain rounded-lg transition-all ${isUnverified ? 'opacity-75' : ''}`}
+                  />
+                  {isUnverified && (
+                    <div className="absolute inset-0 bg-black/65 backdrop-blur-[1.5px] rounded-lg flex flex-col items-center justify-center p-1 text-center">
+                      <Lock className="w-5 h-5 text-amber-400 mb-0.5 animate-pulse" />
+                      <span className="text-[7px] font-mono font-bold text-amber-300 leading-tight uppercase">APPROVAL<br/>PENDING</span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="w-24 h-24 bg-slate-100 flex items-center justify-center rounded-lg">
                   <QrIcon className="w-8 h-8 text-slate-400 animate-spin" />
                 </div>
               )}
             </div>
-            <span className="text-[8px] font-mono text-slate-500 mt-1.5 uppercase tracking-wider text-center">
-              Scan at Gate
+            <span className={`text-[8px] font-mono mt-1.5 uppercase tracking-wider text-center flex items-center justify-center gap-1 ${isUnverified ? 'text-amber-400 font-bold' : isCheckedIn ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+              {isUnverified ? '⚠️ Locked Until Verified' : isCheckedIn ? '✓ Gate Admitted' : 'Scan at Gate'}
             </span>
           </div>
         </div>
