@@ -16,6 +16,7 @@ import { PassCard } from '../components/PassCard';
 import { GoogleAuthModal } from '../components/GoogleAuthModal';
 import { MyPassesModal } from '../components/MyPassesModal';
 import { soundFx } from '../utils/audio';
+import { compressImage } from '../utils/imageCompressor';
 import { api, type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
 
 const UPI_ID = 'pieteceforum@okhdfcbank';
@@ -240,20 +241,26 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
     setTimeout(() => setCopiedUpi(false), 2000);
   };
 
-  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       soundFx.playClick();
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Screenshot file size exceeds 10MB. Please choose a smaller image.');
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Screenshot file size exceeds 15MB. Please choose a smaller image.');
         return;
       }
       setScreenshotFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPaymentScreenshot(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Compress large camera/phone screenshots to ~50KB to protect database egress limits
+        const compressedBase64 = await compressImage(file, 800, 1000, 0.65);
+        setPaymentScreenshot(compressedBase64);
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPaymentScreenshot(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
