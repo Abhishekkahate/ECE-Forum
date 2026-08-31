@@ -96,7 +96,50 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [certEventFilter, setCertEventFilter] = useState('ALL');
   const [certTypeFilter, setCertTypeFilter] = useState('ALL');
   const [deletingCertId, setDeletingCertId] = useState<string | null>(null);
+  const [showStudioPreviewInTab, setShowStudioPreviewInTab] = useState(false);
+  const [modalActiveTab, setModalActiveTab] = useState<'form' | 'preview'>('form');
   const certBgInputRef = useRef<HTMLInputElement>(null);
+
+  const getLivePreviewCertificate = (): ApiCertificate => {
+    const targetEvent = eventsList.find((e) => e.id === certEventSelect) || eventsList[0] || {
+      id: 'evt-1',
+      title: 'SPACE & SINC Forum Installation Ceremony',
+      date: 'July 30, 2026',
+    };
+
+    const samplePass = passes.find((p) => selectedPassIdsForCerts.includes(p.passId)) || passes[0];
+
+    return {
+      certId: 'ECE-CERT-PREVIEW-2026',
+      eventId: targetEvent.id,
+      eventTitle: targetEvent.title,
+      eventDate: targetEvent.date || 'July 30, 2026',
+      userName: samplePass ? samplePass.userName : 'Aarav Sharma (Sample Recipient)',
+      userEmail: samplePass ? samplePass.userEmail : 'aarav.sharma@piet.edu.in',
+      department: samplePass?.department || 'Electronics & Communication Engineering',
+      collegeName: samplePass?.collegeName || 'Priyadarshini Institute of Engineering & Technology, Nagpur',
+      certType: certRankAwardType,
+      title: certCustomTitle || (certRankAwardType === 'PARTICIPATION' ? 'Certificate of Participation' : 'Certificate of Excellence'),
+      rankText: certCustomRankText || (certRankAwardType === 'PARTICIPATION' ? 'Participant' : '1st Place Winner'),
+      description:
+        certCustomDesc ||
+        (certRankAwardType === 'PARTICIPATION'
+          ? `for actively participating in and contributing to the successful execution of ${targetEvent.title}.`
+          : `for exemplary performance, innovation, and securing ${certCustomRankText || 'Top Honors'} in ${targetEvent.title}.`),
+      templateId: certTemplateId,
+      templateBg: certTemplateBg || undefined,
+      signatories: certSignatories,
+      qrData: JSON.stringify({
+        certId: 'ECE-CERT-PREVIEW-2026',
+        event: targetEvent.title,
+        recipient: samplePass ? samplePass.userName : 'Aarav Sharma',
+      }),
+      securityHash: 'SEC_PREVIEW_CRYPTOGRAPHIC_HASH_VERIFIED_7788',
+      status: 'VALID',
+      issuedAt: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+      issuedBy: 'ECE Forum Executive Council',
+    };
+  };
   
   // Gallery state (multi-photo event albums)
   const [galleryDraft, setGalleryDraft] = useState<GalleryItem[]>(galleryList || []);
@@ -1948,7 +1991,23 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              soundFx.playClick();
+                              setShowStudioPreviewInTab((prev) => !prev);
+                            }}
+                            className={`px-3.5 py-2 rounded-xl border text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                              showStudioPreviewInTab
+                                ? 'bg-[#00E5CC]/15 border-[#00E5CC] text-[#00E5CC] shadow-[0_0_15px_rgba(0,229,204,0.2)]'
+                                : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+                            }`}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{showStudioPreviewInTab ? 'Hide Live Preview' : 'Live Certificate Preview'}</span>
+                          </button>
+
                           <button
                             onClick={() => refreshCertificates()}
                             className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -1963,13 +2022,169 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               soundFx.playClick();
                               setShowIssueCertModal(true);
                             }}
-                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-mono font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:opacity-95 transition-all cursor-pointer"
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-mono font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:opacity-95 transition-all cursor-pointer whitespace-nowrap"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
                             <span>Issue New Certificates</span>
                           </button>
                         </div>
                       </div>
+
+                      {/* LIVE CERTIFICATE DESIGNER & PREVIEW SANDBOX (COLLAPSIBLE) */}
+                      <AnimatePresence>
+                        {showStudioPreviewInTab && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="p-5 sm:p-7 rounded-[28px] bg-[#0E0E12] border border-[#00E5CC]/40 space-y-6 shadow-[0_20px_60px_rgba(0,229,204,0.1)] overflow-hidden"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+                              <div className="flex items-center gap-2.5">
+                                <span className="w-9 h-9 rounded-xl bg-[#00E5CC]/20 border border-[#00E5CC]/40 text-[#00E5CC] grid place-items-center">
+                                  <Sparkles className="w-4 h-4" />
+                                </span>
+                                <div>
+                                  <h3 className="font-[Syne] font-[800] text-base text-white">
+                                    Interactive Live Certificate Preview Sandbox
+                                  </h3>
+                                  <p className="text-xs font-mono text-white/50">
+                                    Test templates, custom backgrounds, and honor styles in real time before issuing
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    soundFx.playClick();
+                                    setShowIssueCertModal(true);
+                                  }}
+                                  className="px-3.5 py-1.5 rounded-xl bg-[#FFD700] text-black font-bold text-xs font-mono flex items-center gap-1.5 hover:opacity-95 transition-all cursor-pointer"
+                                >
+                                  <Award className="w-3.5 h-3.5" />
+                                  <span>Issue This Design</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowStudioPreviewInTab(false)}
+                                  className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white grid place-items-center text-xs cursor-pointer"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Quick Live Preview Controls */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                              <label className="space-y-1">
+                                <span className="text-[11px] font-mono text-[#00E5CC] font-bold uppercase">1. Template Theme</span>
+                                <select
+                                  value={certTemplateId}
+                                  onChange={(e) => {
+                                    const val = e.target.value as any;
+                                    setCertTemplateId(val);
+                                    if (val !== 'custom_upload') setCertTemplateBg('');
+                                  }}
+                                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#00E5CC] outline-none"
+                                >
+                                  {CERTIFICATE_TEMPLATES.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                      {t.name} ({t.badge})
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+
+                              <label className="space-y-1">
+                                <span className="text-[11px] font-mono text-[#00E5CC] font-bold uppercase">2. Honor Classification</span>
+                                <select
+                                  value={certRankAwardType}
+                                  onChange={(e) => {
+                                    const val = e.target.value as CertificateType;
+                                    setCertRankAwardType(val);
+                                    if (val === 'WINNER_1ST') {
+                                      setCertCustomTitle('Certificate of Excellence');
+                                      setCertCustomRankText('1st Place Winner');
+                                    } else if (val === 'RUNNER_UP_2ND') {
+                                      setCertCustomTitle('Certificate of Excellence');
+                                      setCertCustomRankText('2nd Place Runner Up');
+                                    } else if (val === 'RUNNER_UP_3RD') {
+                                      setCertCustomTitle('Certificate of Excellence');
+                                      setCertCustomRankText('3rd Place');
+                                    } else if (val === 'MERIT') {
+                                      setCertCustomTitle('Certificate of Merit');
+                                      setCertCustomRankText('Outstanding Merit');
+                                    } else if (val === 'APPRECIATION') {
+                                      setCertCustomTitle('Certificate of Appreciation');
+                                      setCertCustomRankText('Special Recognition');
+                                    } else {
+                                      setCertCustomTitle('Certificate of Participation');
+                                      setCertCustomRankText('Participant');
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#00E5CC] outline-none"
+                                >
+                                  <option value="PARTICIPATION">Participation</option>
+                                  <option value="WINNER_1ST">1st Place Winner</option>
+                                  <option value="RUNNER_UP_2ND">2nd Place Runner Up</option>
+                                  <option value="RUNNER_UP_3RD">3rd Place</option>
+                                  <option value="MERIT">Certificate of Merit</option>
+                                  <option value="APPRECIATION">Certificate of Appreciation</option>
+                                </select>
+                              </label>
+
+                              <label className="space-y-1">
+                                <span className="text-[11px] font-mono text-[#00E5CC] font-bold uppercase">3. Target Event</span>
+                                <select
+                                  value={certEventSelect}
+                                  onChange={(e) => setCertEventSelect(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#00E5CC] outline-none"
+                                >
+                                  {eventsList.map((ev) => (
+                                    <option key={ev.id} value={ev.id}>
+                                      {ev.title}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+
+                              <label className="space-y-1">
+                                <span className="text-[11px] font-mono text-[#00E5CC] font-bold uppercase">4. Custom Background</span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => certBgInputRef.current?.click()}
+                                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#00E5CC] text-xs font-mono text-white/80 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                  >
+                                    <Upload className="w-3.5 h-3.5 text-[#00E5CC]" />
+                                    <span>{certTemplateBg ? 'Change Custom BG' : 'Upload BG Image'}</span>
+                                  </button>
+                                  {certTemplateBg && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCertTemplateBg('');
+                                        setCertTemplateId('classic_gold');
+                                      }}
+                                      className="px-2.5 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:text-red-300 text-xs cursor-pointer"
+                                      title="Reset Background"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </label>
+                            </div>
+
+                            {/* Rendered Live Certificate Card */}
+                            <div className="pt-2">
+                              <CertificateCard certificate={getLivePreviewCertificate()} />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       {/* Certificates Roster Table */}
                       <div className="rounded-[24px] bg-[#121216] border border-white/[0.08] overflow-hidden">
@@ -3590,9 +3805,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full max-w-4xl rounded-[32px] bg-[#0F0F12] border border-[#FFD700]/40 p-6 sm:p-8 space-y-6 font-sans shadow-[0_25px_80px_rgba(255,215,0,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar"
+              className="w-full max-w-5xl rounded-[32px] bg-[#0F0F12] border border-[#FFD700]/40 p-5 sm:p-8 space-y-6 font-sans shadow-[0_25px_80px_rgba(255,215,0,0.2)] max-h-[92vh] overflow-y-auto custom-scrollbar"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
                 <div className="flex items-center gap-3">
                   <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FFD700] to-[#FF4A15] text-black grid place-items-center font-bold shadow-[0_0_15px_rgba(255,215,0,0.3)]">
                     <Award className="w-6 h-6" />
@@ -3602,19 +3817,57 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       E-Certificate Studio &amp; Dispatcher
                     </h3>
                     <p className="text-xs font-mono text-white/50">
-                      Configure design templates, assign honors, and issue verified credentials
+                      Configure design templates, assign honors, and preview live before issuing
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowIssueCertModal(false)}
-                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-white/70 hover:text-white cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  {/* Mode / Preview Switcher */}
+                  <div className="flex items-center p-1 bg-white/5 rounded-xl border border-white/10 text-xs font-mono">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFx.playClick();
+                        setModalActiveTab('form');
+                      }}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        modalActiveTab === 'form'
+                          ? 'bg-[#FFD700] text-black font-bold shadow'
+                          : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      ⚙️ Setup Form
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFx.playClick();
+                        setModalActiveTab('preview');
+                      }}
+                      className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                        modalActiveTab === 'preview'
+                          ? 'bg-[#FFD700] text-black font-bold shadow'
+                          : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Live Certificate Preview</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setShowIssueCertModal(false)}
+                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-white/70 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              <form onSubmit={handleIssueCertificatesSubmit} className="space-y-6">
+              {/* TAB 1: FORM VIEW */}
+              {modalActiveTab === 'form' ? (
+                <form onSubmit={handleIssueCertificatesSubmit} className="space-y-6">
                 {/* 1. Event Selection */}
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
@@ -4015,29 +4268,109 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                 </div>
 
                 {/* Modal Footer Actions */}
-                <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+                <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowIssueCertModal(false)}
-                    className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white cursor-pointer"
+                    onClick={() => {
+                      soundFx.playClick();
+                      setModalActiveTab('preview');
+                    }}
+                    className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-[#00E5CC]/30 text-xs font-mono text-[#00E5CC] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
-                    Cancel
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview This Certificate Before Issuing</span>
                   </button>
 
-                  <button
-                    type="submit"
-                    disabled={isIssuingCerts}
-                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-bold text-xs font-mono tracking-wide shadow-[0_0_20px_rgba(255,215,0,0.35)] hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {isIssuingCerts ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
-                    )}
-                    <span>{isIssuingCerts ? 'Generating Certificates...' : 'Generate & Issue Certificates'}</span>
-                  </button>
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowIssueCertModal(false)}
+                      className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isIssuingCerts}
+                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-bold text-xs font-mono tracking-wide shadow-[0_0_20px_rgba(255,215,0,0.35)] hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isIssuingCerts ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      <span>{isIssuingCerts ? 'Generating Certificates...' : 'Generate & Issue Certificates'}</span>
+                    </button>
+                  </div>
                 </div>
               </form>
+            ) : (
+              /* TAB 2: LIVE CERTIFICATE PREVIEW VIEW */
+              <div className="space-y-6">
+                <div className="p-4 rounded-2xl bg-[#00E5CC]/10 border border-[#00E5CC]/30 text-xs font-mono text-[#00E5CC] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>
+                      Live Real-Time Preview: Showing template <strong>"{CERTIFICATE_TEMPLATES.find((t) => t.id === certTemplateId)?.name || certTemplateId}"</strong> with honor <strong>"{certRankAwardType}"</strong>.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundFx.playClick();
+                      setModalActiveTab('form');
+                    }}
+                    className="text-white hover:underline text-xs shrink-0 cursor-pointer"
+                  >
+                    Edit Settings ✏️
+                  </button>
+                </div>
+
+                {/* Live Card Renderer */}
+                <div className="py-2">
+                  <CertificateCard certificate={getLivePreviewCertificate()} />
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundFx.playClick();
+                      setModalActiveTab('form');
+                    }}
+                    className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/80 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>← Back to Setup Form</span>
+                  </button>
+
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowIssueCertModal(false)}
+                      className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleIssueCertificatesSubmit(e as any)}
+                      disabled={isIssuingCerts}
+                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-bold text-xs font-mono tracking-wide shadow-[0_0_20px_rgba(255,215,0,0.35)] hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isIssuingCerts ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      <span>{isIssuingCerts ? 'Generating Certificates...' : 'Confirm & Issue Certificates'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             </motion.div>
           </div>
         )}
