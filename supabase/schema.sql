@@ -68,12 +68,39 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 6. Enable Row Level Security (RLS)
+-- 6. Create Certificates Table
+CREATE TABLE IF NOT EXISTS public.certificates (
+    cert_id TEXT PRIMARY KEY,
+    event_id TEXT REFERENCES public.events(id) ON DELETE CASCADE,
+    event_title TEXT NOT NULL,
+    event_date TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    user_email TEXT NOT NULL,
+    user_photo TEXT,
+    department TEXT NOT NULL DEFAULT 'Electronics & Communication Engineering',
+    college_name TEXT NOT NULL DEFAULT 'PIET, Nagpur',
+    cert_type TEXT NOT NULL DEFAULT 'PARTICIPATION', -- 'PARTICIPATION', 'WINNER_1ST', 'RUNNER_UP_2ND', 'RUNNER_UP_3RD', 'MERIT', 'APPRECIATION'
+    title TEXT NOT NULL DEFAULT 'Certificate of Participation',
+    rank_text TEXT DEFAULT 'Participant',
+    description TEXT,
+    template_id TEXT NOT NULL DEFAULT 'classic_gold', -- 'classic_gold', 'cyber_neon', 'sapphire_prestige', 'ruby_crimson', 'custom_upload'
+    template_bg TEXT,
+    signatories JSONB DEFAULT '[]'::jsonb,
+    qr_data TEXT NOT NULL,
+    security_hash TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'VALID', -- 'VALID', 'REVOKED'
+    issued_at TEXT NOT NULL,
+    issued_by TEXT NOT NULL DEFAULT 'ECE Forum Executive Council',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 7. Enable Row Level Security (RLS)
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.passes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow Public Read Site Settings" ON public.site_settings;
 CREATE POLICY "Allow Public Read Site Settings" ON public.site_settings FOR SELECT USING (true);
@@ -93,7 +120,7 @@ CREATE POLICY "Allow Public Insert Admins" ON public.admins FOR INSERT WITH CHEC
 DROP POLICY IF EXISTS "Allow Public Delete Admins" ON public.admins;
 CREATE POLICY "Allow Public Delete Admins" ON public.admins FOR DELETE USING (true);
 
--- 5. Create RLS Policies (Allow Read for all, and Allow Insert/Update for authenticated & service role)
+-- 8. Create RLS Policies for Events, Passes, Announcements, Certificates
 DROP POLICY IF EXISTS "Allow Public Read Events" ON public.events;
 CREATE POLICY "Allow Public Read Events" ON public.events FOR SELECT USING (true);
 
@@ -115,13 +142,28 @@ CREATE POLICY "Allow Public Insert Passes" ON public.passes FOR INSERT WITH CHEC
 DROP POLICY IF EXISTS "Allow Public Update Passes" ON public.passes;
 CREATE POLICY "Allow Public Update Passes" ON public.passes FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Allow Public Delete Passes" ON public.passes;
+CREATE POLICY "Allow Public Delete Passes" ON public.passes FOR DELETE USING (true);
+
 DROP POLICY IF EXISTS "Allow Public Read Announcements" ON public.announcements;
 CREATE POLICY "Allow Public Read Announcements" ON public.announcements FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow Public Insert Announcements" ON public.announcements;
 CREATE POLICY "Allow Public Insert Announcements" ON public.announcements FOR ALL USING (true);
 
--- 6. Insert Default Seed Data
+DROP POLICY IF EXISTS "Allow Public Read Certificates" ON public.certificates;
+CREATE POLICY "Allow Public Read Certificates" ON public.certificates FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow Public Insert Certificates" ON public.certificates;
+CREATE POLICY "Allow Public Insert Certificates" ON public.certificates FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow Public Update Certificates" ON public.certificates;
+CREATE POLICY "Allow Public Update Certificates" ON public.certificates FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow Public Delete Certificates" ON public.certificates;
+CREATE POLICY "Allow Public Delete Certificates" ON public.certificates FOR DELETE USING (true);
+
+-- 9. Insert Default Seed Data
 INSERT INTO public.events (id, title, category, status, date, time, venue, description, badge, image, price, total_seats)
 VALUES
     ('evt-1', 'SPACE & SINC Forum Installation Ceremony', 'Installation', 'Upcoming', 'July 30, 2026', '10:00 AM IST', 'PIET Auditorium', 'Official installation ceremony for SPACE & SINC departmental councils for session 2026-27.', 'FLAGSHIP CEREMONY', '/event_images/inst.webp', 150, 250),
@@ -132,3 +174,4 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.announcements (id, content)
 VALUES (1, 'Registration Open for SPACE & SINC Forum Installation & TARANG 2K26 Fiesta!')
 ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content;
+

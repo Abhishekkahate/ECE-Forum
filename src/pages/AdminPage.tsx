@@ -6,13 +6,30 @@ import {
   LogOut, Trash2, Search, Upload, Image as ImageIcon, Sparkles,
   Check, CheckCircle2, Sliders, Edit3, FileDown, Tag, Copy, Activity,
   Eye, ExternalLink, AlertTriangle, X, CheckSquare, Layers, Clock, ShieldCheck, DollarSign,
-  User, Phone, Mail, School, Building2, Download, QrCode, Star
+  User, Phone, Mail, School, Building2, Download, QrCode, Star, Award, Palette, RefreshCw,
+  Trophy, Loader2
 } from 'lucide-react';
 import { AdminLogin } from '../components/AdminLogin';
 import { type EventItem } from '../components/EventsSection';
 import { type GalleryItem, DEFAULT_GALLERY_ITEMS } from '../components/GallerySection';
 import { passService, type EventPass } from '../services/passService';
-import { api, type SiteHeroConfig, DEFAULT_HERO_CONFIG, type Coupon, DEFAULT_COUPONS } from '../services/api';
+import {
+  api,
+  forumApi,
+  type SiteHeroConfig,
+  DEFAULT_HERO_CONFIG,
+  type Coupon,
+  DEFAULT_COUPONS,
+  type ApiCertificate,
+  type CertificateType,
+  type CertificateSignatory,
+} from '../services/api';
+import {
+  certificateService,
+  CERTIFICATE_TEMPLATES,
+  DEFAULT_CERTIFICATE_SIGNATORIES,
+} from '../services/certificateService';
+import { CertificateCard } from '../components/CertificateCard';
 import { soundFx } from '../utils/audio';
 
 interface AdminPageProps {
@@ -56,8 +73,30 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   onUpdateGallery = () => {},
 }) => {
   const [currentUser, setCurrentUser] = useState<{ email: string; role: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'registrations' | 'coupons' | 'gallery' | 'siteContent' | 'announcements' | 'admins'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'registrations' | 'certificates' | 'coupons' | 'gallery' | 'siteContent' | 'announcements' | 'admins'>('overview');
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('ALL');
+
+  // E-Certificates Hub State
+  const [certificates, setCertificates] = useState<ApiCertificate[]>([]);
+  const [selectedCertPreview, setSelectedCertPreview] = useState<ApiCertificate | null>(null);
+  const [showIssueCertModal, setShowIssueCertModal] = useState(false);
+  const [issueMode, setIssueMode] = useState<'all_participants' | 'selective_ranks'>('all_participants');
+  const [certEventSelect, setCertEventSelect] = useState<string>('');
+  const [selectedPassIdsForCerts, setSelectedPassIdsForCerts] = useState<string[]>([]);
+  const [certRankAwardType, setCertRankAwardType] = useState<CertificateType>('PARTICIPATION');
+  const [certCustomTitle, setCertCustomTitle] = useState('Certificate of Participation');
+  const [certCustomRankText, setCertCustomRankText] = useState('Participant');
+  const [certCustomDesc, setCertCustomDesc] = useState('');
+  const [certTemplateId, setCertTemplateId] = useState<'classic_gold' | 'cyber_neon' | 'sapphire_prestige' | 'ruby_crimson' | 'custom_upload'>('classic_gold');
+  const [certTemplateBg, setCertTemplateBg] = useState<string>('');
+  const [certSignatories, setCertSignatories] = useState<CertificateSignatory[]>(DEFAULT_CERTIFICATE_SIGNATORIES);
+  const [isIssuingCerts, setIsIssuingCerts] = useState(false);
+  const [certSuccessMsg, setCertSuccessMsg] = useState<string | null>(null);
+  const [certSearchQuery, setCertSearchQuery] = useState('');
+  const [certEventFilter, setCertEventFilter] = useState('ALL');
+  const [certTypeFilter, setCertTypeFilter] = useState('ALL');
+  const [deletingCertId, setDeletingCertId] = useState<string | null>(null);
+  const certBgInputRef = useRef<HTMLInputElement>(null);
   
   // Gallery state (multi-photo event albums)
   const [galleryDraft, setGalleryDraft] = useState<GalleryItem[]>(galleryList || []);
@@ -227,14 +266,152 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       setCouponsList([]);
     }
   };
+  const refreshCertificates = async () => {
+    try {
+      const list = await certificateService.syncWithBackend();
+      setCertificates(list || []);
+    } catch {
+      setCertificates(certificateService.getAllCertificates());
+    }
+  };
 
   useEffect(() => {
     refreshLivePasses();
     refreshAdmins();
     refreshCoupons();
-    const iv = setInterval(refreshLivePasses, 6000);
+    refreshCertificates();
+    const iv = setInterval(() => {
+      refreshLivePasses();
+      refreshCertificates();
+    }, 6000);
     return () => clearInterval(iv);
   }, []);
+
+  // Set default event for issuance if not selected
+  useEffect(() => {
+    if (!certEventSelect && eventsList.length > 0) {
+      setCertEventSelect(eventsList[0].id);
+    }
+  }, [eventsList]);
+
+  // Certificate Issuance Handlers
+  const handleCustomBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCertTemplateBg(reader.result);
+        setCertTemplateId('custom_upload');
+        soundFx.playSuccess();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleIssueCertificatesSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    soundFx.playClick();
+
+    const targetEvent = eventsList.find((ev) => ev.id === certEventSelect) || eventsList[0];
+    if (!targetEvent) {
+      alert('Please select a valid event.');
+      return;
+    }
+
+    setIsIssuingCerts(true);
+    try {
+      let participantsToIssue: Array<{
+        name: string;
+        email: string;
+        department?: string;
+        collegeName?: string;
+        rankText?: string;
+        certType?: CertificateType;
+      }> = [];
+
+      if (issueMode === 'all_participants') {
+        // Issue to all registered passes for this event
+        const eventPassesList = passes.filter(
+          (p) => p.eventId === targetEvent.id || p.eventTitle.toLowerCase().trim() === targetEvent.title.toLowerCase().trim()
+        );
+
+        if (eventPassesList.length === 0) {
+          alert(`No registered participants found for "${targetEvent.title}".`);
+          setIsIssuingCerts(false);
+          return;
+        }
+
+        participantsToIssue = eventPassesList.map((p) => ({
+          name: p.userName,
+          email: p.userEmail,
+          department: p.department,
+          collegeName: p.collegeName,
+          rankText: certCustomRankText || 'Participant',
+          certType: certRankAwardType,
+        }));
+      } else {
+        // Selective rank-wise issuance
+        const selectedPassesList = passes.filter((p) => selectedPassIdsForCerts.includes(p.passId));
+        if (selectedPassesList.length === 0) {
+          alert('Please select at least one participant to issue rank certificates to.');
+          setIsIssuingCerts(false);
+          return;
+        }
+
+        participantsToIssue = selectedPassesList.map((p) => ({
+          name: p.userName,
+          email: p.userEmail,
+          department: p.department,
+          collegeName: p.collegeName,
+          rankText: certCustomRankText || 'Rank Holder',
+          certType: certRankAwardType,
+        }));
+      }
+
+      const res = await forumApi.issueBulkCertificates({
+        eventId: targetEvent.id,
+        eventTitle: targetEvent.title,
+        eventDate: targetEvent.date,
+        certType: certRankAwardType,
+        title: certCustomTitle,
+        rankText: certCustomRankText,
+        description: certCustomDesc,
+        templateId: certTemplateId,
+        templateBg: certTemplateBg || undefined,
+        signatories: certSignatories,
+        participants: participantsToIssue,
+      });
+
+      if (res.success) {
+        soundFx.playSuccess();
+        await refreshCertificates();
+        setShowIssueCertModal(false);
+        setSelectedPassIdsForCerts([]);
+        setCertSuccessMsg(`Successfully issued ${res.count} official certificates!`);
+        setTimeout(() => setCertSuccessMsg(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Failed to issue certificates:', err);
+      alert('Error issuing certificates. Please verify backend connection.');
+    } finally {
+      setIsIssuingCerts(false);
+    }
+  };
+
+  const handleToggleCertificateStatus = async (certId: string, currentStatus: string) => {
+    soundFx.playClick();
+    const nextStatus = currentStatus === 'VALID' ? 'REVOKED' : 'VALID';
+    await forumApi.updateCertificateStatus(certId, nextStatus);
+    await refreshCertificates();
+  };
+
+  const handleDeleteCertificate = async (certId: string) => {
+    soundFx.playLaser();
+    await forumApi.deleteCertificate(certId);
+    setDeletingCertId(null);
+    await refreshCertificates();
+  };
 
   const BLANK_EVENT_FORM: Partial<EventItem> = {
     title: '',
@@ -699,6 +876,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     { id: 'overview', label: 'Overview', icon: Activity, count: null },
     { id: 'events', label: 'Events', icon: Calendar, count: eventsList.length },
     { id: 'registrations', label: 'Pass Roster', icon: Users, count: passes.length },
+    { id: 'certificates', label: 'Certificates Hub', icon: Award, count: certificates.length },
     { id: 'coupons', label: 'Coupons', icon: Tag, count: couponsList.length },
     { id: 'gallery', label: 'Gallery', icon: ImageIcon, count: galleryDraft.length },
     { id: 'siteContent', label: 'Hero & Flagship', icon: Sliders, count: null },
@@ -837,6 +1015,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         {activeTab === 'overview' && <><Activity className="w-5 h-5 text-[#FF4A15]" /> Overview &amp; Analytics</>}
                         {activeTab === 'events' && <><Calendar className="w-5 h-5 text-[#FF4A15]" /> Event Suite &mdash; {eventsList.length}</>}
                         {activeTab === 'registrations' && <><Users className="w-5 h-5 text-[#FF4A15]" /> Pass Roster &mdash; {filteredPasses.length}/{passes.length}</>}
+                        {activeTab === 'certificates' && <><Award className="w-5 h-5 text-[#FFD700]" /> Certificates Hub &mdash; {certificates.length}</>}
                         {activeTab === 'coupons' && <><Tag className="w-5 h-5 text-[#FFD60A]" /> Coupons &mdash; {couponsList.length}</>}
                         {activeTab === 'gallery' && <><ImageIcon className="w-5 h-5 text-[#FF4A15]" /> Photo Archive &mdash; {galleryDraft.length}</>}
                         {activeTab === 'siteContent' && <><Sliders className="w-5 h-5 text-[#FF4A15]" /> Hero Eyebrow &amp; Flagship Dossier</>}
@@ -847,6 +1026,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         {activeTab === 'overview' && `${totalCheckedIn}/${passes.length} checked in &bull; ₹${totalRevenue.toLocaleString()} verified revenue`}
                         {activeTab === 'events' && `Manage catalog, pricing, individual/team modes & mandatory team sizes`}
                         {activeTab === 'registrations' && `Verify attendees, inspect payment proof screenshots, delete passes & export`}
+                        {activeTab === 'certificates' && `Upload custom design templates, issue participation / rank certificates & manage verification registry`}
                         {activeTab === 'coupons' && `Percentage / flat discount codes & usage telemetry`}
                         {activeTab === 'gallery' && `Curated showcase of departmental expos, labs & hackathons`}
                         {activeTab === 'siteContent' && `Target date sync, countdown telemetry & flagship card parameters`}
@@ -861,6 +1041,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       >
                         <Plus className="w-4 h-4" />
                         {showEventForm ? 'Close Editor' : 'New Event'}
+                      </button>
+                    )}
+                    {activeTab === 'certificates' && (
+                      <button
+                        onClick={() => {
+                          soundFx.playClick();
+                          setShowIssueCertModal(true);
+                        }}
+                        className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-mono font-bold text-xs flex items-center gap-2 hover:opacity-90 shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>Issue Certificates</span>
                       </button>
                     )}
                     {activeTab === 'coupons' && (
@@ -1627,6 +1819,313 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* CERTIFICATES HUB TAB */}
+                  {activeTab === 'certificates' && (
+                    <div className="space-y-6">
+                      {certSuccessMsg && (
+                        <div className="p-4 rounded-2xl bg-[#00FF88]/15 border border-[#00FF88]/30 text-[#00FF88] text-xs font-mono flex items-center justify-between shadow-[0_0_20px_rgba(0,255,136,0.15)] animate-in fade-in">
+                          <div className="flex items-center gap-2.5">
+                            <CheckCircle2 className="w-5 h-5 shrink-0" />
+                            <span>{certSuccessMsg}</span>
+                          </div>
+                          <button
+                            onClick={() => setCertSuccessMsg(null)}
+                            className="text-[#00FF88] hover:text-white text-xs cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Telemetry Row */}
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                          {
+                            label: 'Total Certificates Issued',
+                            value: certificates.length,
+                            sub: `${certificates.filter((c) => c.status === 'VALID').length} active valid credentials`,
+                            icon: Award,
+                            color: '#FFD700',
+                          },
+                          {
+                            label: 'Participation Certificates',
+                            value: certificates.filter((c) => c.certType === 'PARTICIPATION').length,
+                            sub: 'Event attendance credentials',
+                            icon: Users,
+                            color: '#00E5CC',
+                          },
+                          {
+                            label: 'Rank & Merit Honors',
+                            value: certificates.filter((c) => c.certType !== 'PARTICIPATION').length,
+                            sub: `${certificates.filter((c) => c.certType === 'WINNER_1ST').length} 1st Place Winners`,
+                            icon: Trophy,
+                            color: '#FF4A15',
+                          },
+                          {
+                            label: 'Registry Security Status',
+                            value: '100% Tamper-Proof',
+                            sub: 'Cryptographic QR Verification',
+                            icon: ShieldCheck,
+                            color: '#00FF88',
+                          },
+                        ].map((s) => {
+                          const Icon = s.icon;
+                          return (
+                            <div
+                              key={s.label}
+                              className="rounded-[20px] bg-[#121216] border border-white/[0.08] p-5 space-y-2"
+                            >
+                              <div className="flex justify-between items-start">
+                                <span className="text-[10px] font-mono tracking-widest text-white/40 uppercase">
+                                  {s.label}
+                                </span>
+                                <span className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 grid place-items-center">
+                                  <Icon className="w-4 h-4" style={{ color: s.color }} />
+                                </span>
+                              </div>
+                              <div className="font-[Syne] font-[800] text-2xl text-white">{s.value}</div>
+                              <div className="text-xs text-white/40 font-mono">{s.sub}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Controls, Filters & Issuance Trigger */}
+                      <div className="p-4 sm:p-5 rounded-[24px] bg-[#121216] border border-white/[0.08] flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                          {/* Event Filter */}
+                          <select
+                            value={certEventFilter}
+                            onChange={(e) => setCertEventFilter(e.target.value)}
+                            className="px-3.5 py-2 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
+                          >
+                            <option value="ALL">All Events ({certificates.length})</option>
+                            {eventsList.map((ev) => (
+                              <option key={ev.id} value={ev.id}>
+                                {ev.title}
+                              </option>
+                            ))}
+                          </select>
+
+                          {/* Certificate Type Filter */}
+                          <select
+                            value={certTypeFilter}
+                            onChange={(e) => setCertTypeFilter(e.target.value)}
+                            className="px-3.5 py-2 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
+                          >
+                            <option value="ALL">All Honors / Types</option>
+                            <option value="PARTICIPATION">Participation Only</option>
+                            <option value="WINNER_1ST">1st Place Winners</option>
+                            <option value="RUNNER_UP_2ND">2nd Place Runners Up</option>
+                            <option value="RUNNER_UP_3RD">3rd Place</option>
+                            <option value="MERIT">Merit Certificates</option>
+                            <option value="APPRECIATION">Appreciation</option>
+                          </select>
+
+                          {/* Search */}
+                          <div className="relative flex-1 min-w-[200px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
+                            <input
+                              type="text"
+                              value={certSearchQuery}
+                              onChange={(e) => setCertSearchQuery(e.target.value)}
+                              placeholder="Search recipient, email, ID..."
+                              className="w-full pl-9 pr-3 py-2 rounded-xl bg-black border border-white/10 text-xs text-white placeholder:text-white/40 font-mono focus:border-[#FFD700] outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => refreshCertificates()}
+                            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                            title="Synchronize Certificates"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Sync</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              soundFx.playClick();
+                              setShowIssueCertModal(true);
+                            }}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-mono font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:opacity-95 transition-all cursor-pointer"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Issue New Certificates</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Certificates Roster Table */}
+                      <div className="rounded-[24px] bg-[#121216] border border-white/[0.08] overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs font-mono">
+                            <thead className="bg-[#0A0A0C] border-b border-white/[0.08] text-white/50 uppercase text-[10px] tracking-wider">
+                              <tr>
+                                <th className="p-3.5">Credential ID</th>
+                                <th className="p-3.5">Recipient</th>
+                                <th className="p-3.5">Event &amp; Date</th>
+                                <th className="p-3.5">Honor / Rank</th>
+                                <th className="p-3.5">Template</th>
+                                <th className="p-3.5">Status</th>
+                                <th className="p-3.5 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {certificates
+                                .filter((c) => {
+                                  const matchesEvent =
+                                    certEventFilter === 'ALL' ? true : c.eventId === certEventFilter;
+                                  const matchesType =
+                                    certTypeFilter === 'ALL' ? true : c.certType === certTypeFilter;
+                                  const matchesSearch =
+                                    c.userName.toLowerCase().includes(certSearchQuery.toLowerCase()) ||
+                                    c.userEmail.toLowerCase().includes(certSearchQuery.toLowerCase()) ||
+                                    c.certId.toLowerCase().includes(certSearchQuery.toLowerCase()) ||
+                                    c.eventTitle.toLowerCase().includes(certSearchQuery.toLowerCase());
+                                  return matchesEvent && matchesType && matchesSearch;
+                                })
+                                .map((cert) => {
+                                  const isMerit = cert.certType !== 'PARTICIPATION';
+                                  const isRevoked = cert.status === 'REVOKED';
+
+                                  return (
+                                    <tr
+                                      key={cert.certId}
+                                      className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+                                    >
+                                      <td className="p-3.5 font-bold text-[#FFD700]">
+                                        <div className="flex items-center gap-1.5">
+                                          <span>{cert.certId}</span>
+                                          <button
+                                            onClick={() => {
+                                              soundFx.playClick();
+                                              navigator.clipboard.writeText(cert.certId);
+                                            }}
+                                            className="text-white/30 hover:text-white cursor-pointer"
+                                            title="Copy Certificate ID"
+                                          >
+                                            <Copy className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                        <div className="text-[9px] text-white/40 truncate max-w-[120px]">
+                                          {cert.securityHash}
+                                        </div>
+                                      </td>
+
+                                      <td className="p-3.5">
+                                        <div className="font-bold text-white text-sm">{cert.userName}</div>
+                                        <div className="text-white/40 text-[11px]">
+                                          {cert.userEmail} &bull; {cert.department}
+                                        </div>
+                                      </td>
+
+                                      <td className="p-3.5">
+                                        <div className="font-semibold text-white truncate max-w-[180px]">
+                                          {cert.eventTitle}
+                                        </div>
+                                        <div className="text-white/40 text-[10px] flex items-center gap-1">
+                                          <Calendar className="w-3 h-3" />
+                                          <span>{cert.issuedAt}</span>
+                                        </div>
+                                      </td>
+
+                                      <td className="p-3.5">
+                                        <span
+                                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border ${
+                                            cert.certType === 'WINNER_1ST'
+                                              ? 'bg-amber-500/20 text-yellow-300 border-yellow-400/50'
+                                              : cert.certType === 'RUNNER_UP_2ND'
+                                              ? 'bg-slate-400/20 text-slate-200 border-slate-300/50'
+                                              : cert.certType === 'RUNNER_UP_3RD'
+                                              ? 'bg-amber-700/20 text-amber-300 border-amber-600/50'
+                                              : isMerit
+                                              ? 'bg-purple-500/20 text-purple-300 border-purple-400/50'
+                                              : 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                                          }`}
+                                        >
+                                          <Award className="w-3 h-3" />
+                                          <span>{cert.rankText || cert.title}</span>
+                                        </span>
+                                      </td>
+
+                                      <td className="p-3.5">
+                                        <span className="text-[11px] text-white/70 uppercase">
+                                          {cert.templateId.replace('_', ' ')}
+                                        </span>
+                                      </td>
+
+                                      <td className="p-3.5">
+                                        <button
+                                          onClick={() =>
+                                            handleToggleCertificateStatus(cert.certId, cert.status)
+                                          }
+                                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+                                            isRevoked
+                                              ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                          }`}
+                                          title="Click to toggle Revoked/Valid status"
+                                        >
+                                          {isRevoked ? '⛔ REVOKED' : '✓ VALID'}
+                                        </button>
+                                      </td>
+
+                                      <td className="p-3.5 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                          <button
+                                            onClick={() => {
+                                              soundFx.playClick();
+                                              setSelectedCertPreview(cert);
+                                            }}
+                                            className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-[#FFD700] hover:text-black border border-white/10 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                                            title="Preview Official Certificate Card"
+                                          >
+                                            <Eye className="w-3 h-3" />
+                                            <span>View</span>
+                                          </button>
+
+                                          <Link
+                                            to={`/verify/${encodeURIComponent(cert.certId)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-white/60 hover:text-white transition-colors"
+                                            title="Open Public Verification Page"
+                                          >
+                                            <ExternalLink className="w-3.5 h-3.5" />
+                                          </Link>
+
+                                          <button
+                                            onClick={() => setDeletingCertId(cert.certId)}
+                                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-colors cursor-pointer"
+                                            title="Delete Certificate"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+
+                              {certificates.length === 0 && (
+                                <tr>
+                                  <td colSpan={7} className="p-8 text-center text-white/30 font-mono">
+                                    No certificates issued yet. Click "Issue New Certificates" above to
+                                    generate credentials for event participants.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
 
                   {/* COUPONS TAB */}
                   {activeTab === 'coupons' && (
@@ -3070,6 +3569,535 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           </div>
         )}
       </AnimatePresence>
+
+      {/* ISSUE CERTIFICATES MODAL & DESIGNER */}
+      <AnimatePresence>
+        {showIssueCertModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-full max-w-4xl rounded-[32px] bg-[#0F0F12] border border-[#FFD700]/40 p-6 sm:p-8 space-y-6 font-sans shadow-[0_25px_80px_rgba(255,215,0,0.2)] max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+                <div className="flex items-center gap-3">
+                  <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FFD700] to-[#FF4A15] text-black grid place-items-center font-bold shadow-[0_0_15px_rgba(255,215,0,0.3)]">
+                    <Award className="w-6 h-6" />
+                  </span>
+                  <div>
+                    <h3 className="font-[Syne] font-[800] text-lg sm:text-xl text-white">
+                      E-Certificate Studio &amp; Dispatcher
+                    </h3>
+                    <p className="text-xs font-mono text-white/50">
+                      Configure design templates, assign honors, and issue verified credentials
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowIssueCertModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-white/70 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleIssueCertificatesSubmit} className="space-y-6">
+                {/* 1. Event Selection */}
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
+                    1. Target Event
+                  </label>
+                  <select
+                    value={certEventSelect}
+                    onChange={(e) => {
+                      setCertEventSelect(e.target.value);
+                      setSelectedPassIdsForCerts([]);
+                    }}
+                    className="w-full px-4 py-3 rounded-2xl bg-black border border-white/15 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
+                  >
+                    {eventsList.map((ev) => {
+                      const count = passes.filter(
+                        (p) => p.eventId === ev.id || p.eventTitle.toLowerCase().trim() === ev.title.toLowerCase().trim()
+                      ).length;
+                      return (
+                        <option key={ev.id} value={ev.id}>
+                          {ev.title} — ({count} registered participants)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* 2. Issuance Mode Selection */}
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
+                    2. Issuance Mode
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFx.playClick();
+                        setIssueMode('all_participants');
+                        setCertRankAwardType('PARTICIPATION');
+                        setCertCustomTitle('Certificate of Participation');
+                        setCertCustomRankText('Participant');
+                      }}
+                      className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                        issueMode === 'all_participants'
+                          ? 'bg-[#FFD700]/10 border-[#FFD700] text-white shadow-[0_0_15px_rgba(255,215,0,0.15)]'
+                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full border mt-0.5 grid place-items-center ${
+                          issueMode === 'all_participants' ? 'border-[#FFD700]' : 'border-white/30'
+                        }`}
+                      >
+                        {issueMode === 'all_participants' && (
+                          <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-white">Issue to ALL Participants</div>
+                        <p className="text-[11px] text-white/50 font-mono mt-0.5">
+                          Automatically generates participation certificates for all registered/checked-in attendees.
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFx.playClick();
+                        setIssueMode('selective_ranks');
+                        setCertRankAwardType('WINNER_1ST');
+                        setCertCustomTitle('Certificate of Excellence');
+                        setCertCustomRankText('1st Place Winner');
+                      }}
+                      className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                        issueMode === 'selective_ranks'
+                          ? 'bg-[#FFD700]/10 border-[#FFD700] text-white shadow-[0_0_15px_rgba(255,215,0,0.15)]'
+                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full border mt-0.5 grid place-items-center ${
+                          issueMode === 'selective_ranks' ? 'border-[#FFD700]' : 'border-white/30'
+                        }`}
+                      >
+                        {issueMode === 'selective_ranks' && (
+                          <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-white">Selective / Rank Honors (1st, 2nd, 3rd)</div>
+                        <p className="text-[11px] text-white/50 font-mono mt-0.5">
+                          Select specific individuals or teams to assign winner, merit, or runner-up awards.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Selective Participant Checklist (if Mode 2) */}
+                {issueMode === 'selective_ranks' && (
+                  <div className="space-y-3 p-4 rounded-2xl bg-black/50 border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono text-white/80 font-bold">
+                        Select Winners / Awardees ({selectedPassIdsForCerts.length} selected)
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const eventPassesList = passes.filter(
+                              (p) =>
+                                p.eventId === certEventSelect ||
+                                p.eventTitle.toLowerCase().trim() ===
+                                  (eventsList.find((e) => e.id === certEventSelect)?.title || '').toLowerCase().trim()
+                            );
+                            setSelectedPassIdsForCerts(eventPassesList.map((p) => p.passId));
+                          }}
+                          className="text-[11px] font-mono text-[#00E5CC] hover:underline cursor-pointer"
+                        >
+                          Select All
+                        </button>
+                        <span className="text-white/20">·</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPassIdsForCerts([])}
+                          className="text-[11px] font-mono text-white/40 hover:text-white cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                      {passes
+                        .filter(
+                          (p) =>
+                            p.eventId === certEventSelect ||
+                            p.eventTitle.toLowerCase().trim() ===
+                              (eventsList.find((e) => e.id === certEventSelect)?.title || '').toLowerCase().trim()
+                        )
+                        .map((p) => {
+                          const isSelected = selectedPassIdsForCerts.includes(p.passId);
+                          return (
+                            <div
+                              key={p.passId}
+                              onClick={() => {
+                                soundFx.playClick();
+                                if (isSelected) {
+                                  setSelectedPassIdsForCerts((prev) => prev.filter((id) => id !== p.passId));
+                                } else {
+                                  setSelectedPassIdsForCerts((prev) => [...prev, p.passId]);
+                                }
+                              }}
+                              className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-mono transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#FFD700]/15 border-[#FFD700] text-white'
+                                  : 'bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/[0.05]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="w-4 h-4 accent-[#FFD700] rounded"
+                                />
+                                <span className="font-bold text-white truncate">{p.userName}</span>
+                                <span className="text-white/40 text-[11px] truncate">({p.userEmail})</span>
+                              </div>
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white/70">
+                                {p.passId}
+                              </span>
+                            </div>
+                          );
+                        })}
+
+                      {passes.filter(
+                        (p) =>
+                          p.eventId === certEventSelect ||
+                          p.eventTitle.toLowerCase().trim() ===
+                            (eventsList.find((e) => e.id === certEventSelect)?.title || '').toLowerCase().trim()
+                      ).length === 0 && (
+                        <div className="py-6 text-center text-xs font-mono text-white/40">
+                          No registered participants found for this event.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Honor Details & Commendation Text */}
+                <div className="space-y-3">
+                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
+                    3. Honor Classification &amp; Commendation
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className="space-y-1">
+                      <span className="text-xs font-mono text-white/60">Honor Type</span>
+                      <select
+                        value={certRankAwardType}
+                        onChange={(e) => {
+                          const val = e.target.value as CertificateType;
+                          setCertRankAwardType(val);
+                          if (val === 'WINNER_1ST') {
+                            setCertCustomTitle('Certificate of Excellence');
+                            setCertCustomRankText('1st Place Winner');
+                          } else if (val === 'RUNNER_UP_2ND') {
+                            setCertCustomTitle('Certificate of Excellence');
+                            setCertCustomRankText('2nd Place Runner Up');
+                          } else if (val === 'RUNNER_UP_3RD') {
+                            setCertCustomTitle('Certificate of Excellence');
+                            setCertCustomRankText('3rd Place');
+                          } else if (val === 'MERIT') {
+                            setCertCustomTitle('Certificate of Merit');
+                            setCertCustomRankText('Outstanding Merit');
+                          } else if (val === 'APPRECIATION') {
+                            setCertCustomTitle('Certificate of Appreciation');
+                            setCertCustomRankText('Special Recognition');
+                          } else {
+                            setCertCustomTitle('Certificate of Participation');
+                            setCertCustomRankText('Participant');
+                          }
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
+                      >
+                        <option value="PARTICIPATION">Participation</option>
+                        <option value="WINNER_1ST">1st Place Winner</option>
+                        <option value="RUNNER_UP_2ND">2nd Place Runner Up</option>
+                        <option value="RUNNER_UP_3RD">3rd Place</option>
+                        <option value="MERIT">Certificate of Merit</option>
+                        <option value="APPRECIATION">Certificate of Appreciation</option>
+                      </select>
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-xs font-mono text-white/60">Certificate Main Title</span>
+                      <input
+                        type="text"
+                        value={certCustomTitle}
+                        onChange={(e) => setCertCustomTitle(e.target.value)}
+                        placeholder="Certificate of Participation"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
+                      />
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-xs font-mono text-white/60">Rank / Award Subtitle</span>
+                      <input
+                        type="text"
+                        value={certCustomRankText}
+                        onChange={(e) => setCertCustomRankText(e.target.value)}
+                        placeholder="1st Place Winner"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="space-y-1 block">
+                    <span className="text-xs font-mono text-white/60">
+                      Custom Commendation Text (Leave blank for official default wording)
+                    </span>
+                    <textarea
+                      rows={2}
+                      value={certCustomDesc}
+                      onChange={(e) => setCertCustomDesc(e.target.value)}
+                      placeholder="e.g. for exceptional performance and securing 1st position in the 24-Hour Autonomous LiDAR Rover Hackathon."
+                      className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-xs text-white placeholder:text-white/30 font-sans focus:border-[#FFD700] outline-none"
+                    />
+                  </label>
+                </div>
+
+                {/* 5. Design Template Selection & Custom Background */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
+                      4. Design Template &amp; Background
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => certBgInputRef.current?.click()}
+                      className="text-xs font-mono text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5" /> Upload Custom Background
+                    </button>
+                    <input
+                      ref={certBgInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCustomBgUpload}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {CERTIFICATE_TEMPLATES.map((tmpl) => {
+                      const isSelected = certTemplateId === tmpl.id;
+                      return (
+                        <div
+                          key={tmpl.id}
+                          onClick={() => {
+                            soundFx.playClick();
+                            setCertTemplateId(tmpl.id);
+                            if (tmpl.id !== 'custom_upload') setCertTemplateBg('');
+                          }}
+                          className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-white/10 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.2)]'
+                              : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <div
+                            className={`h-12 rounded-xl mb-2 bg-gradient-to-br ${tmpl.theme.borderGradient} p-0.5`}
+                          >
+                            <div
+                              className={`w-full h-full rounded-[10px] bg-gradient-to-br ${tmpl.theme.bgGradient} flex items-center justify-center`}
+                            >
+                              <Award className="w-5 h-5 text-white/70" />
+                            </div>
+                          </div>
+                          <div className="font-bold text-xs text-white truncate">{tmpl.name}</div>
+                          <span className="text-[9px] font-mono text-white/40 uppercase">{tmpl.badge}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {certTemplateBg && (
+                    <div className="p-3 rounded-xl bg-white/5 border border-[#00E5CC]/30 flex items-center justify-between text-xs font-mono text-[#00E5CC]">
+                      <span>✓ Custom template background image active</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCertTemplateBg('');
+                          setCertTemplateId('classic_gold');
+                        }}
+                        className="text-white/40 hover:text-white"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 6. Signatory Verification Customizer */}
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
+                    5. Signatories &amp; Endorsement
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-white/40 text-[10px] uppercase">Signatory 1 (Patron)</span>
+                      <input
+                        type="text"
+                        value={certSignatories[0]?.name || ''}
+                        onChange={(e) => {
+                          const updated = [...certSignatories];
+                          if (updated[0]) updated[0].name = e.target.value;
+                          setCertSignatories(updated);
+                        }}
+                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white"
+                      />
+                      <input
+                        type="text"
+                        value={certSignatories[0]?.title || ''}
+                        onChange={(e) => {
+                          const updated = [...certSignatories];
+                          if (updated[0]) updated[0].title = e.target.value;
+                          setCertSignatories(updated);
+                        }}
+                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white/60 text-[10px]"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-white/40 text-[10px] uppercase">Signatory 2 (Head of Dept)</span>
+                      <input
+                        type="text"
+                        value={certSignatories[1]?.name || ''}
+                        onChange={(e) => {
+                          const updated = [...certSignatories];
+                          if (updated[1]) updated[1].name = e.target.value;
+                          setCertSignatories(updated);
+                        }}
+                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white"
+                      />
+                      <input
+                        type="text"
+                        value={certSignatories[1]?.title || ''}
+                        onChange={(e) => {
+                          const updated = [...certSignatories];
+                          if (updated[1]) updated[1].title = e.target.value;
+                          setCertSignatories(updated);
+                        }}
+                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white/60 text-[10px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer Actions */}
+                <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowIssueCertModal(false)}
+                    className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isIssuingCerts}
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-bold text-xs font-mono tracking-wide shadow-[0_0_20px_rgba(255,215,0,0.35)] hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isIssuingCerts ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span>{isIssuingCerts ? 'Generating Certificates...' : 'Generate & Issue Certificates'}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* FULL CERTIFICATE PREVIEW MODAL */}
+      <AnimatePresence>
+        {selectedCertPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-3xl overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-4xl rounded-[32px] bg-[#0F0F12] border border-[#FFD700]/50 p-5 sm:p-8 space-y-4 max-h-[95vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2 font-mono text-xs text-[#FFD700] font-bold">
+                  <Award className="w-4 h-4" />
+                  <span>Official Certificate Dossier — {selectedCertPreview.certId}</span>
+                </div>
+                <button
+                  onClick={() => setSelectedCertPreview(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <CertificateCard certificate={selectedCertPreview} onClose={() => setSelectedCertPreview(null)} />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* DELETE CERTIFICATE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {deletingCertId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm rounded-[24px] bg-[#0F0F12] border border-[#FF3B30]/30 p-6 space-y-4 font-mono shadow-[0_20px_60px_rgba(255,59,48,0.2)]"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#FF3B30]/10 border border-[#FF3B30]/30 text-[#FF3B30] grid place-items-center mx-auto">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="font-[Syne] font-[800] text-base text-white">Delete Certificate?</h3>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  Certificate <strong className="text-white">{deletingCertId}</strong> will be permanently removed from the official verification registry.
+                </p>
+              </div>
+              <div className="flex gap-2 justify-center pt-2">
+                <button
+                  onClick={() => setDeletingCertId(null)}
+                  className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 text-xs hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteCertificate(deletingCertId)}
+                  className="px-5 py-2 rounded-full bg-[#FF3B30] text-white font-bold text-xs shadow-[0_0_15px_rgba(255,59,48,0.4)] hover:bg-white hover:text-[#FF3B30] transition-all"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+

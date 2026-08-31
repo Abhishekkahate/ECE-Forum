@@ -61,6 +61,53 @@ export interface ApiPass {
   securityHash: string;
 }
 
+export type CertificateType =
+  | 'PARTICIPATION'
+  | 'WINNER_1ST'
+  | 'RUNNER_UP_2ND'
+  | 'RUNNER_UP_3RD'
+  | 'MERIT'
+  | 'APPRECIATION';
+
+export interface CertificateSignatory {
+  name: string;
+  title: string;
+  role?: string;
+  signatureImg?: string;
+}
+
+export interface ApiCertificate {
+  certId: string;
+  eventId: string;
+  eventTitle: string;
+  eventDate: string;
+  userName: string;
+  userEmail: string;
+  userPhoto?: string;
+  department: string;
+  collegeName?: string;
+  certType: CertificateType;
+  title: string;
+  rankText?: string;
+  description?: string;
+  templateId: 'classic_gold' | 'cyber_neon' | 'sapphire_prestige' | 'ruby_crimson' | 'custom_upload';
+  templateBg?: string;
+  signatories?: CertificateSignatory[];
+  qrData: string;
+  securityHash: string;
+  status: 'VALID' | 'REVOKED';
+  issuedAt: string;
+  issuedBy: string;
+}
+
+export interface CertificateVerificationResponse {
+  valid: boolean;
+  status: 'VALID' | 'REVOKED' | 'INVALID';
+  certificate?: ApiCertificate;
+  message: string;
+  verifiedAt: string;
+}
+
 export interface VerificationResponse {
   success: boolean;
   status: 'VALID' | 'ALREADY_CHECKED_IN' | 'UNVERIFIED' | 'INVALID';
@@ -687,6 +734,421 @@ export const forumApi = {
         body: JSON.stringify({ code: clean }),
       }).catch(() => {});
     } catch {}
+  },
+
+  // ── E-Certificates ────────────────────────────────────────────────────────
+  async getCertificates(eventId?: string, email?: string, certType?: string, search?: string): Promise<ApiCertificate[]> {
+    // 1. Direct Supabase Query
+    try {
+      const supaCerts = await supabaseDb.getCertificates(eventId, email, certType);
+      if (Array.isArray(supaCerts)) {
+        let formatted: ApiCertificate[] = supaCerts.map((c: any) => ({
+          certId: c.cert_id,
+          eventId: c.event_id,
+          eventTitle: c.event_title,
+          eventDate: c.event_date,
+          userName: c.user_name,
+          userEmail: c.user_email,
+          userPhoto: c.user_photo,
+          department: c.department || 'Electronics & Communication Engineering',
+          collegeName: c.college_name || 'PIET, Nagpur',
+          certType: c.cert_type || 'PARTICIPATION',
+          title: c.title || 'Certificate of Participation',
+          rankText: c.rank_text || 'Participant',
+          description: c.description || '',
+          templateId: c.template_id || 'classic_gold',
+          templateBg: c.template_bg || undefined,
+          signatories: c.signatories || [],
+          qrData: c.qr_data,
+          securityHash: c.security_hash,
+          status: c.status || 'VALID',
+          issuedAt: c.issued_at,
+          issuedBy: c.issued_by || 'ECE Forum Executive Council',
+        }));
+
+        if (search) {
+          const q = search.toLowerCase();
+          formatted = formatted.filter(
+            (c) =>
+              c.certId.toLowerCase().includes(q) ||
+              c.userName.toLowerCase().includes(q) ||
+              c.userEmail.toLowerCase().includes(q) ||
+              c.eventTitle.toLowerCase().includes(q)
+          );
+        }
+
+        try {
+          localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(formatted));
+        } catch {}
+
+        return formatted;
+      }
+    } catch (err) {
+      console.warn('Supabase getCertificates error:', err);
+    }
+
+    // 2. Backend Fallback
+    try {
+      const params = new URLSearchParams();
+      if (eventId) params.append('eventId', eventId);
+      if (email) params.append('email', email);
+      if (certType) params.append('certType', certType);
+      if (search) params.append('search', search);
+
+      const res = await fetch(`${API_BASE}/certificates?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          try {
+            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(data));
+          } catch {}
+          return data;
+        }
+      }
+    } catch {}
+
+    // 3. LocalStorage Fallback
+    try {
+      const cached = localStorage.getItem('ece_forum_certificates_cache');
+      if (cached) {
+        let list: ApiCertificate[] = JSON.parse(cached);
+        if (eventId && eventId !== 'all') list = list.filter((c) => c.eventId === eventId);
+        if (email) list = list.filter((c) => c.userEmail.toLowerCase() === email.toLowerCase());
+        if (certType && certType !== 'all') list = list.filter((c) => c.certType === certType);
+        return list;
+      }
+    } catch {}
+
+    return [];
+  },
+
+  async getCertificateById(certId: string): Promise<ApiCertificate | null> {
+    const cleanId = certId.trim();
+
+    // 1. Supabase
+    try {
+      const supa = await supabaseDb.getCertificateById(cleanId);
+      if (supa) {
+        return {
+          certId: supa.cert_id,
+          eventId: supa.event_id,
+          eventTitle: supa.event_title,
+          eventDate: supa.event_date,
+          userName: supa.user_name,
+          userEmail: supa.user_email,
+          userPhoto: supa.user_photo,
+          department: supa.department,
+          collegeName: supa.college_name,
+          certType: supa.cert_type,
+          title: supa.title,
+          rankText: supa.rank_text,
+          description: supa.description,
+          templateId: supa.template_id,
+          templateBg: supa.template_bg,
+          signatories: supa.signatories,
+          qrData: supa.qr_data,
+          securityHash: supa.security_hash,
+          status: supa.status,
+          issuedAt: supa.issued_at,
+          issuedBy: supa.issued_by,
+        };
+      }
+    } catch {}
+
+    // 2. Backend
+    try {
+      const res = await fetch(`${API_BASE}/certificates/${encodeURIComponent(cleanId)}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {}
+
+    // 3. LocalStorage cache
+    try {
+      const cached = localStorage.getItem('ece_forum_certificates_cache');
+      if (cached) {
+        const list: ApiCertificate[] = JSON.parse(cached);
+        const match = list.find((c) => c.certId.toUpperCase() === cleanId.toUpperCase());
+        if (match) return match;
+      }
+    } catch {}
+
+    return null;
+  },
+
+  async verifyCertificate(certId: string): Promise<CertificateVerificationResponse> {
+    const cleanId = certId.trim();
+
+    // Try backend verification endpoint
+    try {
+      const res = await fetch(`${API_BASE}/certificates/verify/${encodeURIComponent(cleanId)}`);
+      if (res.ok) {
+        return await res.json();
+      }
+      const data = await res.json().catch(() => null);
+      if (data) return data;
+    } catch {}
+
+    // Fallback client-side verification
+    const cert = await this.getCertificateById(cleanId);
+    if (!cert) {
+      return {
+        valid: false,
+        status: 'INVALID',
+        message: `Certificate ID "${cleanId}" was not found in the official registry.`,
+        verifiedAt: new Date().toISOString(),
+      };
+    }
+
+    if (cert.status === 'REVOKED') {
+      return {
+        valid: false,
+        status: 'REVOKED',
+        certificate: cert,
+        message: 'This certificate has been revoked by the issuing authority.',
+        verifiedAt: new Date().toISOString(),
+      };
+    }
+
+    return {
+      valid: true,
+      status: 'VALID',
+      certificate: cert,
+      message: 'Official and Authentic Certificate verified by ECE Forum PIET.',
+      verifiedAt: new Date().toISOString(),
+    };
+  },
+
+  async createCertificate(certData: Partial<ApiCertificate>): Promise<ApiCertificate> {
+    // Generate cert
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let rand = '';
+    for (let i = 0; i < 5; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    const certId = certData.certId || `ECE-CERT-${new Date().getFullYear()}-${rand}`;
+    const securityHash =
+      certData.securityHash ||
+      `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+
+    const newCert: ApiCertificate = {
+      certId,
+      eventId: certData.eventId || 'evt-general',
+      eventTitle: certData.eventTitle || 'ECE Forum Event',
+      eventDate: certData.eventDate || new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+      userName: certData.userName || 'Student Attendee',
+      userEmail: (certData.userEmail || '').trim().toLowerCase(),
+      userPhoto: certData.userPhoto,
+      department: certData.department || 'Electronics & Communication Engineering',
+      collegeName: certData.collegeName || 'PIET, Nagpur',
+      certType: certData.certType || 'PARTICIPATION',
+      title: certData.title || 'Certificate of Participation',
+      rankText: certData.rankText || 'Participant',
+      description: certData.description || '',
+      templateId: certData.templateId || 'classic_gold',
+      templateBg: certData.templateBg,
+      signatories: certData.signatories || [],
+      qrData:
+        certData.qrData ||
+        JSON.stringify({
+          certId,
+          name: certData.userName,
+          event: certData.eventTitle,
+          type: certData.certType || 'PARTICIPATION',
+          hash: securityHash,
+        }),
+      securityHash,
+      status: certData.status || 'VALID',
+      issuedAt:
+        certData.issuedAt ||
+        new Date().toLocaleDateString('en-IN', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      issuedBy: certData.issuedBy || 'ECE Forum Executive Council',
+    };
+
+    // 1. Supabase
+    try {
+      await supabaseDb.insertCertificate(newCert);
+    } catch {}
+
+    // 2. Backend
+    try {
+      fetch(`${API_BASE}/certificates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCert),
+      }).catch(() => {});
+    } catch {}
+
+    // 3. LocalStorage
+    try {
+      const cached = localStorage.getItem('ece_forum_certificates_cache');
+      const list: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+      const updated = [newCert, ...list.filter((c) => c.certId !== newCert.certId)];
+      localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(updated));
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('ece_certificates_updated', { detail: newCert }));
+    return newCert;
+  },
+
+  async issueBulkCertificates(payload: {
+    eventId: string;
+    eventTitle: string;
+    eventDate: string;
+    certType?: CertificateType;
+    title?: string;
+    rankText?: string;
+    description?: string;
+    templateId?: 'classic_gold' | 'cyber_neon' | 'sapphire_prestige' | 'ruby_crimson' | 'custom_upload';
+    templateBg?: string;
+    signatories?: CertificateSignatory[];
+    issuedBy?: string;
+    participants: Array<{
+      name: string;
+      email: string;
+      department?: string;
+      collegeName?: string;
+      rankText?: string;
+      certType?: CertificateType;
+      photo?: string;
+    }>;
+  }): Promise<{ success: boolean; count: number; certificates: ApiCertificate[] }> {
+    const issueDate = new Date().toLocaleDateString('en-IN', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    const generatedCerts: ApiCertificate[] = [];
+
+    for (let i = 0; i < payload.participants.length; i++) {
+      const p = payload.participants[i];
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let rand = '';
+      for (let r = 0; r < 5; r++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+
+      const certId = `ECE-CERT-${new Date().getFullYear()}-${rand}`;
+      const securityHash = `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+
+      const certObj: ApiCertificate = {
+        certId,
+        eventId: payload.eventId || 'evt-general',
+        eventTitle: payload.eventTitle || 'ECE Forum Event',
+        eventDate: payload.eventDate || issueDate,
+        userName: p.name || 'Participant',
+        userEmail: (p.email || '').trim().toLowerCase(),
+        userPhoto: p.photo,
+        department: p.department || 'Electronics & Communication Engineering',
+        collegeName: p.collegeName || 'PIET, Nagpur',
+        certType: p.certType || payload.certType || 'PARTICIPATION',
+        title: payload.title || 'Certificate of Participation',
+        rankText: p.rankText || payload.rankText || 'Participant',
+        description: payload.description || '',
+        templateId: payload.templateId || 'classic_gold',
+        templateBg: payload.templateBg,
+        signatories: payload.signatories || [],
+        qrData: JSON.stringify({
+          certId,
+          name: p.name,
+          event: payload.eventTitle,
+          type: p.certType || payload.certType || 'PARTICIPATION',
+          hash: securityHash,
+        }),
+        securityHash,
+        status: 'VALID',
+        issuedAt: issueDate,
+        issuedBy: payload.issuedBy || 'ECE Forum Executive Council',
+      };
+
+      generatedCerts.push(certObj);
+    }
+
+    // 1. Supabase bulk
+    try {
+      await supabaseDb.insertCertificatesBulk(generatedCerts);
+    } catch {}
+
+    // 2. Backend bulk
+    try {
+      fetch(`${API_BASE}/certificates/issue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, participants: payload.participants }),
+      }).catch(() => {});
+    } catch {}
+
+    // 3. LocalStorage
+    try {
+      const cached = localStorage.getItem('ece_forum_certificates_cache');
+      const list: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+      const map = new Map(list.map((c) => [c.certId, c]));
+      generatedCerts.forEach((c) => map.set(c.certId, c));
+      localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(Array.from(map.values())));
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('ece_certificates_updated', { detail: { count: generatedCerts.length } }));
+    return {
+      success: true,
+      count: generatedCerts.length,
+      certificates: generatedCerts,
+    };
+  },
+
+  async updateCertificateStatus(certId: string, status: 'VALID' | 'REVOKED'): Promise<boolean> {
+    const cleanId = certId.trim();
+
+    try {
+      await supabaseDb.updateCertificateStatus(cleanId, status);
+    } catch {}
+
+    try {
+      fetch(`${API_BASE}/certificates/${encodeURIComponent(cleanId)}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }).catch(() => {});
+    } catch {}
+
+    try {
+      const cached = localStorage.getItem('ece_forum_certificates_cache');
+      if (cached) {
+        const list: ApiCertificate[] = JSON.parse(cached);
+        const updated = list.map((c) => (c.certId.toUpperCase() === cleanId.toUpperCase() ? { ...c, status } : c));
+        localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(updated));
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('ece_certificates_updated', { detail: { certId: cleanId, status } }));
+    return true;
+  },
+
+  async deleteCertificate(certId: string): Promise<boolean> {
+    const cleanId = certId.trim();
+
+    try {
+      await supabaseDb.deleteCertificate(cleanId);
+    } catch {}
+
+    try {
+      fetch(`${API_BASE}/certificates/${encodeURIComponent(cleanId)}`, {
+        method: 'DELETE',
+      }).catch(() => {});
+    } catch {}
+
+    try {
+      const cached = localStorage.getItem('ece_forum_certificates_cache');
+      if (cached) {
+        const list: ApiCertificate[] = JSON.parse(cached);
+        const updated = list.filter((c) => c.certId.toUpperCase() !== cleanId.toUpperCase());
+        localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(updated));
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('ece_certificates_updated', { detail: { deletedId: cleanId } }));
+    return true;
   },
 };
 

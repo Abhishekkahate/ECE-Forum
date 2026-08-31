@@ -5,7 +5,7 @@ import Lenis from 'lenis';
 import {
   Hexagon, Activity, Layers, Calendar, Image as ImageIcon,
   Trophy, BookOpen, Users, Send, Search, Command, ArrowUp,
-  Check, Sparkles, ExternalLink, Ticket, Shield
+  Check, Sparkles, ExternalLink, Ticket, Shield, Award, CheckCircle2
 } from 'lucide-react';
 import { forumApi, DEFAULT_HERO_CONFIG } from './services/api';
 import { soundFx } from './utils/audio';
@@ -13,9 +13,11 @@ import { RegisterPage } from './pages/RegisterPage';
 import { AdminPage } from './pages/AdminPage';
 import DeveloperPage from './pages/DeveloperPage';
 import { HomePage } from './pages/HomePage';
+import { CertificateVerificationPage } from './pages/CertificateVerificationPage';
 import { useAuth } from './context/AuthContext';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { MyPassesModal } from './components/MyPassesModal';
+import { MyCertificatesModal } from './components/MyCertificatesModal';
 import { DEFAULT_GALLERY_ITEMS } from './components/GallerySection';
 
 // --- MOBILE FLOATING GLASS DOCK (Mobile Bottom Quick Bar) ---
@@ -115,7 +117,7 @@ function MobileDock() {
 }
 
 // --- COMMAND PALETTE (Ctrl+K / ⌘K) ---
-function CommandPalette({ open, setOpen }) {
+function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef(null);
@@ -134,8 +136,10 @@ function CommandPalette({ open, setOpen }) {
     { id: '#faculty', label: 'Academic Board — Faculty Leadership', category: 'Section', icon: BookOpen, kbd: '6' },
     { id: '#team', label: 'Command Council — 30 Student Leaders', category: 'Section', icon: Users, kbd: '7' },
     { id: '#contact', label: 'Dispatch & Coordinates — Contact', category: 'Section', icon: Send, kbd: '8' },
+    { id: '/verify', label: 'Certificate Verification — Live QR & ID Scanner', category: 'Verification', icon: Award, kbd: 'V' },
+    { id: 'action:my_certificates', label: 'My Official Certificates — Honours & Badges', category: 'Account', icon: Award, kbd: 'C' },
     { id: '/register', label: 'Registration Portal — Passes & Booking', category: 'Portal', icon: Ticket, kbd: 'R' },
-    { id: '/admin', label: 'Admin Command Center — Roster & Config', category: 'Portal', icon: Shield, kbd: 'A' },
+    { id: '/admin', label: 'Admin Command Center — Certificates & Roster', category: 'Portal', icon: Shield, kbd: 'A' },
     { id: '/developer', label: 'Developer Specs & Architectural Dossier', category: 'Portal', icon: Sparkles, kbd: 'D' },
   ];
 
@@ -156,6 +160,11 @@ function CommandPalette({ open, setOpen }) {
     setOpen(false);
     soundFx.playSuccess();
     try { navigator.vibrate?.(8); } catch {}
+
+    if (targetId === 'action:my_certificates') {
+      onOpenMyCertificates();
+      return;
+    }
 
     if (targetId.startsWith('/')) {
       navigate(targetId);
@@ -403,6 +412,7 @@ export default function App() {
 
   const [showGoogleAuth, setShowGoogleAuth] = useState(false);
   const [showMyPasses, setShowMyPasses] = useState(false);
+  const [showMyCertificates, setShowMyCertificates] = useState(false);
 
   // Backend Live State
   const [eventsList, setEventsList] = useState(DEFAULT_INITIAL_EVENTS);
@@ -607,7 +617,11 @@ export default function App() {
       )}
 
       {/* Command Palette */}
-      <CommandPalette open={cmdOpen} setOpen={setCmdOpen} />
+      <CommandPalette
+        open={cmdOpen}
+        setOpen={setCmdOpen}
+        onOpenMyCertificates={() => setShowMyCertificates(true)}
+      />
 
       {/* Mobile Floating Quick Dock */}
       <MobileDock />
@@ -626,11 +640,15 @@ export default function App() {
               setIsAuthOpen={setShowGoogleAuth}
               isMyPassesOpen={showMyPasses}
               setIsMyPassesOpen={setShowMyPasses}
+              isMyCertificatesOpen={showMyCertificates}
+              setIsMyCertificatesOpen={setShowMyCertificates}
             />
           }
         />
         <Route path="/register" element={<RegisterPage eventsList={eventsList} heroConfig={heroConfig} />} />
         <Route path="/register/:eventId" element={<RegisterPage eventsList={eventsList} heroConfig={heroConfig} />} />
+        <Route path="/verify" element={<CertificateVerificationPage />} />
+        <Route path="/verify/:certId" element={<CertificateVerificationPage />} />
         <Route
           path="/admin"
           element={
@@ -686,6 +704,17 @@ export default function App() {
           onExploreEvents={() => {
             setShowMyPasses(false);
             document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {showMyCertificates && (
+        <MyCertificatesModal
+          isOpen={showMyCertificates}
+          onClose={() => setShowMyCertificates(false)}
+          onOpenGoogleAuth={() => {
+            setShowMyCertificates(false);
+            setShowGoogleAuth(true);
           }}
         />
       )}

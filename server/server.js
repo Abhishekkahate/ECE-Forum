@@ -99,6 +99,7 @@ const DEFAULT_DATA = {
     },
   ],
   passes: [],
+  certificates: [],
 };
 
 function readLocalDb() {
@@ -598,6 +599,457 @@ app.delete('/api/passes/:passId', async (req, res) => {
   writeLocalDb(db);
 
   res.json({ success: true, deletedPassId: cleanId });
+});
+
+// ── E-Certificates ────────────────────────────────────────────────────────
+// Get all certificates with optional filtering (eventId, email, certType, search)
+app.get('/api/certificates', async (req, res) => {
+  const { eventId, email, certType, search } = req.query;
+
+  if (supabase) {
+    try {
+      let query = supabase.from('certificates').select('*').order('created_at', { ascending: false });
+      if (eventId && eventId !== 'all') query = query.eq('event_id', eventId);
+      if (email) query = query.ilike('user_email', email.trim());
+      if (certType && certType !== 'all') query = query.eq('cert_type', certType);
+
+      const { data, error } = await query;
+      if (!error && Array.isArray(data)) {
+        let certs = data.map((c) => ({
+          certId: c.cert_id,
+          eventId: c.event_id,
+          eventTitle: c.event_title,
+          eventDate: c.event_date,
+          userName: c.user_name,
+          userEmail: c.user_email,
+          userPhoto: c.user_photo,
+          department: c.department || 'Electronics & Communication Engineering',
+          collegeName: c.college_name || 'PIET, Nagpur',
+          certType: c.cert_type || 'PARTICIPATION',
+          title: c.title || 'Certificate of Participation',
+          rankText: c.rank_text || 'Participant',
+          description: c.description || '',
+          templateId: c.template_id || 'classic_gold',
+          templateBg: c.template_bg || null,
+          signatories: c.signatories || [],
+          qrData: c.qr_data,
+          securityHash: c.security_hash,
+          status: c.status || 'VALID',
+          issuedAt: c.issued_at,
+          issuedBy: c.issued_by || 'ECE Forum Executive Council',
+        }));
+
+        if (search) {
+          const q = search.toLowerCase();
+          certs = certs.filter(
+            (c) =>
+              c.certId.toLowerCase().includes(q) ||
+              c.userName.toLowerCase().includes(q) ||
+              c.userEmail.toLowerCase().includes(q) ||
+              c.eventTitle.toLowerCase().includes(q)
+          );
+        }
+
+        return res.json(certs);
+      }
+    } catch (err) {
+      console.warn('Supabase certificates fetch error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  let certs = db.certificates || [];
+  if (eventId && eventId !== 'all') certs = certs.filter((c) => c.eventId === eventId);
+  if (email) certs = certs.filter((c) => (c.userEmail || '').toLowerCase() === email.toLowerCase().trim());
+  if (certType && certType !== 'all') certs = certs.filter((c) => c.certType === certType);
+  if (search) {
+    const q = search.toLowerCase();
+    certs = certs.filter(
+      (c) =>
+        c.certId.toLowerCase().includes(q) ||
+        c.userName.toLowerCase().includes(q) ||
+        (c.userEmail || '').toLowerCase().includes(q) ||
+        c.eventTitle.toLowerCase().includes(q)
+    );
+  }
+
+  res.json(certs);
+});
+
+// Get single certificate by ID
+app.get('/api/certificates/:certId', async (req, res) => {
+  const { certId } = req.params;
+  const cleanId = (certId || '').trim();
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('certificates')
+        .select('*')
+        .eq('cert_id', cleanId)
+        .maybeSingle();
+
+      if (!error && data) {
+        return res.json({
+          certId: data.cert_id,
+          eventId: data.event_id,
+          eventTitle: data.event_title,
+          eventDate: data.event_date,
+          userName: data.user_name,
+          userEmail: data.user_email,
+          userPhoto: data.user_photo,
+          department: data.department || 'Electronics & Communication Engineering',
+          collegeName: data.college_name || 'PIET, Nagpur',
+          certType: data.cert_type || 'PARTICIPATION',
+          title: data.title || 'Certificate of Participation',
+          rankText: data.rank_text || 'Participant',
+          description: data.description || '',
+          templateId: data.template_id || 'classic_gold',
+          templateBg: data.template_bg || null,
+          signatories: data.signatories || [],
+          qrData: data.qr_data,
+          securityHash: data.security_hash,
+          status: data.status || 'VALID',
+          issuedAt: data.issued_at,
+          issuedBy: data.issued_by || 'ECE Forum Executive Council',
+        });
+      }
+    } catch {}
+  }
+
+  const db = readLocalDb();
+  const found = (db.certificates || []).find((c) => c.certId.toUpperCase() === cleanId.toUpperCase());
+  if (found) return res.json(found);
+
+  res.status(404).json({ error: 'Certificate not found' });
+});
+
+// Certificate Public Verification Endpoint
+app.get('/api/certificates/verify/:certId', async (req, res) => {
+  const { certId } = req.params;
+  const cleanId = (certId || '').trim();
+
+  let cert = null;
+  if (supabase) {
+    try {
+      const { data } = await supabase
+        .from('certificates')
+        .select('*')
+        .eq('cert_id', cleanId)
+        .maybeSingle();
+
+      if (data) {
+        cert = {
+          certId: data.cert_id,
+          eventId: data.event_id,
+          eventTitle: data.event_title,
+          eventDate: data.event_date,
+          userName: data.user_name,
+          userEmail: data.user_email,
+          department: data.department || 'Electronics & Communication Engineering',
+          collegeName: data.college_name || 'PIET, Nagpur',
+          certType: data.cert_type || 'PARTICIPATION',
+          title: data.title || 'Certificate of Participation',
+          rankText: data.rank_text || 'Participant',
+          description: data.description || '',
+          templateId: data.template_id || 'classic_gold',
+          templateBg: data.template_bg || null,
+          signatories: data.signatories || [],
+          qrData: data.qr_data,
+          securityHash: data.security_hash,
+          status: data.status || 'VALID',
+          issuedAt: data.issued_at,
+          issuedBy: data.issued_by || 'ECE Forum Executive Council',
+        };
+      }
+    } catch {}
+  }
+
+  if (!cert) {
+    const db = readLocalDb();
+    cert = (db.certificates || []).find((c) => c.certId.toUpperCase() === cleanId.toUpperCase());
+  }
+
+  if (!cert) {
+    return res.status(404).json({
+      valid: false,
+      status: 'INVALID',
+      message: `Certificate ID "${cleanId}" was not found in the official registry.`,
+      verifiedAt: new Date().toISOString(),
+    });
+  }
+
+  if (cert.status === 'REVOKED') {
+    return res.status(200).json({
+      valid: false,
+      status: 'REVOKED',
+      certificate: cert,
+      message: 'This certificate has been revoked by the issuing authority.',
+      verifiedAt: new Date().toISOString(),
+    });
+  }
+
+  res.json({
+    valid: true,
+    status: 'VALID',
+    certificate: cert,
+    message: 'Official and Authentic Certificate verified by ECE Forum PIET.',
+    verifiedAt: new Date().toISOString(),
+  });
+});
+
+// Single Certificate Issuance
+app.post('/api/certificates', async (req, res) => {
+  const certData = req.body;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let rand = '';
+  for (let i = 0; i < 5; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+
+  const certId =
+    certData.certId ||
+    `ECE-CERT-${new Date().getFullYear()}-${rand}`;
+
+  const securityHash =
+    certData.securityHash ||
+    `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+
+  const newCert = {
+    certId,
+    eventId: certData.eventId || 'evt-general',
+    eventTitle: certData.eventTitle || 'ECE Forum Event',
+    eventDate: certData.eventDate || new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+    userName: certData.userName || 'Student Attendee',
+    userEmail: (certData.userEmail || '').trim().toLowerCase(),
+    userPhoto: certData.userPhoto || null,
+    department: certData.department || 'Electronics & Communication Engineering',
+    collegeName: certData.collegeName || 'PIET, Nagpur',
+    certType: certData.certType || 'PARTICIPATION',
+    title: certData.title || 'Certificate of Participation',
+    rankText: certData.rankText || 'Participant',
+    description: certData.description || '',
+    templateId: certData.templateId || 'classic_gold',
+    templateBg: certData.templateBg || null,
+    signatories: certData.signatories || [],
+    qrData:
+      certData.qrData ||
+      JSON.stringify({
+        certId,
+        name: certData.userName,
+        event: certData.eventTitle,
+        type: certData.certType || 'PARTICIPATION',
+        hash: securityHash,
+      }),
+    securityHash,
+    status: certData.status || 'VALID',
+    issuedAt:
+      certData.issuedAt ||
+      new Date().toLocaleDateString('en-IN', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    issuedBy: certData.issuedBy || 'ECE Forum Executive Council',
+  };
+
+  if (supabase) {
+    try {
+      await supabase.from('certificates').upsert([
+        {
+          cert_id: newCert.certId,
+          event_id: newCert.eventId,
+          event_title: newCert.eventTitle,
+          event_date: newCert.eventDate,
+          user_name: newCert.userName,
+          user_email: newCert.userEmail,
+          user_photo: newCert.userPhoto,
+          department: newCert.department,
+          college_name: newCert.collegeName,
+          cert_type: newCert.certType,
+          title: newCert.title,
+          rank_text: newCert.rankText,
+          description: newCert.description,
+          template_id: newCert.templateId,
+          template_bg: newCert.templateBg,
+          signatories: newCert.signatories,
+          qr_data: newCert.qrData,
+          security_hash: newCert.securityHash,
+          status: newCert.status,
+          issued_at: newCert.issuedAt,
+          issued_by: newCert.issuedBy,
+        },
+      ]);
+    } catch (err) {
+      console.warn('Supabase cert insert error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  db.certificates = [newCert, ...(db.certificates || []).filter((c) => c.certId !== newCert.certId)];
+  writeLocalDb(db);
+
+  res.status(201).json(newCert);
+});
+
+// Bulk Certificate Issuance (e.g. Issue to all participants of an event or selected list)
+app.post('/api/certificates/issue', async (req, res) => {
+  const {
+    eventId,
+    eventTitle,
+    eventDate,
+    certType = 'PARTICIPATION',
+    title = 'Certificate of Participation',
+    rankText = 'Participant',
+    description = '',
+    templateId = 'classic_gold',
+    templateBg = null,
+    signatories = [],
+    issuedBy = 'ECE Forum Executive Council',
+    participants = [], // Array of { name, email, department, collegeName, rankText? }
+  } = req.body;
+
+  if (!Array.isArray(participants) || participants.length === 0) {
+    return res.status(400).json({ error: 'No participants provided for certificate issuance.' });
+  }
+
+  const issueDate = new Date().toLocaleDateString('en-IN', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const generatedCerts = [];
+  const supaPayloads = [];
+
+  for (let i = 0; i < participants.length; i++) {
+    const p = participants[i];
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let rand = '';
+    for (let r = 0; r < 5; r++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    const certId = `ECE-CERT-${new Date().getFullYear()}-${rand}`;
+    const securityHash = `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+
+    const certObj = {
+      certId,
+      eventId: eventId || 'evt-general',
+      eventTitle: eventTitle || 'ECE Forum Event',
+      eventDate: eventDate || issueDate,
+      userName: p.name || p.userName || 'Participant',
+      userEmail: (p.email || p.userEmail || '').trim().toLowerCase(),
+      userPhoto: p.photo || p.userPhoto || null,
+      department: p.department || 'Electronics & Communication Engineering',
+      collegeName: p.collegeName || 'PIET, Nagpur',
+      certType: p.certType || certType,
+      title: p.title || title,
+      rankText: p.rankText || rankText,
+      description: p.description || description,
+      templateId,
+      templateBg,
+      signatories,
+      qrData: JSON.stringify({
+        certId,
+        name: p.name || p.userName,
+        event: eventTitle,
+        type: p.certType || certType,
+        hash: securityHash,
+      }),
+      securityHash,
+      status: 'VALID',
+      issuedAt: issueDate,
+      issuedBy,
+    };
+
+    generatedCerts.push(certObj);
+    supaPayloads.push({
+      cert_id: certObj.certId,
+      event_id: certObj.eventId,
+      event_title: certObj.eventTitle,
+      event_date: certObj.eventDate,
+      user_name: certObj.userName,
+      user_email: certObj.userEmail,
+      user_photo: certObj.userPhoto,
+      department: certObj.department,
+      college_name: certObj.collegeName,
+      cert_type: certObj.certType,
+      title: certObj.title,
+      rank_text: certObj.rankText,
+      description: certObj.description,
+      template_id: certObj.templateId,
+      template_bg: certObj.templateBg,
+      signatories: certObj.signatories,
+      qr_data: certObj.qrData,
+      security_hash: certObj.securityHash,
+      status: certObj.status,
+      issued_at: certObj.issuedAt,
+      issued_by: certObj.issuedBy,
+    });
+  }
+
+  if (supabase) {
+    try {
+      await supabase.from('certificates').upsert(supaPayloads);
+    } catch (err) {
+      console.warn('Supabase bulk certs insert error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  const existingMap = new Map((db.certificates || []).map((c) => [c.certId, c]));
+  generatedCerts.forEach((c) => existingMap.set(c.certId, c));
+  db.certificates = Array.from(existingMap.values());
+  writeLocalDb(db);
+
+  res.status(201).json({
+    success: true,
+    count: generatedCerts.length,
+    certificates: generatedCerts,
+    message: `Successfully generated and issued ${generatedCerts.length} certificates.`,
+  });
+});
+
+// Toggle / update certificate status (VALID / REVOKED)
+app.patch('/api/certificates/:certId/status', async (req, res) => {
+  const { certId } = req.params;
+  const { status } = req.body;
+  const cleanId = (certId || '').trim();
+
+  if (supabase) {
+    try {
+      await supabase.from('certificates').update({ status }).eq('cert_id', cleanId);
+    } catch (err) {
+      console.warn('Supabase cert status update error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  const idx = (db.certificates || []).findIndex((c) => c.certId.toUpperCase() === cleanId.toUpperCase());
+  if (idx !== -1) {
+    db.certificates[idx].status = status;
+    writeLocalDb(db);
+    return res.json({ success: true, certificate: db.certificates[idx] });
+  }
+
+  res.status(404).json({ error: 'Certificate not found' });
+});
+
+// Delete certificate
+app.delete('/api/certificates/:certId', async (req, res) => {
+  const { certId } = req.params;
+  const cleanId = (certId || '').trim();
+
+  if (supabase) {
+    try {
+      await supabase.from('certificates').delete().eq('cert_id', cleanId);
+    } catch (err) {
+      console.warn('Supabase cert delete error:', err.message);
+    }
+  }
+
+  const db = readLocalDb();
+  db.certificates = (db.certificates || []).filter((c) => c.certId.toUpperCase() !== cleanId.toUpperCase());
+  writeLocalDb(db);
+
+  res.json({ success: true, deletedCertId: cleanId });
 });
 
 // ── Hero & Site Content ──────────────────────────────────────────────────

@@ -329,4 +329,158 @@ export const supabaseDb = {
       return false;
     }
   },
+
+  // Certificates
+  async getCertificates(eventId?: string, email?: string, certType?: string) {
+    try {
+      let query = supabase
+        .from('certificates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (eventId && eventId !== 'all') {
+        query = query.eq('event_id', eventId);
+      }
+      if (email) {
+        query = query.ilike('user_email', email.trim());
+      }
+      if (certType && certType !== 'all') {
+        query = query.eq('cert_type', certType);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase getCertificates error:', err);
+      return null;
+    }
+  },
+
+  async getCertificateById(certId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('certificates')
+        .select('*')
+        .eq('cert_id', certId.trim())
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase getCertificateById error:', err);
+      return null;
+    }
+  },
+
+  async insertCertificate(cert: any) {
+    const payload = {
+      cert_id: cert.certId || cert.cert_id,
+      event_id: cert.eventId || cert.event_id,
+      event_title: cert.eventTitle || cert.event_title,
+      event_date: cert.eventDate || cert.event_date,
+      user_name: cert.userName || cert.user_name,
+      user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
+      user_photo: cert.userPhoto || cert.user_photo || null,
+      department: cert.department || 'Electronics & Communication Engineering',
+      college_name: cert.collegeName || cert.college_name || 'PIET, Nagpur',
+      cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
+      title: cert.title || 'Certificate of Participation',
+      rank_text: cert.rankText || cert.rank_text || 'Participant',
+      description: cert.description || '',
+      template_id: cert.templateId || cert.template_id || 'classic_gold',
+      template_bg: cert.templateBg || cert.template_bg || null,
+      signatories: cert.signatories || [],
+      qr_data: cert.qrData || cert.qr_data,
+      security_hash: cert.securityHash || cert.security_hash,
+      status: cert.status || 'VALID',
+      issued_at: cert.issuedAt || cert.issued_at || new Date().toLocaleDateString('en-IN'),
+      issued_by: cert.issuedBy || cert.issued_by || 'ECE Forum Executive Council',
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('certificates')
+        .upsert([payload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase insertCertificate error:', err);
+      return null;
+    }
+  },
+
+  async insertCertificatesBulk(certs: any[]) {
+    const payloads = certs.map((cert) => ({
+      cert_id: cert.certId || cert.cert_id,
+      event_id: cert.eventId || cert.event_id,
+      event_title: cert.eventTitle || cert.event_title,
+      event_date: cert.eventDate || cert.event_date,
+      user_name: cert.userName || cert.user_name,
+      user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
+      user_photo: cert.userPhoto || cert.user_photo || null,
+      department: cert.department || 'Electronics & Communication Engineering',
+      college_name: cert.collegeName || cert.college_name || 'PIET, Nagpur',
+      cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
+      title: cert.title || 'Certificate of Participation',
+      rank_text: cert.rankText || cert.rank_text || 'Participant',
+      description: cert.description || '',
+      template_id: cert.templateId || cert.template_id || 'classic_gold',
+      template_bg: cert.templateBg || cert.template_bg || null,
+      signatories: cert.signatories || [],
+      qr_data: cert.qrData || cert.qr_data,
+      security_hash: cert.securityHash || cert.security_hash,
+      status: cert.status || 'VALID',
+      issued_at: cert.issuedAt || cert.issued_at || new Date().toLocaleDateString('en-IN'),
+      issued_by: cert.issuedBy || cert.issued_by || 'ECE Forum Executive Council',
+    }));
+
+    try {
+      const { data, error } = await supabase
+        .from('certificates')
+        .upsert(payloads)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase insertCertificatesBulk error:', err);
+      return null;
+    }
+  },
+
+  async updateCertificateStatus(certId: string, status: string) {
+    try {
+      const { data, error } = await supabase
+        .from('certificates')
+        .update({ status })
+        .eq('cert_id', certId.trim())
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase updateCertificateStatus error:', err);
+      return null;
+    }
+  },
+
+  async deleteCertificate(certId: string) {
+    try {
+      const { error } = await supabase
+        .from('certificates')
+        .delete()
+        .eq('cert_id', certId.trim());
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.warn('Supabase deleteCertificate error:', err);
+      return false;
+    }
+  },
 };

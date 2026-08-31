@@ -5,6 +5,7 @@ import { HeroSection } from '../components/HeroSection';
 import { ScrollToTopFab } from '../components/ScrollToTopFab';
 import { GoogleAuthModal } from '../components/GoogleAuthModal';
 import { MyPassesModal } from '../components/MyPassesModal';
+import { MyCertificatesModal } from '../components/MyCertificatesModal';
 import { type SiteHeroConfig } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import type { EventItem } from '../components/EventsSection';
@@ -38,6 +39,8 @@ interface HomePageProps {
   setIsAuthOpen: (open: boolean) => void;
   isMyPassesOpen: boolean;
   setIsMyPassesOpen: (open: boolean) => void;
+  isMyCertificatesOpen?: boolean;
+  setIsMyCertificatesOpen?: (open: boolean) => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -49,6 +52,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   setIsAuthOpen,
   isMyPassesOpen,
   setIsMyPassesOpen,
+  isMyCertificatesOpen = false,
+  setIsMyCertificatesOpen = () => {},
 }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -113,6 +118,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       <Navbar
         onOpenGoogleAuth={() => setIsAuthOpen(true)}
         onOpenMyPasses={() => setIsMyPassesOpen(true)}
+        onOpenMyCertificates={() => setIsMyCertificatesOpen(true)}
         onOpenAdmin={() => navigate('/admin')}
       />
 
@@ -145,6 +151,13 @@ export const HomePage: React.FC<HomePageProps> = ({
           onClose={() => setIsMyPassesOpen(false)}
           onOpenGoogleAuth={() => { setIsMyPassesOpen(false); setIsAuthOpen(true); }}
           onExploreEvents={() => { setIsMyPassesOpen(false); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }); }}
+        />
+      )}
+      {isMyCertificatesOpen && (
+        <MyCertificatesModal
+          isOpen={isMyCertificatesOpen}
+          onClose={() => setIsMyCertificatesOpen(false)}
+          onOpenGoogleAuth={() => { setIsMyCertificatesOpen(false); setIsAuthOpen(true); }}
         />
       )}
     </div>
