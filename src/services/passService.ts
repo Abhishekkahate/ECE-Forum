@@ -60,6 +60,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 class PassService {
   private passes: EventPass[] = [];
+  private lastSyncTimestamp = 0;
+  private isSyncing = false;
 
   constructor() {
     this.loadPasses();
@@ -73,10 +75,17 @@ class PassService {
     }
   }
 
-  public async syncWithBackend() {
+  public async syncWithBackend(force = false) {
+    const now = Date.now();
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 25000)) {
+      return this.passes;
+    }
+
+    this.isSyncing = true;
     try {
       // 1. Primary Supabase Cloud Sync
       const supaPasses = await supabaseDb.getPasses();
+      this.lastSyncTimestamp = Date.now();
       if (supaPasses && Array.isArray(supaPasses) && supaPasses.length > 0) {
         this.passes = supaPasses.map((p: any) => ({
           passId: p.pass_id,
@@ -140,7 +149,9 @@ class PassService {
           this.saveToStorage(true);
         }
       }
-    } catch {}
+    } catch {} finally {
+      this.isSyncing = false;
+    }
   }
 
   private loadPasses() {

@@ -103,6 +103,8 @@ const STORAGE_KEY = 'ece_forum_certificates_cache';
 
 class CertificateService {
   private certificates: ApiCertificate[] = [];
+  private lastSyncTimestamp = 0;
+  private isSyncing = false;
 
   constructor() {
     this.loadFromStorage();
@@ -112,7 +114,7 @@ class CertificateService {
         if (e.key === STORAGE_KEY) this.loadFromStorage();
       });
       window.addEventListener('ece_certificates_updated', () => {
-        this.syncWithBackend();
+        this.syncWithBackend(true);
       });
     }
   }
@@ -126,10 +128,17 @@ class CertificateService {
     } catch {}
   }
 
-  public async syncWithBackend(): Promise<ApiCertificate[]> {
+  public async syncWithBackend(force = false): Promise<ApiCertificate[]> {
+    const now = Date.now();
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 25000)) {
+      return this.certificates;
+    }
+
+    this.isSyncing = true;
     try {
       // 1. Fetch from direct Supabase
       const supa = await supabaseDb.getCertificates();
+      this.lastSyncTimestamp = Date.now();
       if (Array.isArray(supa) && supa.length > 0) {
         const formatted: ApiCertificate[] = supa.map((c: any) => ({
           certId: c.cert_id,
@@ -168,7 +177,9 @@ class CertificateService {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
         return rest;
       }
-    } catch {}
+    } catch {} finally {
+      this.isSyncing = false;
+    }
 
     return this.certificates;
   }

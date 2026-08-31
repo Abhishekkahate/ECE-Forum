@@ -280,11 +280,23 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     refreshAdmins();
     refreshCoupons();
     refreshCertificates();
+
+    const onPassesUpdate = () => refreshLivePasses();
+    const onCertsUpdate = () => refreshCertificates();
+    window.addEventListener('ece_passes_updated', onPassesUpdate);
+    window.addEventListener('ece_certificates_updated', onCertsUpdate);
+
+    // 45-second gentle polling while actively in Admin Studio
     const iv = setInterval(() => {
       refreshLivePasses();
       refreshCertificates();
-    }, 6000);
-    return () => clearInterval(iv);
+    }, 45000);
+
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('ece_passes_updated', onPassesUpdate);
+      window.removeEventListener('ece_certificates_updated', onCertsUpdate);
+    };
   }, []);
 
   // Set default event for issuance if not selected

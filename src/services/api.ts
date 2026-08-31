@@ -118,13 +118,28 @@ export interface VerificationResponse {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const CACHE_TTL_MS = 45000; // 45-second cache to protect Supabase free-tier limits
+const memoryCache = {
+  events: { data: null as ApiEvent[] | null, timestamp: 0 },
+  announcement: { data: null as string | null, timestamp: 0 },
+  heroConfig: { data: null as SiteHeroConfig | null, timestamp: 0 },
+  gallery: { data: null as any[] | null, timestamp: 0 },
+  coupons: { data: null as Coupon[] | null, timestamp: 0 },
+};
+
 export const forumApi = {
   // ── Events ───────────────────────────────────────────────────────────────
-  async getEvents(): Promise<ApiEvent[]> {
+  async getEvents(force = false): Promise<ApiEvent[]> {
+    const now = Date.now();
+    if (!force && memoryCache.events.data && now - memoryCache.events.timestamp < CACHE_TTL_MS) {
+      return memoryCache.events.data;
+    }
+
     // 0. Direct Supabase Manifest (Rich metadata: QRs, UPIs, exact team constraints)
     try {
       const supaManifest = await supabaseDb.getSiteSettings('events_manifest');
       if (Array.isArray(supaManifest) && supaManifest.length > 0) {
+        memoryCache.events = { data: supaManifest, timestamp: now };
         try {
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(supaManifest));
         } catch {}
@@ -439,21 +454,32 @@ export const forumApi = {
   },
 
   // ── Announcements ────────────────────────────────────────────────────────
-  async getAnnouncement(): Promise<string> {
+  async getAnnouncement(force = false): Promise<string> {
+    const now = Date.now();
+    if (!force && memoryCache.announcement.data !== null && now - memoryCache.announcement.timestamp < CACHE_TTL_MS) {
+      return memoryCache.announcement.data;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/announcements`);
       if (res.ok) {
         const data = await res.json();
-        return data.announcement || '';
+        const text = data.announcement || '';
+        memoryCache.announcement = { data: text, timestamp: now };
+        return text;
       }
     } catch {
       const ann = await supabaseDb.getAnnouncement();
-      if (ann) return ann;
+      if (ann) {
+        memoryCache.announcement = { data: ann, timestamp: now };
+        return ann;
+      }
     }
-    return '';
+    return memoryCache.announcement.data || '';
   },
 
   async setAnnouncement(announcement: string): Promise<boolean> {
+    memoryCache.announcement = { data: announcement, timestamp: Date.now() };
     try {
       const res = await fetch(`${API_BASE}/announcements`, {
         method: 'POST',
@@ -550,23 +576,35 @@ export const forumApi = {
   },
 
   // ── Hero Eyebrow Pill & Flagship Event Banner Config ──────────────────────
-  async getSiteHeroConfig(): Promise<SiteHeroConfig> {
+  async getSiteHeroConfig(force = false): Promise<SiteHeroConfig> {
+    const now = Date.now();
+    if (!force && memoryCache.heroConfig.data && now - memoryCache.heroConfig.timestamp < CACHE_TTL_MS) {
+      return memoryCache.heroConfig.data;
+    }
+
     try {
       const supaConfig = await supabaseDb.getSiteSettings('hero_flagship');
       if (supaConfig && typeof supaConfig === 'object') {
-        return { ...DEFAULT_HERO_CONFIG, ...supaConfig };
+        const full = { ...DEFAULT_HERO_CONFIG, ...supaConfig };
+        memoryCache.heroConfig = { data: full, timestamp: now };
+        return full;
       }
     } catch {}
 
     try {
       const saved = localStorage.getItem('ece_hero_flagship_config');
-      if (saved) return { ...DEFAULT_HERO_CONFIG, ...JSON.parse(saved) };
+      if (saved) {
+        const full = { ...DEFAULT_HERO_CONFIG, ...JSON.parse(saved) };
+        memoryCache.heroConfig = { data: full, timestamp: now };
+        return full;
+      }
     } catch {}
 
     return DEFAULT_HERO_CONFIG;
   },
 
   async updateSiteHeroConfig(config: SiteHeroConfig): Promise<boolean> {
+    memoryCache.heroConfig = { data: config, timestamp: Date.now() };
     try {
       localStorage.setItem('ece_hero_flagship_config', JSON.stringify(config));
     } catch {}
@@ -580,11 +618,17 @@ export const forumApi = {
   },
 
   // ── Photo Gallery / Archive ───────────────────────────────────────────────
-  async getGalleryItems(): Promise<any[]> {
+  async getGalleryItems(force = false): Promise<any[]> {
+    const now = Date.now();
+    if (!force && memoryCache.gallery.data && now - memoryCache.gallery.timestamp < CACHE_TTL_MS) {
+      return memoryCache.gallery.data;
+    }
+
     // 1. Supabase Cloud Database (Primary source of truth)
     try {
       const supaGallery = await supabaseDb.getSiteSettings('gallery_archive');
       if (supaGallery && Array.isArray(supaGallery)) {
+        memoryCache.gallery = { data: supaGallery, timestamp: now };
         try {
           localStorage.setItem('ece_gallery_archive_items', JSON.stringify(supaGallery));
         } catch {}
@@ -598,6 +642,7 @@ export const forumApi = {
       if (res.ok) {
         const backendGallery = await res.json();
         if (Array.isArray(backendGallery) && backendGallery.length > 0) {
+          memoryCache.gallery = { data: backendGallery, timestamp: now };
           try {
             localStorage.setItem('ece_gallery_archive_items', JSON.stringify(backendGallery));
           } catch {}
@@ -611,7 +656,10 @@ export const forumApi = {
       const saved = localStorage.getItem('ece_gallery_archive_items');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          memoryCache.gallery = { data: parsed, timestamp: now };
+          return parsed;
+        }
       }
     } catch {}
 
@@ -619,6 +667,7 @@ export const forumApi = {
   },
 
   async updateGalleryItems(items: any[]): Promise<boolean> {
+    memoryCache.gallery = { data: items, timestamp: Date.now() };
     try {
       localStorage.setItem('ece_gallery_archive_items', JSON.stringify(items));
     } catch {}
@@ -643,11 +692,17 @@ export const forumApi = {
   },
 
   // ── Coupon Code System ──────────────────────────────────────────────────
-  async getCoupons(): Promise<Coupon[]> {
+  async getCoupons(force = false): Promise<Coupon[]> {
+    const now = Date.now();
+    if (!force && memoryCache.coupons.data && now - memoryCache.coupons.timestamp < CACHE_TTL_MS) {
+      return memoryCache.coupons.data;
+    }
+
     // 1. Direct Supabase Cloud Settings (Source of truth)
     try {
       const supaCoupons = await supabaseDb.getSiteSettings('coupon_codes');
       if (supaCoupons !== null && supaCoupons !== undefined && Array.isArray(supaCoupons)) {
+        memoryCache.coupons = { data: supaCoupons, timestamp: now };
         try {
           localStorage.setItem('ece_coupon_codes', JSON.stringify(supaCoupons));
         } catch {}

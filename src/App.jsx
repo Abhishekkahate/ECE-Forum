@@ -546,12 +546,24 @@ export default function App() {
     window.addEventListener('ece_events_updated', handleEventsUpdate);
     window.addEventListener('ece_gallery_updated', handleGalleryUpdate);
 
-    const iv = setInterval(loadData, 10000);
+    // Smart liveness revalidation on tab focus if away for > 3 minutes (0 constant background polling)
+    let lastActiveTime = Date.now();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const elapsed = Date.now() - lastActiveTime;
+        if (elapsed > 180000) {
+          loadData();
+        }
+        lastActiveTime = Date.now();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
-      clearInterval(iv);
       window.removeEventListener('ece_hero_config_updated', handleHeroUpdate);
       window.removeEventListener('ece_events_updated', handleEventsUpdate);
       window.removeEventListener('ece_gallery_updated', handleGalleryUpdate);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 
