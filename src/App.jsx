@@ -368,8 +368,6 @@ const DEFAULT_INITIAL_EVENTS = [
     image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80',
     badge: 'FLAGSHIP CEREMONY',
     price: 150,
-    totalSeats: 250,
-    seatsRemaining: 84,
     participationType: 'both',
   },
   {
@@ -384,8 +382,6 @@ const DEFAULT_INITIAL_EVENTS = [
     image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&q=80',
     badge: 'HANDS-ON LAB',
     price: 200,
-    totalSeats: 60,
-    seatsRemaining: 18,
     participationType: 'individual_only',
   },
   {
@@ -400,8 +396,6 @@ const DEFAULT_INITIAL_EVENTS = [
     image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=900&q=80',
     badge: 'â‚¹50,000 PRIZE',
     price: 400,
-    totalSeats: 40,
-    seatsRemaining: 9,
     participationType: 'team_only',
   },
 ];
@@ -491,8 +485,6 @@ export default function App() {
             description: e.description,
             badge: e.badge || 'EVENT',
             price: Number(e.price) || 0,
-            totalSeats: e.totalSeats || 100,
-            seatsRemaining: Math.floor((e.totalSeats || 100) * 0.4),
             image: e.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80',
             participationType: e.participationType || 'both',
             minTeamSize: e.minTeamSize || 2,
