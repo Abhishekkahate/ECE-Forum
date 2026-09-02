@@ -108,13 +108,9 @@ class CertificateService {
 
   constructor() {
     this.loadFromStorage();
-    // Do NOT auto-sync the entire database on load to prevent massive egress
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY) this.loadFromStorage();
-      });
-      window.addEventListener('ece_certificates_updated', () => {
-        this.syncWithBackend(true);
       });
     }
   }

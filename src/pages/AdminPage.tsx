@@ -311,11 +311,48 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const refreshLivePasses = () => {
+  const refreshLivePasses = async () => {
     try {
-      setPasses(passService.getAllPasses());
+      const cloudPasses = await supabaseDb.getPasses();
+      if (cloudPasses && Array.isArray(cloudPasses)) {
+        const mappedPasses: EventPass[] = cloudPasses.map((p: any) => ({
+          passId: p.pass_id,
+          eventId: p.event_id,
+          eventTitle: p.event_title,
+          eventDate: p.event_date,
+          eventTime: p.event_time,
+          eventVenue: p.event_venue,
+          userName: p.user_name,
+          userEmail: p.user_email,
+          userPhoto: p.user_photo,
+          department: p.department,
+          collegeName: p.college_name || 'PIET, Nagpur',
+          year: p.year,
+          phone: p.phone,
+          paymentId: p.payment_id,
+          amount: Number(p.amount || p.final_price || 0),
+          originalAmount: Number(p.original_amount || p.original_price || p.amount || 0),
+          discountAmount: Number(p.discount_amount || 0),
+          couponCode: p.coupon_code || p.coupon_applied || '',
+          registrationType: (p.registration_type || 'individual') as 'individual' | 'team',
+          teamName: p.team_name || '',
+          teamMembers: p.team_members || [],
+          paymentStatus: p.payment_status || (p.status === 'CONFIRMED' ? 'Paid' : 'Pending'),
+          paymentScreenshot: p.payment_screenshot || undefined,
+          status: p.status || 'CONFIRMED',
+          adminVerified: Boolean(p.admin_verified),
+          verifiedAt: p.verified_at,
+          verifiedBy: p.verified_by,
+          rejectionReason: p.rejection_reason,
+          registeredAt: p.registered_at || new Date().toISOString(),
+          qrData: p.qr_data,
+        }));
+        setPasses(mappedPasses);
+      } else {
+        setPasses(passService.getAllPasses());
+      }
     } catch {
-      setPasses([]);
+      setPasses(passService.getAllPasses());
     }
   };
   const refreshAdmins = async () => {

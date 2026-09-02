@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { HeroSection } from '../components/HeroSection';
 import { ScrollToTopFab } from '../components/ScrollToTopFab';
-import { GoogleAuthModal } from '../components/GoogleAuthModal';
-import { MyPassesModal } from '../components/MyPassesModal';
-import { MyCertificatesModal } from '../components/MyCertificatesModal';
 import { type SiteHeroConfig } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import type { EventItem } from '../components/EventsSection';
@@ -143,23 +140,6 @@ export const HomePage: React.FC<HomePageProps> = ({
         <ContactFooter />
       </Suspense>
       <ScrollToTopFab />
-
-      {isAuthOpen && <GoogleAuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />}
-      {isMyPassesOpen && (
-        <MyPassesModal
-          isOpen={isMyPassesOpen}
-          onClose={() => setIsMyPassesOpen(false)}
-          onOpenGoogleAuth={() => { setIsMyPassesOpen(false); setIsAuthOpen(true); }}
-          onExploreEvents={() => { setIsMyPassesOpen(false); document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' }); }}
-        />
-      )}
-      {isMyCertificatesOpen && (
-        <MyCertificatesModal
-          isOpen={isMyCertificatesOpen}
-          onClose={() => setIsMyCertificatesOpen(false)}
-          onOpenGoogleAuth={() => { setIsMyCertificatesOpen(false); setIsAuthOpen(true); }}
-        />
-      )}
     </div>
   );
 };
