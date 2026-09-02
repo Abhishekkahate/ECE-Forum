@@ -40,32 +40,40 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
   const refreshPasses = async () => {
     if (user?.email) {
       const cleanEmail = user.email.trim().toLowerCase();
-      const localList = passService.getUserPasses(cleanEmail);
-      if (localList.length > 0) setPasses(localList);
       try {
         const remote = await api.getPasses(undefined, cleanEmail);
         if (remote && Array.isArray(remote)) {
-          const map = new Map<string, EventPass>();
-          localList.forEach((p) => map.set(p.passId, p));
-          remote.forEach((p: any) =>
-            map.set(p.passId, {
-              ...p,
-              qrData:
-                p.qrData ||
-                JSON.stringify({
-                  passId: p.passId,
-                  name: p.userName,
-                  email: p.userEmail,
-                  event: p.eventTitle,
-                  hash: p.securityHash,
-                  date: p.eventDate,
-                  venue: p.eventVenue,
-                }),
-            })
-          );
-          setPasses(Array.from(map.values()));
+          const mappedRemote: EventPass[] = remote.map((p: any) => ({
+            ...p,
+            qrData:
+              p.qrData ||
+              JSON.stringify({
+                passId: p.passId,
+                name: p.userName,
+                email: p.userEmail,
+                event: p.eventTitle,
+                hash: p.securityHash,
+                date: p.eventDate,
+                venue: p.eventVenue,
+                verified: p.status === 'CONFIRMED' || p.status === 'CHECKED_IN',
+              }),
+          }));
+
+          // Authoritative sync: wipe any pass deleted by Admin from local cache
+          passService.syncUserPasses(cleanEmail, mappedRemote);
+          setPasses(mappedRemote);
+
+          // If current open pass was deleted, return to pass list
+          if (selectedPass && !mappedRemote.some((p) => p.passId === selectedPass.passId)) {
+            setSelectedPass(null);
+          }
+          return;
         }
       } catch {}
+
+      // Fallback only if network/offline
+      const localList = passService.getUserPasses(cleanEmail);
+      setPasses(localList);
     } else {
       setPasses([]);
     }
@@ -75,7 +83,14 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
     if (isOpen) refreshPasses();
     const handler = () => refreshPasses();
     window.addEventListener('ece_passes_updated', handler);
-    return () => window.removeEventListener('ece_passes_updated', handler);
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === 'ece_forum_registered_passes_v1') refreshPasses();
+    };
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener('ece_passes_updated', handler);
+      window.removeEventListener('storage', storageHandler);
+    };
   }, [isOpen, user?.email]);
 
   if (!isOpen) return null;

@@ -1821,17 +1821,33 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                         <div className="flex items-center justify-end gap-1.5">
                                           {isUnverified ? (
                                             <>
-                                              <button
-                                                onClick={() => handleConfirmPass(p.passId)}
-                                                disabled={verifyingPassId === p.passId}
-                                                className="px-3 py-1 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_10px_rgba(0,255,136,0.3)] disabled:opacity-50"
-                                                title="Confirm pass to unlock scanner entry"
-                                              >
-                                                {verifyingPassId === p.passId ? 'Confirming...' : '✓ Confirm Pass'}
-                                              </button>
+                                              {p.amount > 0 || p.paymentScreenshot || (p.paymentId && p.paymentId !== 'FREE_PASS') ? (
+                                                <button
+                                                  onClick={() => handleOpenProof(p)}
+                                                  disabled={loadingProofId === p.passId}
+                                                  className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#00E5CC] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_12px_rgba(0,229,204,0.35)] flex items-center gap-1.5 disabled:opacity-50"
+                                                  title="Check payment proof screenshot before verifying"
+                                                >
+                                                  {loadingProofId === p.passId ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                  ) : (
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                  )}
+                                                  <span>Review Proof &amp; Verify</span>
+                                                </button>
+                                              ) : (
+                                                <button
+                                                  onClick={() => handleConfirmPass(p.passId)}
+                                                  disabled={verifyingPassId === p.passId}
+                                                  className="px-3 py-1 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_10px_rgba(0,255,136,0.3)] disabled:opacity-50"
+                                                  title="Confirm free pass to unlock scanner entry"
+                                                >
+                                                  {verifyingPassId === p.passId ? 'Confirming...' : '✓ Confirm Pass'}
+                                                </button>
+                                              )}
                                               <button
                                                 onClick={() => handleRejectPass(p.passId)}
-                                                className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+                                                className="px-2.5 py-1.5 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
                                                 title="Reject Pass"
                                               >
                                                 Reject
@@ -3648,11 +3664,23 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                 {/* Uploaded Payment Screenshot Image Viewer */}
                 <div className="space-y-2 pt-2">
-                  <span className="text-[10px] text-white/50 uppercase font-bold block">
-                    Uploaded Payment Screenshot Proof:
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-white/50 uppercase font-bold block">
+                      Uploaded Payment Screenshot Proof:
+                    </span>
+                    {selectedProofPass.paymentScreenshot && (
+                      <span className="text-[10px] text-[#00FF88] font-mono flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Proof Loaded
+                      </span>
+                    )}
+                  </div>
 
-                  {selectedProofPass.paymentScreenshot ? (
+                  {loadingProofId === selectedProofPass.passId ? (
+                    <div className="p-12 text-center text-white/60 text-xs border border-white/15 rounded-2xl bg-white/[0.02] flex flex-col items-center justify-center gap-3">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#00E5CC]" />
+                      <span className="font-mono">Loading high-resolution payment proof from cloud...</span>
+                    </div>
+                  ) : selectedProofPass.paymentScreenshot ? (
                     <div className="space-y-2">
                       <div className="rounded-2xl overflow-hidden border border-white/15 bg-black max-h-[420px] flex items-center justify-center p-2">
                         <img
@@ -3682,8 +3710,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="p-6 text-center text-white/40 text-xs border border-dashed border-white/15 rounded-2xl bg-white/[0.01]">
-                      No screenshot uploaded for this pass (Free entry or verified offline).
+                    <div className="p-6 text-center text-white/40 text-xs border border-dashed border-white/15 rounded-2xl bg-white/[0.01] space-y-2">
+                      <p>No screenshot loaded for this pass.</p>
+                      {selectedProofPass.amount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenProof(selectedProofPass)}
+                          className="px-3.5 py-1.5 rounded-full bg-[#00E5CC]/20 text-[#00E5CC] border border-[#00E5CC]/40 hover:bg-[#00E5CC] hover:text-black text-xs font-mono transition-colors cursor-pointer"
+                        >
+                          Fetch Proof Screenshot from Cloud
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -3700,13 +3737,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         className="px-4 py-2 rounded-full text-xs font-bold bg-[#00FF88] text-black hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(0,255,136,0.35)] flex items-center gap-1.5 disabled:opacity-50"
                       >
                         <CheckCircle2 className="w-4 h-4 text-black" />
-                        <span>{verifyingPassId === selectedProofPass.passId ? 'Confirming...' : '✓ Confirm & Verify Pass'}</span>
+                        <span>{verifyingPassId === selectedProofPass.passId ? 'Confirming...' : '✓ Approve & Verify Payment'}</span>
                       </button>
                       <button
                         onClick={() => handleRejectPass(selectedProofPass.passId)}
                         className="px-3.5 py-2 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
                       >
-                        Reject Pass
+                        ✕ Reject Payment Proof
                       </button>
                     </>
                   ) : selectedProofPass.status === 'REJECTED' ? (

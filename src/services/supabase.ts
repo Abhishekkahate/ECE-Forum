@@ -159,7 +159,6 @@ export const supabaseDb = {
       discount_amount: Number(pass.discountAmount || pass.discount_amount) || 0,
       coupon_code: pass.couponCode || pass.coupon_code || null,
       payment_status: pass.paymentStatus || pass.payment_status || 'PAID',
-      payment_screenshot: pass.paymentScreenshot || pass.payment_screenshot || null,
       transaction_id: pass.transactionId || pass.transaction_id || null,
       status: pass.status || 'UNVERIFIED',
       admin_verified: pass.adminVerified !== undefined ? pass.adminVerified : (pass.status === 'CONFIRMED' || pass.status === 'CHECKED_IN'),
@@ -171,6 +170,11 @@ export const supabaseDb = {
       registered_at: pass.registeredAt || pass.registered_at || new Date().toLocaleString('en-IN'),
       security_hash: pass.securityHash || pass.security_hash || 'SEC_HASH',
     };
+
+    // Only set payment_screenshot if explicitly provided so we never overwrite an existing screenshot with NULL
+    if (pass.paymentScreenshot || pass.payment_screenshot) {
+      payload.payment_screenshot = pass.paymentScreenshot || pass.payment_screenshot;
+    }
 
     try {
       const { data, error } = await supabase
@@ -201,6 +205,39 @@ export const supabaseDb = {
     } catch (err) {
       console.warn('Supabase deletePass error:', err);
       return false;
+    }
+  },
+
+  async updatePassVerification(
+    passId: string,
+    status: string,
+    adminVerified: boolean,
+    verifiedAt?: string | null,
+    verifiedBy?: string | null,
+    rejectionReason?: string | null
+  ) {
+    try {
+      const updateData: any = {
+        status,
+        admin_verified: adminVerified,
+        verified_at: verifiedAt || null,
+        verified_by: verifiedBy || null,
+      };
+      if (rejectionReason !== undefined) {
+        updateData.rejection_reason = rejectionReason;
+      }
+      const { data, error } = await supabase
+        .from('passes')
+        .update(updateData)
+        .eq('pass_id', passId)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase updatePassVerification error:', err);
+      return null;
     }
   },
 

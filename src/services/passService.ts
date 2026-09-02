@@ -153,13 +153,8 @@ class PassService {
           securityHash: p.security_hash,
         }));
 
-        // Merge user passes into existing local list
-        const map = new Map<string, EventPass>();
-        this.passes.forEach((p) => map.set(p.passId, p));
-        mappedPasses.forEach((p) => map.set(p.passId, p));
-        this.passes = Array.from(map.values());
-
-        this.saveToStorage(true);
+        // Authoritative sync: overwrite this user's passes with fresh cloud list (clears any pass deleted by admin)
+        this.syncUserPasses(emailToSync, mappedPasses);
         return;
       }
     } catch {}
@@ -343,6 +338,16 @@ class PassService {
     return newPass;
   }
 
+  public syncUserPasses(userEmail: string, authoritativePasses: EventPass[]) {
+    const clean = userEmail.trim().toLowerCase();
+    // Retain passes belonging to other emails, but strictly overwrite this user's list
+    const otherPasses = this.passes.filter(
+      (p) => (p.userEmail || '').trim().toLowerCase() !== clean
+    );
+    this.passes = [...otherPasses, ...authoritativePasses];
+    this.saveToStorage(true);
+  }
+
   public async confirmPass(passId: string, verifiedBy = 'Admin'): Promise<EventPass | null> {
     const passIndex = this.passes.findIndex((p) => p.passId.toUpperCase() === passId.toUpperCase());
     if (passIndex === -1) return null;
@@ -375,8 +380,8 @@ class PassService {
     this.passes[passIndex] = updated;
     this.saveToStorage(true);
 
-    // Supabase update
-    supabaseDb.insertPass(updated).catch(() => {});
+    // Supabase update without overwriting payment screenshot
+    supabaseDb.updatePassVerification(passId, 'CONFIRMED', true, verifiedAt, verifiedBy, null).catch(() => {});
     fetch(`${API_BASE_URL}/passes/${encodeURIComponent(passId)}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -401,7 +406,7 @@ class PassService {
 
     this.passes[passIndex] = updated;
     this.saveToStorage(true);
-    supabaseDb.insertPass(updated).catch(() => {});
+    supabaseDb.updatePassVerification(passId, 'REJECTED', false, null, verifiedBy, reason).catch(() => {});
     return updated;
   }
 
@@ -422,7 +427,7 @@ class PassService {
 
     this.passes[passIndex] = updated;
     this.saveToStorage(true);
-    supabaseDb.insertPass(updated).catch(() => {});
+    supabaseDb.updatePassVerification(passId, 'UNVERIFIED', false, null, null, null).catch(() => {});
     return updated;
   }
 
