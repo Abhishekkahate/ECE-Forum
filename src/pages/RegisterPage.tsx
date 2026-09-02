@@ -251,8 +251,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       }
       setScreenshotFileName(file.name);
       try {
-        // Compress large camera/phone screenshots to ~50KB to protect database egress limits
-        const compressedBase64 = await compressImage(file, 800, 1000, 0.65);
+        // Compress phone screenshots to ~20KB-30KB WebP to protect database egress limits
+        const compressedBase64 = await compressImage(file, 600, 800, 0.5);
         setPaymentScreenshot(compressedBase64);
       } catch (err) {
         const reader = new FileReader();

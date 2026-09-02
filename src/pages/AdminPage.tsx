@@ -31,6 +31,7 @@ import {
 } from '../services/certificateService';
 import { CertificateCard } from '../components/CertificateCard';
 import { soundFx } from '../utils/audio';
+import { supabaseDb } from '../services/supabase';
 
 interface AdminPageProps {
   eventsList: EventItem[];
@@ -263,11 +264,31 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   // Passes & Attendee Roster State
   const [passes, setPasses] = useState<EventPass[]>([]);
   const [selectedProofPass, setSelectedProofPass] = useState<EventPass | null>(null);
+  const [loadingProofId, setLoadingProofId] = useState<string | null>(null);
   const [deletingPassId, setDeletingPassId] = useState<string | null>(null);
   const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
   const [passStatusFilter, setPassStatusFilter] = useState<'ALL' | 'UNVERIFIED' | 'CONFIRMED' | 'CHECKED_IN' | 'REJECTED'>('ALL');
   const [verifyingPassId, setVerifyingPassId] = useState<string | null>(null);
   const [verifySuccessMsg, setVerifySuccessMsg] = useState<string | null>(null);
+
+  const handleOpenProof = async (pass: EventPass) => {
+    soundFx.playClick();
+    if (pass.paymentScreenshot) {
+      setSelectedProofPass(pass);
+      return;
+    }
+    setLoadingProofId(pass.passId);
+    try {
+      const proof = await supabaseDb.getPassScreenshot(pass.passId);
+      const updated = { ...pass, paymentScreenshot: proof || undefined };
+      setSelectedProofPass(updated);
+      setPasses((prev) => prev.map((p) => (p.passId === pass.passId ? updated : p)));
+    } catch {
+      setSelectedProofPass(pass);
+    } finally {
+      setLoadingProofId(null);
+    }
+  };
 
   // Admins & Organizers
   const [adminsList, setAdminsList] = useState<{ id: string; name: string; email: string; role: string; created_at?: string }[]>([]);
@@ -329,11 +350,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     window.addEventListener('ece_passes_updated', onPassesUpdate);
     window.addEventListener('ece_certificates_updated', onCertsUpdate);
 
-    // 45-second gentle polling while actively in Admin Studio
+    // 60-second gentle polling while actively in Admin Studio (pauses when tab is inactive)
     const iv = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       refreshLivePasses();
       refreshCertificates();
-    }, 45000);
+    }, 60000);
 
     return () => {
       clearInterval(iv);
@@ -1722,13 +1744,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                         <div className="flex items-center gap-2.5 mt-1">
                                           <span className="text-[10px] text-[#FF4A15] font-bold">{p.passId}</span>
                                           <button
-                                            onClick={() => {
-                                              soundFx.playClick();
-                                              setSelectedProofPass(p);
-                                            }}
-                                            className="text-[10px] text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer font-bold"
+                                            onClick={() => handleOpenProof(p)}
+                                            disabled={loadingProofId === p.passId}
+                                            className="text-[10px] text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer font-bold disabled:opacity-50"
                                           >
-                                            <Eye className="w-3 h-3" /> View Dossier &amp; Proof
+                                            {loadingProofId === p.passId ? (
+                                              <Loader2 className="w-3 h-3 animate-spin" />
+                                            ) : (
+                                              <Eye className="w-3 h-3" />
+                                            )}
+                                            <span>View Dossier &amp; Proof</span>
                                           </button>
                                         </div>
                                       </td>
@@ -1741,31 +1766,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                         <div className="font-bold text-[#F5F3EF]">
                                           {p.amount === 0 ? <span className="text-[#00FF88]">FREE PASS</span> : `₹${p.amount}`}
                                         </div>
-                                        {p.paymentScreenshot ? (
+                                        {p.amount > 0 || p.paymentScreenshot || (p.paymentId && p.paymentId !== 'FREE_PASS') ? (
                                           <div className="flex items-center gap-2 mt-1.5">
-                                            <img
-                                              src={p.paymentScreenshot}
-                                              alt="Payment Proof"
-                                              onClick={() => {
-                                                soundFx.playClick();
-                                                setSelectedProofPass(p);
-                                              }}
-                                              className="w-10 h-10 rounded-lg object-cover border border-white/20 hover:border-[#00E5CC] cursor-pointer shadow transition-all hover:scale-105 shrink-0 bg-black"
-                                            />
                                             <button
-                                              onClick={() => {
-                                                soundFx.playClick();
-                                                setSelectedProofPass(p);
-                                              }}
-                                              className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30 hover:bg-[#00E5CC] hover:text-black transition-colors cursor-pointer"
+                                              onClick={() => handleOpenProof(p)}
+                                              disabled={loadingProofId === p.passId}
+                                              className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30 hover:bg-[#00E5CC] hover:text-black transition-colors cursor-pointer font-mono font-medium disabled:opacity-50"
                                             >
-                                              <Eye className="w-3 h-3" /> Screenshot
+                                              {loadingProofId === p.passId ? (
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                              ) : (
+                                                <Eye className="w-3 h-3" />
+                                              )}
+                                              <span>{p.paymentScreenshot ? 'View Proof' : 'Load Proof'}</span>
                                             </button>
+                                            {p.transactionId && (
+                                              <span className="text-[10px] text-[#FFD60A] font-mono truncate max-w-[100px]" title={p.transactionId}>
+                                                {p.transactionId}
+                                              </span>
+                                            )}
                                           </div>
-                                        ) : p.transactionId ? (
-                                          <div className="text-[10px] text-[#FFD60A] font-bold mt-0.5 truncate max-w-[140px]">UTR: {p.transactionId}</div>
                                         ) : (
-                                          <div className="text-[10px] text-white/30">Direct Gateway</div>
+                                          <div className="text-[10px] text-white/30 mt-0.5">Free Registration</div>
                                         )}
                                       </td>
                                       <td className="p-3.5">

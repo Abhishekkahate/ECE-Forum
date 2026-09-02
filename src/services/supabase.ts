@@ -90,12 +90,16 @@ export const supabaseDb = {
     }
   },
 
-  // Passes
-  async getPasses(eventId?: string, email?: string) {
+  // Passes (Lightweight column list without heavy payment_screenshot to minimize database egress)
+  async getPasses(eventId?: string, email?: string, includeScreenshot = false) {
     try {
+      const columns = includeScreenshot
+        ? '*'
+        : 'pass_id, event_id, event_title, event_date, event_time, event_venue, user_name, user_email, user_photo, college_name, department, year, phone, registration_type, team_name, team_members, payment_id, amount, original_amount, discount_amount, coupon_code, payment_status, transaction_id, status, admin_verified, verified_at, verified_by, rejection_reason, checked_in_at, checked_in_by, registered_at, security_hash, created_at';
+
       let query = supabase
         .from('passes')
-        .select('*')
+        .select(columns)
         .order('created_at', { ascending: false });
 
       if (eventId && eventId !== 'all') {
@@ -110,6 +114,23 @@ export const supabaseDb = {
       return data;
     } catch (err) {
       console.warn('Supabase getPasses error:', err);
+      return null;
+    }
+  },
+
+  // On-demand fetch for payment screenshot (avoids loading base64 images into passes list)
+  async getPassScreenshot(passId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('passes')
+        .select('payment_screenshot')
+        .eq('pass_id', passId)
+        .single();
+
+      if (error) throw error;
+      return data?.payment_screenshot || null;
+    } catch (err) {
+      console.warn('Supabase getPassScreenshot error:', err);
       return null;
     }
   },

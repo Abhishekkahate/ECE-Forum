@@ -108,7 +108,7 @@ class CertificateService {
 
   constructor() {
     this.loadFromStorage();
-    this.syncWithBackend();
+    // Do NOT auto-sync the entire database on load to prevent massive egress
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY) this.loadFromStorage();
@@ -128,18 +128,34 @@ class CertificateService {
     } catch {}
   }
 
-  public async syncWithBackend(force = false): Promise<ApiCertificate[]> {
+  public async syncWithBackend(force = false, userEmail?: string): Promise<ApiCertificate[]> {
     const now = Date.now();
-    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 25000)) {
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 30000)) {
+      return this.certificates;
+    }
+
+    let emailToSync = userEmail;
+    if (!emailToSync && typeof window !== 'undefined') {
+      try {
+        const savedUser = localStorage.getItem('ece_forum_auth_user_v1');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          if (parsed?.email) emailToSync = parsed.email.trim().toLowerCase();
+        }
+      } catch {}
+    }
+
+    // Do NOT query all certificates unless requested by user email
+    if (!emailToSync) {
       return this.certificates;
     }
 
     this.isSyncing = true;
     try {
-      // 1. Fetch from direct Supabase
-      const supa = await supabaseDb.getCertificates();
+      // 1. Fetch from direct Supabase (scoped strictly to user email)
+      const supa = await supabaseDb.getCertificates(undefined, emailToSync);
       this.lastSyncTimestamp = Date.now();
-      if (Array.isArray(supa) && supa.length > 0) {
+      if (Array.isArray(supa)) {
         const formatted: ApiCertificate[] = supa.map((c: any) => ({
           certId: c.cert_id,
           eventId: c.event_id,
@@ -159,23 +175,35 @@ class CertificateService {
           signatories: c.signatories || DEFAULT_CERTIFICATE_SIGNATORIES,
           qrData: c.qr_data,
           securityHash: c.security_hash,
-          status: c.status || 'VALID',
+          status: (c.status || 'VALID') as 'VALID' | 'REVOKED',
           issuedAt: c.issued_at,
           issuedBy: c.issued_by || 'ECE Forum Executive Council',
         }));
-        this.certificates = formatted;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(formatted));
-        return formatted;
+
+        const map = new Map<string, ApiCertificate>();
+        this.certificates.forEach((c) => map.set(c.certId, c));
+        formatted.forEach((c) => map.set(c.certId, c));
+        this.certificates = Array.from(map.values());
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
+        } catch {}
+        return this.certificates;
       }
     } catch {}
 
-    // 2. Fetch from REST API
+    // 2. Fetch from REST API fallback
     try {
-      const rest = await forumApi.getCertificates();
+      const rest = await forumApi.getCertificates(undefined, emailToSync);
       if (Array.isArray(rest) && rest.length > 0) {
-        this.certificates = rest;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
-        return rest;
+        const map = new Map<string, ApiCertificate>();
+        this.certificates.forEach((c) => map.set(c.certId, c));
+        rest.forEach((c: ApiCertificate) => map.set(c.certId, c));
+        this.certificates = Array.from(map.values());
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
+        } catch {}
+        return this.certificates;
       }
     } catch {} finally {
       this.isSyncing = false;

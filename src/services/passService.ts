@@ -65,7 +65,7 @@ class PassService {
 
   constructor() {
     this.loadPasses();
-    this.syncWithBackend();
+    // Do NOT auto-sync the entire database on load to prevent massive egress
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (e) => {
         if (e.key === PASSES_STORAGE_KEY) {
@@ -75,19 +75,36 @@ class PassService {
     }
   }
 
-  public async syncWithBackend(force = false) {
+  public async syncWithBackend(force = false, userEmail?: string) {
     const now = Date.now();
-    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 25000)) {
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 30000)) {
+      return this.passes;
+    }
+
+    // Determine target email from parameter or logged-in auth user
+    let emailToSync = userEmail;
+    if (!emailToSync && typeof window !== 'undefined') {
+      try {
+        const savedUser = localStorage.getItem('ece_forum_auth_user_v1');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          if (parsed?.email) emailToSync = parsed.email.trim().toLowerCase();
+        }
+      } catch {}
+    }
+
+    // If there is no active logged-in user, do NOT query the database to prevent egress waste
+    if (!emailToSync) {
       return this.passes;
     }
 
     this.isSyncing = true;
     try {
-      // 1. Primary Supabase Cloud Sync
-      const supaPasses = await supabaseDb.getPasses();
+      // 1. Primary Supabase Cloud Sync (scoped strictly to the user's email)
+      const supaPasses = await supabaseDb.getPasses(undefined, emailToSync);
       this.lastSyncTimestamp = Date.now();
-      if (supaPasses && Array.isArray(supaPasses) && supaPasses.length > 0) {
-        this.passes = supaPasses.map((p: any) => ({
+      if (supaPasses && Array.isArray(supaPasses)) {
+        const mappedPasses: EventPass[] = supaPasses.map((p: any) => ({
           passId: p.pass_id,
           eventId: p.event_id,
           eventTitle: p.event_title,
@@ -135,17 +152,27 @@ class PassService {
           }),
           securityHash: p.security_hash,
         }));
+
+        // Merge user passes into existing local list
+        const map = new Map<string, EventPass>();
+        this.passes.forEach((p) => map.set(p.passId, p));
+        mappedPasses.forEach((p) => map.set(p.passId, p));
+        this.passes = Array.from(map.values());
+
         this.saveToStorage(true);
         return;
       }
     } catch {}
 
     try {
-      const res = await fetch(`${API_BASE_URL}/passes`);
+      const res = await fetch(`${API_BASE_URL}/passes?email=${encodeURIComponent(emailToSync)}`);
       if (res.ok) {
         const remotePasses = await res.json();
-        if (Array.isArray(remotePasses) && remotePasses.length > 0) {
-          this.passes = remotePasses;
+        if (Array.isArray(remotePasses)) {
+          const map = new Map<string, EventPass>();
+          this.passes.forEach((p) => map.set(p.passId, p));
+          remotePasses.forEach((p: EventPass) => map.set(p.passId, p));
+          this.passes = Array.from(map.values());
           this.saveToStorage(true);
         }
       }

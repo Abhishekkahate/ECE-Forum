@@ -118,7 +118,7 @@ export interface VerificationResponse {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const CACHE_TTL_MS = 45000; // 45-second cache to protect Supabase free-tier limits
+const CACHE_TTL_MS = 300000; // 5-minute persistent cache to minimize Supabase free-tier egress
 const memoryCache = {
   events: { data: null as ApiEvent[] | null, timestamp: 0 },
   announcement: { data: null as string | null, timestamp: 0 },
@@ -135,6 +135,21 @@ export const forumApi = {
       return memoryCache.events.data;
     }
 
+    // Check localStorage cache with timestamp before making network call to preserve egress
+    if (!force) {
+      try {
+        const cachedStr = localStorage.getItem('ece_forum_events_cache');
+        const cachedTime = localStorage.getItem('ece_forum_events_cache_time');
+        if (cachedStr && cachedTime && now - Number(cachedTime) < CACHE_TTL_MS) {
+          const parsed = JSON.parse(cachedStr);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            memoryCache.events = { data: parsed, timestamp: Number(cachedTime) };
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+
     // 0. Direct Supabase Manifest (Rich metadata: QRs, UPIs, exact team constraints)
     try {
       const supaManifest = await supabaseDb.getSiteSettings('events_manifest');
@@ -142,6 +157,7 @@ export const forumApi = {
         memoryCache.events = { data: supaManifest, timestamp: now };
         try {
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(supaManifest));
+          localStorage.setItem('ece_forum_events_cache_time', String(now));
         } catch {}
         return supaManifest;
       }
@@ -175,6 +191,7 @@ export const forumApi = {
         }));
         try {
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
+          localStorage.setItem('ece_forum_events_cache_time', String(now));
         } catch {}
         return formatted;
       }
