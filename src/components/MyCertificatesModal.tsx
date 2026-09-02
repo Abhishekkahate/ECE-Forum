@@ -61,19 +61,24 @@ export const MyCertificatesModal: React.FC<MyCertificatesModalProps> = ({
       const localList = certificateService.getUserCertificates(cleanEmail);
       if (localList.length > 0) setCertificates(localList);
 
-      // 2. Fresh remote fetch
+      // 2. Fresh remote fetch from Supabase
       try {
         const remote = await forumApi.getCertificates(undefined, cleanEmail);
         if (remote && Array.isArray(remote)) {
-          const map = new Map<string, ApiCertificate>();
-          localList.forEach((c) => map.set(c.certId, c));
-          remote.forEach((c) => map.set(c.certId, c));
-          setCertificates(Array.from(map.values()));
+          // Authoritative sync: removes any deleted or revoked certificates
+          certificateService.syncUserCertificates(cleanEmail, remote);
+          setCertificates(remote);
+          if (selectedCert && !remote.some((c) => c.certId === selectedCert.certId)) {
+            setSelectedCert(null);
+          }
+          setIsLoading(false);
+          return;
         }
       } catch {}
       setIsLoading(false);
     } else {
       setCertificates([]);
+      setIsLoading(false);
     }
   };
 
@@ -81,7 +86,14 @@ export const MyCertificatesModal: React.FC<MyCertificatesModalProps> = ({
     if (isOpen) refreshCertificates();
     const handler = () => refreshCertificates();
     window.addEventListener('ece_certificates_updated', handler);
-    return () => window.removeEventListener('ece_certificates_updated', handler);
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === 'ece_forum_certificates_cache') refreshCertificates();
+    };
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener('ece_certificates_updated', handler);
+      window.removeEventListener('storage', storageHandler);
+    };
   }, [isOpen, user?.email]);
 
   if (!isOpen) return null;

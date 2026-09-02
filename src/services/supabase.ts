@@ -417,10 +417,11 @@ export const supabaseDb = {
 
   async getCertificateById(certId: string) {
     try {
+      const clean = certId.trim();
       const { data, error } = await supabase
         .from('certificates')
         .select('*')
-        .eq('cert_id', certId.trim())
+        .or(`cert_id.ilike.${clean},security_hash.ilike.${clean}`)
         .maybeSingle();
 
       if (error) throw error;

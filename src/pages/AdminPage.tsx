@@ -81,7 +81,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [certificates, setCertificates] = useState<ApiCertificate[]>([]);
   const [selectedCertPreview, setSelectedCertPreview] = useState<ApiCertificate | null>(null);
   const [showIssueCertModal, setShowIssueCertModal] = useState(false);
-  const [issueMode, setIssueMode] = useState<'all_participants' | 'selective_ranks'>('all_participants');
+  const [issueMode, setIssueMode] = useState<'all_participants' | 'selective_ranks' | 'manual_entry'>('all_participants');
+  const [manualRecipientName, setManualRecipientName] = useState('');
+  const [manualRecipientEmail, setManualRecipientEmail] = useState('');
+  const [manualRecipientDept, setManualRecipientDept] = useState('Electronics & Communication Engineering');
+  const [manualRecipientCollege, setManualRecipientCollege] = useState('PIET, Nagpur');
   const [certEventSelect, setCertEventSelect] = useState<string>('');
   const [selectedPassIdsForCerts, setSelectedPassIdsForCerts] = useState<string[]>([]);
   const [certRankAwardType, setCertRankAwardType] = useState<CertificateType>('PARTICIPATION');
@@ -332,7 +336,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   };
   const refreshCertificates = async () => {
     try {
-      const list = await certificateService.syncWithBackend();
+      // Pass isAdmin = true to fetch complete database of certificates for Admin Studio
+      const list = await certificateService.syncWithBackend(true, undefined, true);
       setCertificates(list || []);
     } catch {
       setCertificates(certificateService.getAllCertificates());
@@ -410,11 +415,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       if (issueMode === 'all_participants') {
         // Issue to all registered passes for this event
         const eventPassesList = passes.filter(
-          (p) => p.eventId === targetEvent.id || p.eventTitle.toLowerCase().trim() === targetEvent.title.toLowerCase().trim()
+          (p) =>
+            (p.eventId && targetEvent.id && p.eventId.toLowerCase() === targetEvent.id.toLowerCase()) ||
+            (p.eventTitle && targetEvent.title && p.eventTitle.toLowerCase().trim() === targetEvent.title.toLowerCase().trim())
         );
 
         if (eventPassesList.length === 0) {
-          alert(`No registered participants found for "${targetEvent.title}".`);
+          alert(`No registered participants found for "${targetEvent.title}". Tip: You can switch to "Manual / Direct Recipient Entry" to issue certificates directly by name and email!`);
           setIsIssuingCerts(false);
           return;
         }
@@ -427,11 +434,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           rankText: certCustomRankText || 'Participant',
           certType: certRankAwardType,
         }));
-      } else {
+      } else if (issueMode === 'selective_ranks') {
         // Selective rank-wise issuance
         const selectedPassesList = passes.filter((p) => selectedPassIdsForCerts.includes(p.passId));
         if (selectedPassesList.length === 0) {
-          alert('Please select at least one participant to issue rank certificates to.');
+          alert('Please select at least one participant from the checklist to issue certificates to.');
           setIsIssuingCerts(false);
           return;
         }
@@ -444,6 +451,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           rankText: certCustomRankText || 'Rank Holder',
           certType: certRankAwardType,
         }));
+      } else {
+        // Manual / Direct Recipient Entry
+        if (!manualRecipientName.trim() || !manualRecipientEmail.trim()) {
+          alert('Please enter both student name and email address.');
+          setIsIssuingCerts(false);
+          return;
+        }
+        participantsToIssue = [{
+          name: manualRecipientName.trim(),
+          email: manualRecipientEmail.trim().toLowerCase(),
+          department: manualRecipientDept.trim() || 'Electronics & Communication Engineering',
+          collegeName: manualRecipientCollege.trim() || 'PIET, Nagpur',
+          rankText: certCustomRankText || 'Participant',
+          certType: certRankAwardType,
+        }];
       }
 
       const res = await forumApi.issueBulkCertificates({
@@ -4022,10 +4044,93 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </p>
                       </div>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFx.playClick();
+                        setIssueMode('manual_entry');
+                        setCertRankAwardType('PARTICIPATION');
+                        setCertCustomTitle('Certificate of Participation');
+                        setCertCustomRankText('Participant');
+                      }}
+                      className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                        issueMode === 'manual_entry'
+                          ? 'bg-[#FFD700]/10 border-[#FFD700] text-white shadow-[0_0_15px_rgba(255,215,0,0.15)]'
+                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full border mt-0.5 grid place-items-center ${
+                          issueMode === 'manual_entry' ? 'border-[#FFD700]' : 'border-white/30'
+                        }`}
+                      >
+                        {issueMode === 'manual_entry' && (
+                          <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-white">Manual / Direct Recipient Entry</div>
+                        <p className="text-[11px] text-white/50 font-mono mt-0.5">
+                          Directly issue to any attendee or speaker by typing their official Name &amp; Email.
+                        </p>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
-                {/* 3. Selective Participant Checklist (if Mode 2) */}
+                {/* 3. Manual Recipient Details (if Mode 3) */}
+                {issueMode === 'manual_entry' && (
+                  <div className="space-y-3 p-4 rounded-2xl bg-black/50 border border-white/10">
+                    <span className="text-xs font-mono text-[#FFD700] font-bold block uppercase tracking-wider">
+                      Recipient Attendee Details
+                    </span>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <label className="space-y-1">
+                        <span className="text-xs font-mono text-white/60">Full Name *</span>
+                        <input
+                          type="text"
+                          required
+                          value={manualRecipientName}
+                          onChange={(e) => setManualRecipientName(e.target.value)}
+                          placeholder="e.g. Aarav Sharma"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-xs font-mono text-white/60">Email Address *</span>
+                        <input
+                          type="email"
+                          required
+                          value={manualRecipientEmail}
+                          onChange={(e) => setManualRecipientEmail(e.target.value)}
+                          placeholder="student@gmail.com"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-xs font-mono text-white/60">Department</span>
+                        <input
+                          type="text"
+                          value={manualRecipientDept}
+                          onChange={(e) => setManualRecipientDept(e.target.value)}
+                          placeholder="Electronics & Communication Engineering"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-xs font-mono text-white/60">College / Institution</span>
+                        <input
+                          type="text"
+                          value={manualRecipientCollege}
+                          onChange={(e) => setManualRecipientCollege(e.target.value)}
+                          placeholder="PIET, Nagpur"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
                 {issueMode === 'selective_ranks' && (
                   <div className="space-y-3 p-4 rounded-2xl bg-black/50 border border-white/10">
                     <div className="flex items-center justify-between">

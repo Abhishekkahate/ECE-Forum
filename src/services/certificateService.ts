@@ -128,14 +128,20 @@ class CertificateService {
     } catch {}
   }
 
-  public async syncWithBackend(force = false, userEmail?: string): Promise<ApiCertificate[]> {
+  private saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
+    } catch {}
+  }
+
+  public async syncWithBackend(force = false, userEmail?: string, isAdmin = false): Promise<ApiCertificate[]> {
     const now = Date.now();
-    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 30000)) {
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 15000)) {
       return this.certificates;
     }
 
     let emailToSync = userEmail;
-    if (!emailToSync && typeof window !== 'undefined') {
+    if (!isAdmin && !emailToSync && typeof window !== 'undefined') {
       try {
         const savedUser = localStorage.getItem('ece_forum_auth_user_v1');
         if (savedUser) {
@@ -145,15 +151,15 @@ class CertificateService {
       } catch {}
     }
 
-    // Do NOT query all certificates unless requested by user email
-    if (!emailToSync) {
+    // If not admin and no active user email, do not query
+    if (!isAdmin && !emailToSync) {
       return this.certificates;
     }
 
     this.isSyncing = true;
     try {
-      // 1. Fetch from direct Supabase (scoped strictly to user email)
-      const supa = await supabaseDb.getCertificates(undefined, emailToSync);
+      // 1. Fetch from direct Supabase (all if admin, scoped if student)
+      const supa = await supabaseDb.getCertificates(undefined, isAdmin ? undefined : emailToSync);
       this.lastSyncTimestamp = Date.now();
       if (Array.isArray(supa)) {
         const formatted: ApiCertificate[] = supa.map((c: any) => ({
@@ -180,36 +186,44 @@ class CertificateService {
           issuedBy: c.issued_by || 'ECE Forum Executive Council',
         }));
 
-        const map = new Map<string, ApiCertificate>();
-        this.certificates.forEach((c) => map.set(c.certId, c));
-        formatted.forEach((c) => map.set(c.certId, c));
-        this.certificates = Array.from(map.values());
+        if (isAdmin) {
+          // Admin gets complete database list
+          this.certificates = formatted;
+        } else if (emailToSync) {
+          // Student gets authoritative replace for their email (purges deleted/revoked certs)
+          const otherCerts = this.certificates.filter(
+            (c) => (c.userEmail || '').trim().toLowerCase() !== emailToSync
+          );
+          this.certificates = [...otherCerts, ...formatted];
+        }
 
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
-        } catch {}
+        this.saveToStorage();
         return this.certificates;
       }
-    } catch {}
-
-    // 2. Fetch from REST API fallback
-    try {
-      const rest = await forumApi.getCertificates(undefined, emailToSync);
-      if (Array.isArray(rest) && rest.length > 0) {
-        const map = new Map<string, ApiCertificate>();
-        this.certificates.forEach((c) => map.set(c.certId, c));
-        rest.forEach((c: ApiCertificate) => map.set(c.certId, c));
-        this.certificates = Array.from(map.values());
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
-        } catch {}
-        return this.certificates;
-      }
-    } catch {} finally {
+    } catch (err) {
+      console.warn('CertificateService sync error:', err);
+    } finally {
       this.isSyncing = false;
     }
 
     return this.certificates;
+  }
+
+  public syncUserCertificates(userEmail: string, authoritativeCerts: ApiCertificate[]) {
+    const clean = userEmail.trim().toLowerCase();
+    const otherCerts = this.certificates.filter(
+      (c) => (c.userEmail || '').trim().toLowerCase() !== clean
+    );
+    this.certificates = [...otherCerts, ...authoritativeCerts];
+    this.saveToStorage();
+  }
+
+  public removeCertificate(certId: string) {
+    const clean = certId.trim().toUpperCase();
+    this.certificates = this.certificates.filter(
+      (c) => c.certId.toUpperCase() !== clean && (c.securityHash || '').toUpperCase() !== clean
+    );
+    this.saveToStorage();
   }
 
   public getAllCertificates(): ApiCertificate[] {
@@ -229,7 +243,9 @@ class CertificateService {
 
   public getCertificateById(certId: string): ApiCertificate | undefined {
     const clean = certId.trim().toUpperCase();
-    return this.certificates.find((c) => c.certId.toUpperCase() === clean);
+    return this.certificates.find(
+      (c) => c.certId.toUpperCase() === clean || (c.securityHash || '').toUpperCase() === clean
+    );
   }
 
   public generateVerificationQrUrl(certId: string): string {

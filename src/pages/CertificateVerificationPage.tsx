@@ -102,6 +102,7 @@ export const CertificateVerificationPage: React.FC = () => {
               extractedId = new URL(extractedId).searchParams.get('id') || extractedId;
             }
           } catch {}
+          extractedId = decodeURIComponent(extractedId).trim();
 
           setInputCertId(extractedId);
           setShowScanner(false);

@@ -951,7 +951,33 @@ export const forumApi = {
   async verifyCertificate(certId: string): Promise<CertificateVerificationResponse> {
     const cleanId = certId.trim();
 
-    // Try backend verification endpoint
+    // 1. Direct Supabase verification (instant, zero backend delay)
+    try {
+      const cert = await this.getCertificateById(cleanId);
+      if (cert) {
+        if (cert.status === 'REVOKED') {
+          return {
+            valid: false,
+            status: 'REVOKED',
+            certificate: cert,
+            message: 'This certificate has been revoked by the issuing authority.',
+            verifiedAt: new Date().toISOString(),
+          };
+        }
+
+        return {
+          valid: true,
+          status: 'VALID',
+          certificate: cert,
+          message: 'Official and Authentic Certificate verified by ECE Forum PIET.',
+          verifiedAt: new Date().toISOString(),
+        };
+      }
+    } catch (err) {
+      console.warn('Supabase verifyCertificate error:', err);
+    }
+
+    // 2. Try backend verification endpoint if available
     try {
       const res = await fetch(`${API_BASE}/certificates/verify/${encodeURIComponent(cleanId)}`);
       if (res.ok) {
@@ -961,32 +987,10 @@ export const forumApi = {
       if (data) return data;
     } catch {}
 
-    // Fallback client-side verification
-    const cert = await this.getCertificateById(cleanId);
-    if (!cert) {
-      return {
-        valid: false,
-        status: 'INVALID',
-        message: `Certificate ID "${cleanId}" was not found in the official registry.`,
-        verifiedAt: new Date().toISOString(),
-      };
-    }
-
-    if (cert.status === 'REVOKED') {
-      return {
-        valid: false,
-        status: 'REVOKED',
-        certificate: cert,
-        message: 'This certificate has been revoked by the issuing authority.',
-        verifiedAt: new Date().toISOString(),
-      };
-    }
-
     return {
-      valid: true,
-      status: 'VALID',
-      certificate: cert,
-      message: 'Official and Authentic Certificate verified by ECE Forum PIET.',
+      valid: false,
+      status: 'INVALID',
+      message: `Certificate ID "${cleanId}" was not found in the official registry.`,
       verifiedAt: new Date().toISOString(),
     };
   },
@@ -1140,8 +1144,19 @@ export const forumApi = {
 
     // 1. Supabase bulk
     try {
-      await supabaseDb.insertCertificatesBulk(generatedCerts);
-    } catch {}
+      const supaResult = await supabaseDb.insertCertificatesBulk(generatedCerts);
+      if (!supaResult) {
+        console.warn('Supabase bulk insert returned null, attempting fallback sequential insert...');
+        for (const cert of generatedCerts) {
+          await supabaseDb.insertCertificate(cert);
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase bulk insert error:', err);
+      for (const cert of generatedCerts) {
+        try { await supabaseDb.insertCertificate(cert); } catch {}
+      }
+    }
 
     // 2. Backend bulk
     try {
