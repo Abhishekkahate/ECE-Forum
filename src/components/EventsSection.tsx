@@ -455,7 +455,7 @@ const EventCard: React.FC<{
 }> = ({ evt, index, onRegisterClick, onShare }) => {
   const fileRef = `EV-${String(index + 1).padStart(2, '0')}`;
   const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(evt.title)}&dates=20260730T043000Z/20260730T103000Z&details=${encodeURIComponent(evt.description)}&location=${encodeURIComponent(evt.venue)}`;
-  const isClosed = evt.status === 'Completed' || evt.status === 'Past' || evt.status === 'Closed';
+  const isClosed = evt.status === 'Past';
 
   return (
     <div className="group relative rounded-[26px] overflow-hidden flex flex-col h-full bg-[#0F0F11] border border-white/[0.08] backdrop-blur-2xl hover:border-white/20 hover:-translate-y-1 transition-all duration-300 shadow-xl">
