@@ -63,7 +63,7 @@ const DEFAULT_DATA = {
       status: 'Upcoming',
       date: 'July 30, 2026',
       time: '10:00 AM IST',
-      venue: 'PIET Auditorium',
+      venue: 'PCE-NAGPUR Auditorium',
       description: 'Official installation ceremony for SPACE & SINC departmental councils for session 2026-27.',
       badge: 'FLAGSHIP CEREMONY',
       image: '/event_images/inst.webp',
@@ -77,7 +77,7 @@ const DEFAULT_DATA = {
       status: 'Upcoming',
       date: 'July 30, 2026',
       time: '10:30 AM IST',
-      venue: 'PIET Auditorium',
+      venue: 'PCE-NAGPUR Auditorium',
       description: 'Annual welcoming fiesta and hardware ice-breaker for 2nd year electronics students.',
       badge: 'FRESHERS CELEBRATION',
       image: '/event_images/tarang.webp',
@@ -161,6 +161,7 @@ app.get('/api/events', async (req, res) => {
             price: Number(e.price) || 0,
             totalSeats: e.total_seats || 100,
             participationType: e.participation_type || e.participationType || 'both',
+            customFields: e.custom_fields || [],
           }))
         );
       }
@@ -182,13 +183,14 @@ app.post('/api/events', async (req, res) => {
     status: eventData.status || 'Upcoming',
     date: eventData.date || 'TBD',
     time: eventData.time || '10:00 AM IST',
-    venue: eventData.venue || 'PIET Campus',
+    venue: eventData.venue || 'PCE-NAGPUR Campus',
     description: eventData.description || '',
     badge: eventData.badge || 'EVENT',
     image: eventData.image || '/event_images/tarang.webp',
     price: Number(eventData.price) || 0,
     totalSeats: Number(eventData.totalSeats) || 100,
     participationType: eventData.participationType || 'both',
+    customFields: eventData.customFields || [],
   };
 
   if (supabase) {
@@ -207,6 +209,7 @@ app.post('/api/events', async (req, res) => {
           image: newEvent.image,
           price: newEvent.price,
           total_seats: newEvent.totalSeats,
+          custom_fields: newEvent.customFields || [],
         },
       ]);
     } catch (err) {
@@ -260,7 +263,7 @@ app.get('/api/passes', async (req, res) => {
             userName: p.user_name,
             userEmail: p.user_email,
             userPhoto: p.user_photo,
-            collegeName: p.college_name || 'PIET, Nagpur',
+            collegeName: p.college_name || 'PCE-NAGPUR',
             department: p.department,
             year: p.year,
             phone: p.phone,
@@ -280,6 +283,7 @@ app.get('/api/passes', async (req, res) => {
             checkedInBy: p.checked_in_by,
             registeredAt: p.registered_at,
             securityHash: p.security_hash,
+            customFields: p.custom_fields || p.customFields || {},
           }))
         );
       }
@@ -348,6 +352,7 @@ app.post('/api/passes', async (req, res) => {
   const newPass = {
     ...passData,
     passId,
+    customFields: passData.customFields || {},
     status: passData.status || 'CONFIRMED',
     registeredAt:
       passData.registeredAt ||
@@ -371,7 +376,7 @@ app.post('/api/passes', async (req, res) => {
           user_name: newPass.userName,
           user_email: newPass.userEmail,
           user_photo: newPass.userPhoto,
-          college_name: newPass.collegeName || 'PIET, Nagpur',
+          college_name: newPass.collegeName || 'PCE-NAGPUR',
           department: newPass.department,
           year: newPass.year,
           phone: newPass.phone,
@@ -391,6 +396,7 @@ app.post('/api/passes', async (req, res) => {
           checked_in_by: newPass.checkedInBy,
           registered_at: newPass.registeredAt,
           security_hash: newPass.securityHash,
+          custom_fields: newPass.customFields || {},
         },
       ]);
     } catch (err) {
@@ -466,6 +472,7 @@ app.post('/api/passes/verify', async (req, res) => {
           checkedInBy: data[0].checked_in_by,
           registeredAt: data[0].registered_at,
           securityHash: data[0].security_hash,
+          customFields: data[0].custom_fields || {},
         };
       }
     } catch {}
@@ -625,7 +632,7 @@ app.get('/api/certificates', async (req, res) => {
           userEmail: c.user_email,
           userPhoto: c.user_photo,
           department: c.department || 'Electronics & Communication Engineering',
-          collegeName: c.college_name || 'PIET, Nagpur',
+          collegeName: c.college_name || 'PCE-NAGPUR',
           certType: c.cert_type || 'PARTICIPATION',
           title: c.title || 'Certificate of Participation',
           rankText: c.rank_text || 'Participant',
@@ -700,7 +707,7 @@ app.get('/api/certificates/:certId', async (req, res) => {
           userEmail: data.user_email,
           userPhoto: data.user_photo,
           department: data.department || 'Electronics & Communication Engineering',
-          collegeName: data.college_name || 'PIET, Nagpur',
+          collegeName: data.college_name || 'PCE-NAGPUR',
           certType: data.cert_type || 'PARTICIPATION',
           title: data.title || 'Certificate of Participation',
           rankText: data.rank_text || 'Participant',
@@ -748,7 +755,7 @@ app.get('/api/certificates/verify/:certId', async (req, res) => {
           userName: data.user_name,
           userEmail: data.user_email,
           department: data.department || 'Electronics & Communication Engineering',
-          collegeName: data.college_name || 'PIET, Nagpur',
+          collegeName: data.college_name || 'PCE-NAGPUR',
           certType: data.cert_type || 'PARTICIPATION',
           title: data.title || 'Certificate of Participation',
           rankText: data.rank_text || 'Participant',
@@ -794,7 +801,7 @@ app.get('/api/certificates/verify/:certId', async (req, res) => {
     valid: true,
     status: 'VALID',
     certificate: cert,
-    message: 'Official and Authentic Certificate verified by ECE Forum PIET.',
+    message: 'Official and Authentic Certificate verified by ECE Forum PCE-NAGPUR.',
     verifiedAt: new Date().toISOString(),
   });
 });
@@ -823,7 +830,7 @@ app.post('/api/certificates', async (req, res) => {
     userEmail: (certData.userEmail || '').trim().toLowerCase(),
     userPhoto: certData.userPhoto || null,
     department: certData.department || 'Electronics & Communication Engineering',
-    collegeName: certData.collegeName || 'PIET, Nagpur',
+    collegeName: certData.collegeName || 'PCE-NAGPUR',
     certType: certData.certType || 'PARTICIPATION',
     title: certData.title || 'Certificate of Participation',
     rankText: certData.rankText || 'Participant',
@@ -939,7 +946,7 @@ app.post('/api/certificates/issue', async (req, res) => {
       userEmail: (p.email || p.userEmail || '').trim().toLowerCase(),
       userPhoto: p.photo || p.userPhoto || null,
       department: p.department || 'Electronics & Communication Engineering',
-      collegeName: p.collegeName || 'PIET, Nagpur',
+      collegeName: p.collegeName || 'PCE-NAGPUR',
       certType: p.certType || certType,
       title: p.title || title,
       rankText: p.rankText || rankText,

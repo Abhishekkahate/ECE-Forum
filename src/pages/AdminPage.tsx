@@ -7,7 +7,7 @@ import {
   Check, CheckCircle2, Sliders, Edit3, FileDown, Tag, Copy, Activity,
   Eye, ExternalLink, AlertTriangle, X, CheckSquare, Layers, Clock, ShieldCheck, DollarSign,
   User, Phone, Mail, School, Building2, Download, QrCode, Star, Award, Palette, RefreshCw,
-  Trophy, Loader2
+  Trophy, Loader2, HelpCircle
 } from 'lucide-react';
 import { AdminLogin } from '../components/AdminLogin';
 import { type EventItem } from '../components/EventsSection';
@@ -23,6 +23,7 @@ import {
   type ApiCertificate,
   type CertificateType,
   type CertificateSignatory,
+  type EventFormField,
 } from '../services/api';
 import {
   certificateService,
@@ -85,7 +86,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [manualRecipientName, setManualRecipientName] = useState('');
   const [manualRecipientEmail, setManualRecipientEmail] = useState('');
   const [manualRecipientDept, setManualRecipientDept] = useState('Electronics & Communication Engineering');
-  const [manualRecipientCollege, setManualRecipientCollege] = useState('PIET, Nagpur');
+  const [manualRecipientCollege, setManualRecipientCollege] = useState('PCE-NAGPUR');
   const [certEventSelect, setCertEventSelect] = useState<string>('');
   const [selectedPassIdsForCerts, setSelectedPassIdsForCerts] = useState<string[]>([]);
   const [certRankAwardType, setCertRankAwardType] = useState<CertificateType>('PARTICIPATION');
@@ -120,9 +121,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       eventTitle: targetEvent.title,
       eventDate: targetEvent.date || 'July 30, 2026',
       userName: samplePass ? samplePass.userName : 'Aarav Sharma (Sample Recipient)',
-      userEmail: samplePass ? samplePass.userEmail : 'aarav.sharma@piet.edu.in',
+      userEmail: samplePass ? samplePass.userEmail : 'aarav.sharma@pcenagpur.edu.in',
       department: samplePass?.department || 'Electronics & Communication Engineering',
-      collegeName: samplePass?.collegeName || 'Priyadarshini Institute of Engineering & Technology, Nagpur',
+      collegeName: samplePass?.collegeName || 'PCE-NAGPUR',
       certType: certRankAwardType,
       title: certCustomTitle || (certRankAwardType === 'PARTICIPATION' ? 'Certificate of Participation' : 'Certificate of Excellence'),
       rankText: certCustomRankText || (certRankAwardType === 'PARTICIPATION' ? 'Participant' : '1st Place Winner'),
@@ -326,7 +327,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           userEmail: p.user_email,
           userPhoto: p.user_photo,
           department: p.department,
-          collegeName: p.college_name || 'PIET, Nagpur',
+          collegeName: p.college_name || 'PCE-NAGPUR',
           year: p.year,
           phone: p.phone,
           paymentId: p.payment_id,
@@ -499,7 +500,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           name: manualRecipientName.trim(),
           email: manualRecipientEmail.trim().toLowerCase(),
           department: manualRecipientDept.trim() || 'Electronics & Communication Engineering',
-          collegeName: manualRecipientCollege.trim() || 'PIET, Nagpur',
+          collegeName: manualRecipientCollege.trim() || 'PCE-NAGPUR',
           rankText: certCustomRankText || 'Participant',
           certType: certRankAwardType,
         }];
@@ -568,12 +569,70 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     upiId: '',
     payeeName: '',
     paymentInstructions: '',
+    customFields: [],
   };
 
   // Events Management State
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState<Partial<EventItem>>(BLANK_EVENT_FORM);
+
+  // Dynamic Registration Questionnaire Builder State
+  const [newCustomField, setNewCustomField] = useState<Partial<EventFormField>>({
+    label: '',
+    type: 'text',
+    placeholder: '',
+    options: [],
+    required: false,
+    appliesTo: 'all',
+  });
+  const [rawOptionsInput, setRawOptionsInput] = useState('');
+
+  const handleAddCustomField = () => {
+    if (!newCustomField.label?.trim()) return;
+    soundFx.playClick();
+    const fieldId = `field_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const parsedOptions =
+      newCustomField.type === 'select'
+        ? rawOptionsInput
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined;
+
+    const fieldToAdd: EventFormField = {
+      id: fieldId,
+      label: newCustomField.label.trim(),
+      type: newCustomField.type || 'text',
+      placeholder: newCustomField.placeholder?.trim() || undefined,
+      options: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
+      required: Boolean(newCustomField.required),
+      appliesTo: newCustomField.appliesTo || 'all',
+    };
+
+    setNewEvent((prev) => ({
+      ...prev,
+      customFields: [...(prev.customFields || []), fieldToAdd],
+    }));
+
+    setNewCustomField({
+      label: '',
+      type: 'text',
+      placeholder: '',
+      options: [],
+      required: false,
+      appliesTo: 'all',
+    });
+    setRawOptionsInput('');
+  };
+
+  const handleRemoveCustomField = (idToRemove: string) => {
+    soundFx.playClick();
+    setNewEvent((prev) => ({
+      ...prev,
+      customFields: (prev.customFields || []).filter((f) => f.id !== idToRemove),
+    }));
+  };
 
   const [announcementText, setAnnouncementText] = useState(currentAnnouncement);
   const [announcementSaved, setAnnouncementSaved] = useState(false);
@@ -609,6 +668,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       upiId: event.upiId || '',
       payeeName: event.payeeName || '',
       paymentInstructions: event.paymentInstructions || '',
+      customFields: event.customFields ? JSON.parse(JSON.stringify(event.customFields)) : [],
     });
     setShowEventForm(true);
   };
@@ -628,7 +688,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               status: (newEvent.status as any) || 'Upcoming',
               date: newEvent.date || 'TBD',
               time: newEvent.time || '10:00 AM IST',
-              venue: newEvent.venue || 'PIET Campus',
+              venue: newEvent.venue || 'PCE-NAGPUR Campus',
               description: newEvent.description || '',
               price: Number(newEvent.price) || 0,
               image: newEvent.image || '/event_images/tarang.webp',
@@ -641,6 +701,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               upiId: newEvent.upiId || undefined,
               payeeName: newEvent.payeeName || undefined,
               paymentInstructions: newEvent.paymentInstructions || undefined,
+              customFields: newEvent.customFields || [],
             }
           : evt
       );
@@ -669,6 +730,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         upiId: newEvent.upiId || undefined,
         payeeName: newEvent.payeeName || undefined,
         paymentInstructions: newEvent.paymentInstructions || undefined,
+        customFields: newEvent.customFields || [],
       };
       onAddEvent(eventToAdd);
       await api.createEvent(eventToAdd);
@@ -933,13 +995,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     const headers = [
       'Pass ID', 'Name', 'Email', 'College', 'Department', 'Year', 'Phone',
       'Event', 'Reg Type', 'Team Name', 'Team Members', 'Payment ID', 'Transaction Ref',
-      'Original Amount', 'Discount', 'Coupon', 'Final Fee', 'Payment Status', 'Entry Status', 'CheckIn Time'
+      'Original Amount', 'Discount', 'Coupon', 'Final Fee', 'Payment Status', 'Entry Status', 'CheckIn Time', 'Questionnaire Data'
     ];
     const rows = filteredPasses.map((p) => [
       p.passId,
       `"${p.userName}"`,
       p.userEmail,
-      `"${p.collegeName || 'PIET'}"`,
+      `"${p.collegeName || 'PCE-NAGPUR'}"`,
       `"${p.department}"`,
       p.year,
       p.phone,
@@ -956,6 +1018,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       p.paymentStatus || 'PAID',
       p.status,
       `"${p.checkedInAt || 'Pending'}"`,
+      p.customFields && Object.keys(p.customFields).length > 0
+        ? `"${Object.entries(p.customFields).map(([k, v]) => `${k}: ${v}`).join(' | ').replace(/"/g, '""')}"`
+        : '""',
     ]);
     const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const uri = encodeURI(csv);
@@ -974,10 +1039,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({
       selectedEventFilter === 'ALL'
         ? 'All_Events'
         : (eventsList.find((e) => e.id === selectedEventFilter)?.title || selectedEventFilter).replace(/[^a-zA-Z0-9]/g, '_');
-    const excel = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#040711" ss:Pattern="Solid"/></Style><Style ss:ID="Data"><Alignment ss:Vertical="Center"/></Style><Style ss:ID="Currency"><NumberFormat ss:Format="₹#,##0"/></Style><Style ss:ID="CheckedIn"><Font ss:Color="#006600" ss:Bold="1"/><Interior ss:Color="#E6F4EA" ss:Pattern="Solid"/></Style></Styles><Worksheet ss:Name="Attendees"><Table><Row ss:StyleID="Header"><Cell><Data ss:Type="String">Pass ID</Data></Cell><Cell><Data ss:Type="String">Attendee Name</Data></Cell><Cell><Data ss:Type="String">Email</Data></Cell><Cell><Data ss:Type="String">Phone</Data></Cell><Cell><Data ss:Type="String">College</Data></Cell><Cell><Data ss:Type="String">Department</Data></Cell><Cell><Data ss:Type="String">Year</Data></Cell><Cell><Data ss:Type="String">Reg Type</Data></Cell><Cell><Data ss:Type="String">Team Name</Data></Cell><Cell><Data ss:Type="String">Event Title</Data></Cell><Cell><Data ss:Type="String">Payment ID</Data></Cell><Cell><Data ss:Type="String">Transaction Ref</Data></Cell><Cell><Data ss:Type="String">Fee Paid</Data></Cell><Cell><Data ss:Type="String">Entry Status</Data></Cell><Cell><Data ss:Type="String">Check-In Time</Data></Cell></Row>${filteredPasses
+    const excel = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#040711" ss:Pattern="Solid"/></Style><Style ss:ID="Data"><Alignment ss:Vertical="Center"/></Style><Style ss:ID="Currency"><NumberFormat ss:Format="₹#,##0"/></Style><Style ss:ID="CheckedIn"><Font ss:Color="#006600" ss:Bold="1"/><Interior ss:Color="#E6F4EA" ss:Pattern="Solid"/></Style></Styles><Worksheet ss:Name="Attendees"><Table><Row ss:StyleID="Header"><Cell><Data ss:Type="String">Pass ID</Data></Cell><Cell><Data ss:Type="String">Attendee Name</Data></Cell><Cell><Data ss:Type="String">Email</Data></Cell><Cell><Data ss:Type="String">Phone</Data></Cell><Cell><Data ss:Type="String">College</Data></Cell><Cell><Data ss:Type="String">Department</Data></Cell><Cell><Data ss:Type="String">Year</Data></Cell><Cell><Data ss:Type="String">Reg Type</Data></Cell><Cell><Data ss:Type="String">Team Name</Data></Cell><Cell><Data ss:Type="String">Event Title</Data></Cell><Cell><Data ss:Type="String">Payment ID</Data></Cell><Cell><Data ss:Type="String">Transaction Ref</Data></Cell><Cell><Data ss:Type="String">Fee Paid</Data></Cell><Cell><Data ss:Type="String">Entry Status</Data></Cell><Cell><Data ss:Type="String">Check-In Time</Data></Cell><Cell><Data ss:Type="String">Questionnaire Data</Data></Cell></Row>${filteredPasses
       .map(
         (p) =>
-          `<Row ss:StyleID="Data"><Cell><Data ss:Type="String">${p.passId}</Data></Cell><Cell><Data ss:Type="String">${(p.userName || '').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${p.userEmail || ''}</Data></Cell><Cell><Data ss:Type="String">${p.phone || ''}</Data></Cell><Cell><Data ss:Type="String">${(p.collegeName || 'PIET').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${(p.department || '').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${p.year || ''}</Data></Cell><Cell><Data ss:Type="String">${p.registrationType === 'team' ? 'Team' : 'Individual'}</Data></Cell><Cell><Data ss:Type="String">${(p.teamName || 'N/A').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${(p.eventTitle || '').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${p.paymentId || ''}</Data></Cell><Cell><Data ss:Type="String">${p.transactionId || 'N/A'}</Data></Cell><Cell ss:StyleID="Currency"><Data ss:Type="Number">${p.amount || 0}</Data></Cell><Cell ss:StyleID="${p.status === 'CHECKED_IN' ? 'CheckedIn' : 'Data'}"><Data ss:Type="String">${p.status === 'CHECKED_IN' ? 'Checked In' : 'Confirmed'}</Data></Cell><Cell><Data ss:Type="String">${p.checkedInAt || 'Pending'}</Data></Cell></Row>`
+          `<Row ss:StyleID="Data"><Cell><Data ss:Type="String">${p.passId}</Data></Cell><Cell><Data ss:Type="String">${(p.userName || '').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${p.userEmail || ''}</Data></Cell><Cell><Data ss:Type="String">${p.phone || ''}</Data></Cell><Cell><Data ss:Type="String">${(p.collegeName || 'PCE-NAGPUR').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${(p.department || '').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${p.year || ''}</Data></Cell><Cell><Data ss:Type="String">${p.registrationType === 'team' ? 'Team' : 'Individual'}</Data></Cell><Cell><Data ss:Type="String">${(p.teamName || 'N/A').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${(p.eventTitle || '').replace(/&/g, '&amp;')}</Data></Cell><Cell><Data ss:Type="String">${p.paymentId || ''}</Data></Cell><Cell><Data ss:Type="String">${p.transactionId || 'N/A'}</Data></Cell><Cell ss:StyleID="Currency"><Data ss:Type="Number">${p.amount || 0}</Data></Cell><Cell ss:StyleID="${p.status === 'CHECKED_IN' ? 'CheckedIn' : 'Data'}"><Data ss:Type="String">${p.status === 'CHECKED_IN' ? 'Checked In' : 'Confirmed'}</Data></Cell><Cell><Data ss:Type="String">${p.checkedInAt || 'Pending'}</Data></Cell><Cell><Data ss:Type="String">${p.customFields && Object.keys(p.customFields).length > 0 ? Object.entries(p.customFields).map(([k, v]) => `${k}: ${v}`).join(' | ').replace(/&/g, '&amp;') : 'N/A'}</Data></Cell></Row>`
       )
       .join('')}</Table></Worksheet></Workbook>`;
     const blob = new Blob([excel], { type: 'application/vnd.ms-excel' });
@@ -1036,7 +1101,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               <div className="w-8 h-8 rounded-xl bg-[#FF4A15] text-white grid place-items-center font-black text-xs shadow-[0_0_15px_rgba(255,74,21,0.4)]">◈</div>
               <div>
                 <div className="font-[Syne] font-[800] text-sm leading-none tracking-tight">COMMAND STUDIO</div>
-                <div className="text-[10px] font-mono text-white/40 tracking-[0.14em]">PIET ECE &bull; SPACE &times; SINC</div>
+                <div className="text-[10px] font-mono text-white/40 tracking-[0.14em]">PCE-NAGPUR ECE &bull; SPACE &times; SINC</div>
               </div>
             </div>
           </div>
@@ -1568,6 +1633,159 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                 </div>
                               </div>
                             </div>
+
+                            {/* ── DYNAMIC REGISTRATION QUESTIONNAIRE BUILDER (JSONB) ── */}
+                            <div className="sm:col-span-2 lg:col-span-3 p-4 rounded-2xl bg-black/50 border border-[#00E5CC]/30 space-y-4 shadow-[0_0_25px_rgba(0,229,204,0.06)]">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/[0.08]">
+                                <div className="flex items-center gap-2">
+                                  <HelpCircle className="w-4 h-4 text-[#00E5CC]" />
+                                  <span className="font-[Syne] font-bold text-sm text-white">Attendee Questionnaire Builder</span>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] border border-[#00E5CC]/30">
+                                    JSONB Dynamic Schema
+                                  </span>
+                                </div>
+                                <span className="text-[10px] font-mono text-white/50">
+                                  {(newEvent.customFields || []).length} Question{(newEvent.customFields || []).length === 1 ? '' : 's'} Configured
+                                </span>
+                              </div>
+
+                              <p className="text-[11px] text-white/60 leading-relaxed">
+                                Define custom information fields to collect from attendees during registration (e.g., T-Shirt Size, GitHub Profile, Dietary Preferences, Hardware Kit). Stored natively as JSONB with zero database schema alterations.
+                              </p>
+
+                              {/* Configured Fields List */}
+                              {(newEvent.customFields || []).length > 0 && (
+                                <div className="space-y-2">
+                                  {newEvent.customFields!.map((field, idx) => (
+                                    <div
+                                      key={field.id || idx}
+                                      className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                                    >
+                                      <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="font-bold text-white text-xs">{field.label}</span>
+                                          {field.required && (
+                                            <span className="text-[9px] font-mono text-red-400 bg-red-500/15 px-1.5 py-0.5 rounded border border-red-500/25">
+                                              * Required
+                                            </span>
+                                          )}
+                                          <span className="text-[9px] font-mono text-[#00E5CC] bg-[#00E5CC]/10 px-1.5 py-0.5 rounded border border-[#00E5CC]/25 uppercase font-bold">
+                                            {field.type}
+                                          </span>
+                                          <span className="text-[9px] font-mono text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                            {field.appliesTo === 'team_only'
+                                              ? 'Team Registrations Only'
+                                              : field.appliesTo === 'individual_only'
+                                              ? 'Individual Registrations Only'
+                                              : 'All Registrations'}
+                                          </span>
+                                        </div>
+                                        <div className="text-[10px] text-white/40 flex flex-wrap items-center gap-2">
+                                          {field.placeholder && <span>Hint: "{field.placeholder}"</span>}
+                                          {field.options && field.options.length > 0 && (
+                                            <span>Options: [{field.options.join(', ')}]</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveCustomField(field.id)}
+                                        className="self-end sm:self-center px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all text-[11px] font-mono flex items-center gap-1 cursor-pointer border border-red-500/20"
+                                      >
+                                        <Trash2 className="w-3 h-3" /> Remove
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Add Question Sub-Panel */}
+                              <div className="p-3.5 rounded-xl bg-black/60 border border-white/10 space-y-3">
+                                <div className="text-[10px] font-mono uppercase tracking-wider text-white/70 font-bold flex items-center gap-1.5">
+                                  <Plus className="w-3 h-3 text-[#00E5CC]" /> Add Questionnaire Field
+                                </div>
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
+                                  <label className="space-y-1 sm:col-span-2">
+                                    <span className="text-white/60 text-[10px]">Question / Field Label *</span>
+                                    <input
+                                      autoComplete="off"
+                                      value={newCustomField.label || ''}
+                                      onChange={(e) => setNewCustomField({ ...newCustomField, label: e.target.value })}
+                                      placeholder="e.g. T-Shirt Size or GitHub Profile"
+                                      className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white focus:border-[#00E5CC]/60 outline-none"
+                                    />
+                                  </label>
+                                  <label className="space-y-1">
+                                    <span className="text-white/60 text-[10px]">Field Type</span>
+                                    <select
+                                      value={newCustomField.type || 'text'}
+                                      onChange={(e) => setNewCustomField({ ...newCustomField, type: e.target.value as any })}
+                                      className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white focus:border-[#00E5CC]/60 outline-none"
+                                    >
+                                      <option value="text">Text (Single Line)</option>
+                                      <option value="number">Number</option>
+                                      <option value="textarea">Textarea (Paragraph)</option>
+                                      <option value="select">Dropdown Select</option>
+                                      <option value="checkbox">Checkbox (Yes / No)</option>
+                                      <option value="url">Web URL</option>
+                                    </select>
+                                  </label>
+                                  <label className="space-y-1">
+                                    <span className="text-white/60 text-[10px]">Applies To Mode</span>
+                                    <select
+                                      value={newCustomField.appliesTo || 'all'}
+                                      onChange={(e) => setNewCustomField({ ...newCustomField, appliesTo: e.target.value as any })}
+                                      className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white focus:border-[#00E5CC]/60 outline-none"
+                                    >
+                                      <option value="all">All Registrations</option>
+                                      <option value="individual_only">Individual Only</option>
+                                      <option value="team_only">Team Only</option>
+                                    </select>
+                                  </label>
+                                  <label className="space-y-1 sm:col-span-2">
+                                    <span className="text-white/60 text-[10px]">Placeholder / Instruction Hint</span>
+                                    <input
+                                      autoComplete="off"
+                                      value={newCustomField.placeholder || ''}
+                                      onChange={(e) => setNewCustomField({ ...newCustomField, placeholder: e.target.value })}
+                                      placeholder="e.g. https://github.com/username"
+                                      className="w-full px-3 py-2 rounded-xl bg-black border border-white/10 text-white focus:border-[#00E5CC]/60 outline-none"
+                                    />
+                                  </label>
+                                  {newCustomField.type === 'select' && (
+                                    <label className="space-y-1 sm:col-span-2">
+                                      <span className="text-white/60 text-[10px]">Options (Comma-separated) *</span>
+                                      <input
+                                        autoComplete="off"
+                                        value={rawOptionsInput}
+                                        onChange={(e) => setRawOptionsInput(e.target.value)}
+                                        placeholder="e.g. S, M, L, XL, XXL"
+                                        className="w-full px-3 py-2 rounded-xl bg-black border border-[#00E5CC]/40 text-white focus:border-[#00E5CC] outline-none"
+                                      />
+                                    </label>
+                                  )}
+                                  <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-4 pt-1 justify-between">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={Boolean(newCustomField.required)}
+                                        onChange={(e) => setNewCustomField({ ...newCustomField, required: e.target.checked })}
+                                        className="w-4 h-4 accent-[#00E5CC] rounded cursor-pointer"
+                                      />
+                                      <span className="text-[11px] text-white/80">Mark as Mandatory (Required to submit)</span>
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={handleAddCustomField}
+                                      disabled={!newCustomField.label?.trim()}
+                                      className="px-4 py-1.5 rounded-xl bg-[#00E5CC] text-black font-bold text-xs hover:bg-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-[0_0_12px_rgba(0,229,204,0.3)]"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" /> Add Question
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.06]">
                             <button
@@ -1818,7 +2036,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                       </td>
                                       <td className="p-3.5">
                                         <div className="truncate max-w-[200px] text-white font-medium">{p.eventTitle}</div>
-                                        <div className="text-white/40 text-[10px] truncate max-w-[200px]">{p.collegeName || 'PIET, Nagpur'}</div>
+                                        <div className="text-white/40 text-[10px] truncate max-w-[200px]">{p.collegeName || 'PCE-NAGPUR'}</div>
                                         <div className="text-white/30 text-[10px]">{p.department} &bull; {p.year}</div>
                                       </td>
                                       <td className="p-3.5">
@@ -3180,7 +3398,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                             <input
                               value={heroConfigDraft.flagshipTargetVenue}
                               onChange={(e) => updateHeroField('flagshipTargetVenue', e.target.value)}
-                              placeholder="AUDITORIUM, PIET"
+                              placeholder="AUDITORIUM, PCE-NAGPUR"
                               className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white"
                             />
                           </label>
@@ -3338,7 +3556,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <input
                                 value={heroConfigDraft.paymentUpiId || ''}
                                 onChange={(e) => updateHeroField('paymentUpiId', e.target.value)}
-                                placeholder="pieteceforum@okhdfcbank"
+                                placeholder="pceeceforum@okhdfcbank"
                                 className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-mono"
                               />
                             </label>
@@ -3348,7 +3566,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                               <input
                                 value={heroConfigDraft.paymentPayeeName || ''}
                                 onChange={(e) => updateHeroField('paymentPayeeName', e.target.value)}
-                                placeholder="PIET ECE COUNCIL"
+                                placeholder="PCE-NAGPUR ECE COUNCIL"
                                 className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-white font-mono"
                               />
                             </label>
@@ -3615,7 +3833,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 block">College / Institution:</span>
-                    <span className="text-white/90">{selectedProofPass.collegeName || 'PIET, Nagpur'}</span>
+                    <span className="text-white/90">{selectedProofPass.collegeName || 'PCE-NAGPUR'}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 block">Department / Branch:</span>
@@ -3654,7 +3872,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                           <div className="flex flex-wrap gap-2 text-[10px] text-white/60 pt-0.5 border-t border-white/[0.04]">
                             <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/80">
-                              College: {tm.collegeName || selectedProofPass.collegeName || 'PIET'}
+                              College: {tm.collegeName || selectedProofPass.collegeName || 'PCE-NAGPUR'}
                             </span>
                             <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/80">
                               Dept: {tm.department || 'ECE'}
@@ -3671,6 +3889,31 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   ) : (
                     <p className="text-[11px] text-white/40 italic">Single leader recorded under team pass format.</p>
                   )}
+                </div>
+              )}
+
+              {/* Questionnaire Responses (JSONB) */}
+              {selectedProofPass.customFields && Object.keys(selectedProofPass.customFields).length > 0 && (
+                <div className="p-4 rounded-2xl bg-black/60 border border-[#00E5CC]/30 space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                    <span className="text-[11px] font-bold text-[#00E5CC] flex items-center gap-1.5 uppercase">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      <span>Custom Questionnaire Responses (JSONB)</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#00E5CC]/15 text-[#00E5CC] text-[10px] font-bold border border-[#00E5CC]/30">
+                      {Object.keys(selectedProofPass.customFields).length} Answers
+                    </span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2 text-xs font-mono">
+                    {Object.entries(selectedProofPass.customFields).map(([key, val]) => (
+                      <div key={key} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-1">
+                        <span className="text-[10px] text-white/50 block capitalize font-medium">{key.replace(/_/g, ' ')}:</span>
+                        <span className="text-white font-bold break-all block">
+                          {typeof val === 'boolean' ? (val ? '✓ Yes (Checked)' : '✗ No (Unchecked)') : String(val || 'N/A')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -3853,7 +4096,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                   <button
                     onClick={() => {
                       soundFx.playClick();
-                      const fullSummary = `ECE FORUM REGISTRATION\nPass ID: ${selectedProofPass.passId}\nEvent: ${selectedProofPass.eventTitle}\nAttendee: ${selectedProofPass.userName}\nEmail: ${selectedProofPass.userEmail}\nPhone: ${selectedProofPass.phone || 'N/A'}\nCollege: ${selectedProofPass.collegeName || 'PIET'}\nDepartment: ${selectedProofPass.department}\nType: ${selectedProofPass.registrationType || 'individual'}\nTeam Name: ${selectedProofPass.teamName || 'N/A'}\nTeammates: ${selectedProofPass.teamMembers?.map((m: any) => `${m.name} (${m.email})`).join(', ') || 'None'}\nAmount: ₹${selectedProofPass.amount}\nUTR: ${selectedProofPass.transactionId || 'N/A'}\nStatus: ${selectedProofPass.status}`;
+                      const fullSummary = `ECE FORUM REGISTRATION\nPass ID: ${selectedProofPass.passId}\nEvent: ${selectedProofPass.eventTitle}\nAttendee: ${selectedProofPass.userName}\nEmail: ${selectedProofPass.userEmail}\nPhone: ${selectedProofPass.phone || 'N/A'}\nCollege: ${selectedProofPass.collegeName || 'PCE-NAGPUR'}\nDepartment: ${selectedProofPass.department}\nType: ${selectedProofPass.registrationType || 'individual'}\nTeam Name: ${selectedProofPass.teamName || 'N/A'}\nTeammates: ${selectedProofPass.teamMembers?.map((m: any) => `${m.name} (${m.email})`).join(', ') || 'None'}\nAmount: ₹${selectedProofPass.amount}\nUTR: ${selectedProofPass.transactionId || 'N/A'}\nStatus: ${selectedProofPass.status}`;
                       navigator.clipboard.writeText(fullSummary);
                       setCopiedProofField('summary');
                       setTimeout(() => setCopiedProofField(null), 2000);
@@ -4161,7 +4404,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                           type="text"
                           value={manualRecipientCollege}
                           onChange={(e) => setManualRecipientCollege(e.target.value)}
-                          placeholder="PIET, Nagpur"
+                          placeholder="PCE-NAGPUR"
                           className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
                         />
                       </label>

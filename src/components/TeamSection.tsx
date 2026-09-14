@@ -241,7 +241,7 @@ export const TeamSection: React.FC = () => {
               </h2>
               <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
                 <span className="h-px w-8 bg-white/15" />
-                <span>OFFICIAL APPOINTED COUNCIL // DEPT OF ECE // PIET</span>
+                <span>OFFICIAL APPOINTED COUNCIL // DEPT OF ECE // PCE-NAGPUR</span>
               </div>
             </div>
             <p className="reveal stagger-2 max-w-[400px] text-[13.5px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/40 pl-4">
@@ -359,7 +359,7 @@ export const TeamSection: React.FC = () => {
                   ? 'Faculty Incharge: Dr. Sunita N. Parihar · Council President: Rohan Virutkar'
                   : councilTab === 'SINC'
                   ? 'Faculty Incharge: Ms. V. V. Shirpurkar · Council President: Makarand Bahmane'
-                  : 'Operating under Dept of Electronics & Communication Engineering, PIET.'}
+                  : 'Operating under Dept of Electronics & Communication Engineering, PCE-NAGPUR.'}
               </p>
             </div>
           </div>
@@ -726,7 +726,7 @@ export const TeamSection: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between text-[10px] font-mono text-white/35 pt-1">
-                  <span>PIET ECE COUNCIL · APPOINTED SESSION 2026–27</span>
+                  <span>PCE-NAGPUR ECE COUNCIL · APPOINTED SESSION 2026–27</span>
                   <span className="hidden sm:inline">VERIFIED APEX DOSSIER</span>
                 </div>
               </div>

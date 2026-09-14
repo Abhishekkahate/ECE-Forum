@@ -168,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                     <span className="hidden lg:inline-flex text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-[#FF4A15] text-white font-bold tracking-[0.08em]">2026—27</span>
                     <span className="hidden xl:inline-flex w-1.5 h-1.5 rounded-full bg-[#FF4A15] animate-pulse shadow-[0_0_8px_rgba(255,74,21,0.6)]" />
                   </div>
-                  <span className="block text-[10px] font-mono tracking-[0.16em] text-white/40 mt-[2px]">PIET <span className="text-[#FF4A15]">·</span> SPACE × SINC</span>
+                  <span className="block text-[10px] font-mono tracking-[0.16em] text-white/40 mt-[2px]">PCE-NAGPUR <span className="text-[#FF4A15]">·</span> SPACE × SINC</span>
                 </div>
               </a>
 

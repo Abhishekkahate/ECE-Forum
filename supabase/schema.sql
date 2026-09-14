@@ -10,12 +10,13 @@ CREATE TABLE IF NOT EXISTS public.events (
     status TEXT NOT NULL DEFAULT 'Upcoming',
     date TEXT NOT NULL,
     time TEXT NOT NULL DEFAULT '10:00 AM IST',
-    venue TEXT NOT NULL DEFAULT 'PIET Campus',
+    venue TEXT NOT NULL DEFAULT 'PCE-NAGPUR Campus',
     description TEXT,
     badge TEXT DEFAULT 'EVENT',
     image TEXT,
     price NUMERIC NOT NULL DEFAULT 0,
     total_seats INTEGER NOT NULL DEFAULT 100,
+    custom_fields JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -41,6 +42,7 @@ CREATE TABLE IF NOT EXISTS public.passes (
     checked_in_by TEXT,
     registered_at TEXT NOT NULL,
     security_hash TEXT NOT NULL,
+    custom_fields JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -78,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     user_email TEXT NOT NULL,
     user_photo TEXT,
     department TEXT NOT NULL DEFAULT 'Electronics & Communication Engineering',
-    college_name TEXT NOT NULL DEFAULT 'PIET, Nagpur',
+    college_name TEXT NOT NULL DEFAULT 'PCE-NAGPUR',
     cert_type TEXT NOT NULL DEFAULT 'PARTICIPATION', -- 'PARTICIPATION', 'WINNER_1ST', 'RUNNER_UP_2ND', 'RUNNER_UP_3RD', 'MERIT', 'APPRECIATION'
     title TEXT NOT NULL DEFAULT 'Certificate of Participation',
     rank_text TEXT DEFAULT 'Participant',
@@ -166,12 +168,16 @@ CREATE POLICY "Allow Public Delete Certificates" ON public.certificates FOR DELE
 -- 9. Insert Default Seed Data
 INSERT INTO public.events (id, title, category, status, date, time, venue, description, badge, image, price, total_seats)
 VALUES
-    ('evt-1', 'SPACE & SINC Forum Installation Ceremony', 'Installation', 'Upcoming', 'July 30, 2026', '10:00 AM IST', 'PIET Auditorium', 'Official installation ceremony for SPACE & SINC departmental councils for session 2026-27.', 'FLAGSHIP CEREMONY', '/event_images/inst.webp', 150, 250),
-    ('evt-2', 'TARANG 2K26 Freshers Gala & Tech Fiesta', 'Workshop', 'Upcoming', 'July 30, 2026', '10:30 AM IST', 'PIET Auditorium', 'Annual welcoming fiesta and hardware ice-breaker for 2nd year electronics students.', 'FRESHERS CELEBRATION', '/event_images/tarang.webp', 200, 300),
+    ('evt-1', 'SPACE & SINC Forum Installation Ceremony', 'Installation', 'Upcoming', 'July 30, 2026', '10:00 AM IST', 'PCE-NAGPUR Auditorium', 'Official installation ceremony for SPACE & SINC departmental councils for session 2026-27.', 'FLAGSHIP CEREMONY', '/event_images/inst.webp', 150, 250),
+    ('evt-2', 'TARANG 2K26 Freshers Gala & Tech Fiesta', 'Workshop', 'Upcoming', 'July 30, 2026', '10:30 AM IST', 'PCE-NAGPUR Auditorium', 'Annual welcoming fiesta and hardware ice-breaker for 2nd year electronics students.', 'FRESHERS CELEBRATION', '/event_images/tarang.webp', 200, 300),
     ('evt-3', 'KiCAD 8 PCB Design & Fabrication Bootcamp', 'Workshop', 'Upcoming', 'Aug 12, 2026', '09:30 AM IST', 'ECE Simulation Lab 304', 'Hands-on schematic capture, routing, Gerber generation and CNC milling for custom 2-layer PCBs.', 'HANDS-ON BOOTCAMP', '/event_images/tarang.webp', 100, 60)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.announcements (id, content)
 VALUES (1, 'Registration Open for SPACE & SINC Forum Installation & TARANG 2K26 Fiesta!')
 ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content;
+
+-- 10. Dynamic Registration Questionnaire Migration (JSONB)
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}'::jsonb;
 

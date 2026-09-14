@@ -186,7 +186,7 @@ export const MyCertificatesModal: React.FC<MyCertificatesModalProps> = ({
                 </div>
                 <h4 className="font-bold text-white text-base">Sign In to Access Your Credentials</h4>
                 <p className="text-xs text-white/60 max-w-md mx-auto">
-                  Certificates issued by ECE Forum PIET are securely linked to your registered student email
+                  Certificates issued by ECE Forum PCE-NAGPUR are securely linked to your registered student email
                   address.
                 </p>
                 <button

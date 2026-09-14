@@ -176,7 +176,7 @@ export const AchievementsSection: React.FC = () => {
               </h2>
               <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
                 <span className="h-px w-8 bg-white/15" />
-                <span>DOSSIER // 2025–26 · VERIFIED RECORDS ONLY · PIET ECE</span>
+                <span>DOSSIER // 2025–26 · VERIFIED RECORDS ONLY · PCE-NAGPUR ECE</span>
               </div>
             </div>
             <div className="reveal stagger-2 max-w-[380px] space-y-3">
@@ -184,7 +184,7 @@ export const AchievementsSection: React.FC = () => {
                 Student breakthroughs in national robotics expos, sovereign patent grants &amp; core silicon careers — documented, stamped, and traceable.
               </p>
               <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
-                <Verified className="w-3.5 h-3.5 text-[#FF4A15]" /> OFFICIAL REGISTRY — PIET AUTONOMOUS
+                <Verified className="w-3.5 h-3.5 text-[#FF4A15]" /> OFFICIAL REGISTRY — PCE-NAGPUR AUTONOMOUS
               </div>
             </div>
           </div>
@@ -368,7 +368,7 @@ export const AchievementsSection: React.FC = () => {
                   </div>
                   <div className="flex justify-between gap-4 px-4 py-3 bg-white/[0.02]">
                     <span className="text-white/40 tracking-[0.08em] text-[10px] font-bold">ASSIGNEE</span>
-                    <span className="font-semibold text-[#F5F3EF] text-right">ECE Research Cell &amp; Forum — PIET</span>
+                    <span className="font-semibold text-[#F5F3EF] text-right">ECE Research Cell &amp; Forum — PCE-NAGPUR</span>
                   </div>
                   <div className="flex justify-between gap-4 px-4 py-3">
                     <span className="text-white/40 tracking-[0.08em] text-[10px] font-bold">JURISDICTION</span>

@@ -149,7 +149,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
     ctx.fillStyle = '#FFD700';
     ctx.font = 'bold 26px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('PRIYADARSHINI INSTITUTE OF ENGINEERING & TECHNOLOGY, NAGPUR', 800, 120);
+    ctx.fillText('PRIYADARSHINI COLLEGE OF ENGINEERING, NAGPUR (PCE-NAGPUR)', 800, 120);
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 20px sans-serif';
@@ -210,7 +210,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
     ctx.fillText('Dr. G. M. Asutkar', 550, 980);
     ctx.font = '16px sans-serif';
     ctx.fillStyle = '#94A3B8';
-    ctx.fillText('Principal & Patron, PIET', 550, 1010);
+    ctx.fillText('Principal & Patron, PCE-NAGPUR', 550, 1010);
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 20px sans-serif';
@@ -393,7 +393,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
               </div>
               <div className="leading-tight">
                 <div className="font-[Syne] font-[800] text-xs sm:text-sm md:text-base tracking-tight text-[#F5F3EF]">
-                  PRIYADARSHINI INSTITUTE OF ENGINEERING &amp; TECHNOLOGY
+                  PRIYADARSHINI COLLEGE OF ENGINEERING (PCE-NAGPUR)
                 </div>
                 <div className="text-[10px] sm:text-xs font-mono text-[#00E5CC] font-semibold tracking-wider uppercase">
                   Department of Electronics &amp; Communication Engineering
@@ -442,7 +442,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
 
             {/* Department / College */}
             <p className="text-[11px] sm:text-xs font-mono text-[#00E5CC] font-medium">
-              {certificate.department} · {certificate.collegeName || 'PIET, Nagpur'}
+              {certificate.department} · {certificate.collegeName || 'PCE-NAGPUR'}
             </p>
 
             {/* Commendation Description */}
@@ -453,8 +453,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
                     for active and meritorious participation in{' '}
                     <strong className="text-white font-semibold">"{certificate.eventTitle}"</strong> held on{' '}
                     <span className="text-[#FFD700] font-mono">{certificate.eventDate}</span>, conducted with
-                    distinction by the SPACE &amp; SINC Forum at Priyadarshini Institute of Engineering &amp;
-                    Technology.
+                    distinction by the SPACE &amp; SINC Forum at Priyadarshini College of Engineering (PCE-NAGPUR).
                   </>
                 )}
               </p>

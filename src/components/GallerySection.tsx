@@ -130,7 +130,7 @@ export const GallerySection: React.FC<{ galleryItems?: GalleryItem[] }> = ({ gal
           35MM RUNWAY &amp; BENTO CATALOG
         </span>
         <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
-          SCALE 1:1 // PIET
+          SCALE 1:1 // PCE-NAGPUR
         </span>
       </div>
 
@@ -411,7 +411,7 @@ export const GallerySection: React.FC<{ galleryItems?: GalleryItem[] }> = ({ gal
             <span className="w-2 h-2 rounded-full bg-[#FF4A15] animate-pulse shadow-[0_0_8px_rgba(255,74,21,0.4)]" />
             ARCHIVE INDEXED · {filteredItems.length} / {activeItems.length} PLATES VISIBLE
           </span>
-          <span className="text-white/40">© PIET ECE · SPACE × SINC · ATELIER No. 8</span>
+          <span className="text-white/40">© PCE-NAGPUR ECE · SPACE × SINC · ATELIER No. 8</span>
         </div>
       </div>
       </div>

@@ -6,7 +6,7 @@ import {
 import { soundFx } from '../utils/audio';
 import { useScrollReveal } from './useScrollReveal';
 import { OptimizedImage } from './OptimizedImage';
-import { type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
+import { type SiteHeroConfig, type EventFormField, DEFAULT_HERO_CONFIG } from '../services/api';
 
 export interface EventItem {
   id: string;
@@ -31,6 +31,7 @@ export interface EventItem {
   upiId?: string;
   payeeName?: string;
   paymentInstructions?: string;
+  customFields?: EventFormField[];
 }
 
 interface EventsSectionProps {
@@ -268,7 +269,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               <div className="grid grid-cols-3 gap-2.5 pt-1">
                 {[
                   { k: 'SCHEDULED DATE', v: (heroConfig.flagshipTargetDate || '2026-07-30').slice(0,10), sub: '09:45 AM IST' },
-                  { k: 'CENTRAL VENUE', v: heroConfig.flagshipTargetVenue || 'AUDITORIUM', sub: 'PIET CAMPUS' },
+                  { k: 'CENTRAL VENUE', v: heroConfig.flagshipTargetVenue || 'AUDITORIUM', sub: 'PCE-NAGPUR CAMPUS' },
                   { k: 'COUNCIL EDITION', v: '14TH EDITION', sub: 'ESTD 2012' },
                 ].map((s) => (
                   <div key={s.k} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">

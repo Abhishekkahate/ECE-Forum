@@ -66,7 +66,7 @@ export const FacultySection: React.FC = () => {
       {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
       <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
         <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
-          RESEARCH LAB DIRECTORS // PIET
+          RESEARCH LAB DIRECTORS // PCE-NAGPUR
         </span>
         <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
           SCALE 1:1 // 2026
@@ -87,7 +87,7 @@ export const FacultySection: React.FC = () => {
               <div className="section-eyebrow-hud">
                 <Shield className="w-3.5 h-3.5 text-[#FF4A15]" /> 06 — ACADEMIC BOARD &amp; ADVISORS
                 <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 pl-2.5 border-l border-[rgba(255,74,21,0.22)] text-white/40 tracking-[0.08em] normal-case">
-                  ATELIER DOSSIERS · PIET ECE
+                  ATELIER DOSSIERS · PCE-NAGPUR ECE
                 </span>
               </div>
               <h2 className="mt-4 font-[Syne] font-[800] tracking-[-0.05em] leading-[0.88] text-[34px] sm:text-[44px] lg:text-[52px] text-[#F5F3EF]">
@@ -96,7 +96,7 @@ export const FacultySection: React.FC = () => {
               </h2>
               <div className="mt-3 flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-white/40">
                 <span className="h-px w-8 bg-white/15" />
-                <span>PRINCIPAL INVESTIGATORS &amp; LAB DIRECTORS · PIET AUTONOMOUS</span>
+                <span>PRINCIPAL INVESTIGATORS &amp; LAB DIRECTORS · PCE-NAGPUR AUTONOMOUS</span>
               </div>
             </div>
             <p className="reveal stagger-2 max-w-[380px] text-[13.5px] leading-relaxed font-mono text-white/55 border-l-2 border-[#FF4A15]/40 pl-4">

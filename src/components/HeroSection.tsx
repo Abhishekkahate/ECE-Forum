@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ArrowDown, Cpu, Bot, Radio, Brain, ArrowUpRight, Play, Zap, Clock3, ShieldCheck, Sparkles } from 'lucide-react';
 import { soundFx } from '../utils/audio';
@@ -61,7 +61,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
       {/* LEFT RAIL — vertical section plate */}
       <div className="hidden lg:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] bg-[rgba(10,10,12,0.55)] backdrop-blur-xl flex-col items-center py-6 z-20">
-        <span className="text-[10px] font-mono tracking-[0.22em] text-white/25 [writing-mode:vertical-rl] rotate-180">ATELIER NO.08 — PIET NAGPUR — 21.14°N</span>
+        <span className="text-[10px] font-mono tracking-[0.22em] text-white/25 [writing-mode:vertical-rl] rotate-180">ATELIER NO.08 — PCE-NAGPUR — 21.14°N</span>
         <span className="mt-auto text-[10px] font-mono tracking-[0.18em] text-[#FF4A15] font-bold [writing-mode:vertical-rl] rotate-180">COVER — SPEC 001</span>
         <span className="mt-4 w-px h-16 bg-gradient-to-b from-[#FF4A15] to-transparent" />
         <span className="mt-4 w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
@@ -76,7 +76,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
           <div className="hidden xl:flex items-center gap-3 px-5 border-r border-white/[0.06]"><span>DEPT</span> <strong className="text-[#F5F3EF]">ECE</strong> <span className="opacity-30">/</span> <span>FORUM</span> <strong className="text-[#F5F3EF]">{heroConfig.heroForumTitle || 'SPACE × SINC'}</strong></div>
           <div className="flex items-center gap-2 px-5 border-r border-white/[0.06]"><Clock3 className="w-3 h-3 text-[#FF4A15]" /> IST {liveTime || '10:00 AM'} <span className="opacity-30">·</span> 1,500+ ENGINEERS</div>
-          <div className="ml-auto flex items-center gap-2 px-5 text-white/25"><span>SCALE 1:1</span> <span className="w-px h-3 bg-white/10" /> <span>REF PIET/ECE/2026</span></div>
+          <div className="ml-auto flex items-center gap-2 px-5 text-white/25"><span>SCALE 1:1</span> <span className="w-px h-3 bg-white/10" /> <span>REF PCE-NAGPUR/ECE/2026</span></div>
         </div>
 
         {/* COVER — editorial, airy */}
@@ -113,7 +113,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <div className="mt-6 sm:mt-7 max-w-[560px] flex gap-3">
                 <span className="hidden sm:block w-px self-stretch bg-gradient-to-b from-[#FF4A15]/40 via-white/10 to-transparent mt-1 shrink-0" />
                 <p className="text-[14px] sm:text-[15px] leading-[1.7] text-white/50">
-                  PIET&apos;s premier dual-council atelier — <span className="text-[#F5F3EF] font-semibold">SPACE</span> for research, IEEE &amp; symposiums, and <span className="text-[#FF4A15] font-semibold">SINC</span> for hardware — rovers, RISC-V, LoRa mesh &amp; patents.
+                  PCE-NAGPUR&apos;s premier dual-council atelier — <span className="text-[#F5F3EF] font-semibold">SPACE</span> for research, IEEE &amp; symposiums, and <span className="text-[#FF4A15] font-semibold">SINC</span> for hardware — rovers, RISC-V, LoRa mesh &amp; patents.
                   <span className="hidden sm:inline text-white/35"> — Fold this manual. Build the future.</span>
                 </p>
               </div>
@@ -195,7 +195,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div data-hero-item className="mt-7 flex flex-wrap items-center gap-2.5 text-[11px]">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.04] px-3 py-1 font-medium text-white/70 backdrop-blur"><Sparkles className="w-3 h-3 text-[#FF4A15]" /> 12× National Champions</span>
             <span className="hidden sm:inline text-white/10">—</span>
-            <span className="text-white/35 font-mono text-[11px] tracking-[0.05em]">REF: PIET/ECE/2026-27 · FIELD MANUAL COVER — VERIFIED</span>
+            <span className="text-white/35 font-mono text-[11px] tracking-[0.05em]">REF: PCE-NAGPUR/ECE/2026-27 · FIELD MANUAL COVER — VERIFIED</span>
           </div>
         </div>
 

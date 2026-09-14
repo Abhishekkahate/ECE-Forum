@@ -1,6 +1,17 @@
 // Frontend API Client for ECE Forum Platform (Render Backend + Supabase Fallback)
 import { supabaseDb } from './supabase';
 
+export interface EventFormField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'url';
+  placeholder?: string;
+  options?: string[]; // For dropdown options
+  required: boolean;
+  helpText?: string;
+  appliesTo?: 'all' | 'individual_only' | 'team_only';
+}
+
 export interface ApiEvent {
   id: string;
   title: string;
@@ -22,6 +33,7 @@ export interface ApiEvent {
   upiId?: string;
   payeeName?: string;
   paymentInstructions?: string;
+  customFields?: EventFormField[];
 }
 
 export interface ApiPass {
@@ -59,6 +71,7 @@ export interface ApiPass {
   checkedInBy?: string;
   registeredAt: string;
   securityHash: string;
+  customFields?: Record<string, any>;
 }
 
 export type CertificateType =
@@ -188,6 +201,7 @@ export const forumApi = {
           upiId: e.upi_id || e.upiId || undefined,
           payeeName: e.payee_name || e.payeeName || undefined,
           paymentInstructions: e.payment_instructions || e.paymentInstructions || undefined,
+          customFields: e.custom_fields || e.customFields || [],
         }));
         try {
           localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
@@ -215,6 +229,7 @@ export const forumApi = {
             upiId: e.upi_id || e.upiId || undefined,
             payeeName: e.payee_name || e.payeeName || undefined,
             paymentInstructions: e.payment_instructions || e.paymentInstructions || undefined,
+            customFields: e.customFields || e.custom_fields || [],
           }));
           try {
             localStorage.setItem('ece_forum_events_cache', JSON.stringify(formatted));
@@ -245,7 +260,7 @@ export const forumApi = {
       status: eventData.status || 'Upcoming',
       date: eventData.date || 'Aug 25, 2026',
       time: eventData.time || '10:00 AM IST',
-      venue: eventData.venue || 'PIET Campus',
+      venue: eventData.venue || 'PCE-NAGPUR Campus',
       description: eventData.description || '',
       badge: eventData.badge || 'EVENT',
       image: eventData.image || '/event_images/tarang.webp',
@@ -259,6 +274,7 @@ export const forumApi = {
       upiId: eventData.upiId || undefined,
       payeeName: eventData.payeeName || undefined,
       paymentInstructions: eventData.paymentInstructions || undefined,
+      customFields: eventData.customFields || [],
     };
 
     // 1. Immediately update localStorage cache
@@ -380,6 +396,7 @@ export const forumApi = {
           checkedInBy: p.checked_in_by,
           registeredAt: p.registered_at,
           securityHash: p.security_hash,
+          customFields: p.custom_fields || p.customFields || {},
         }));
       }
     } catch (err) {
@@ -433,6 +450,7 @@ export const forumApi = {
           status: inserted.status,
           registeredAt: inserted.registered_at,
           securityHash: inserted.security_hash,
+          customFields: inserted.custom_fields || passData.customFields || {},
         } as ApiPass;
       }
     } catch (err) {
@@ -823,7 +841,7 @@ export const forumApi = {
           userEmail: c.user_email,
           userPhoto: c.user_photo,
           department: c.department || 'Electronics & Communication Engineering',
-          collegeName: c.college_name || 'PIET, Nagpur',
+          collegeName: c.college_name || 'PCE-NAGPUR',
           certType: c.cert_type || 'PARTICIPATION',
           title: c.title || 'Certificate of Participation',
           rankText: c.rank_text || 'Participant',
@@ -969,7 +987,7 @@ export const forumApi = {
           valid: true,
           status: 'VALID',
           certificate: cert,
-          message: 'Official and Authentic Certificate verified by ECE Forum PIET.',
+          message: 'Official and Authentic Certificate verified by ECE Forum PCE-NAGPUR.',
           verifiedAt: new Date().toISOString(),
         };
       }
@@ -1015,7 +1033,7 @@ export const forumApi = {
       userEmail: (certData.userEmail || '').trim().toLowerCase(),
       userPhoto: certData.userPhoto,
       department: certData.department || 'Electronics & Communication Engineering',
-      collegeName: certData.collegeName || 'PIET, Nagpur',
+      collegeName: certData.collegeName || 'PCE-NAGPUR',
       certType: certData.certType || 'PARTICIPATION',
       title: certData.title || 'Certificate of Participation',
       rankText: certData.rankText || 'Participant',
@@ -1118,7 +1136,7 @@ export const forumApi = {
         userEmail: (p.email || '').trim().toLowerCase(),
         userPhoto: p.photo,
         department: p.department || 'Electronics & Communication Engineering',
-        collegeName: p.collegeName || 'PIET, Nagpur',
+        collegeName: p.collegeName || 'PCE-NAGPUR',
         certType: p.certType || payload.certType || 'PARTICIPATION',
         title: payload.title || 'Certificate of Participation',
         rankText: p.rankText || payload.rankText || 'Participant',
@@ -1265,7 +1283,7 @@ export const DEFAULT_COUPONS: Coupon[] = [
 export interface SiteHeroConfig {
   // 1. Hero Eyebrow Telemetry Pill
   heroSession: string; // "SYS.2026-27"
-  heroForumTitle: string; // "PIET ECE FORUM"
+  heroForumTitle: string; // "PCE-NAGPUR ECE FORUM"
   heroHighlight: string; // "INSTALLATION: 30 JULY"
 
   // 2. Flagship Countdown Event Banner
@@ -1278,15 +1296,15 @@ export interface SiteHeroConfig {
   flagshipButtonText: string; // "Register With Razorpay"
 
   // 3. Payment Gateway / Official UPI QR Settings
-  paymentUpiId?: string; // e.g. "pieteceforum@okhdfcbank"
-  paymentPayeeName?: string; // e.g. "PIET ECE COUNCIL"
+  paymentUpiId?: string; // e.g. "pceeceforum@okhdfcbank"
+  paymentPayeeName?: string; // e.g. "PCE-NAGPUR ECE COUNCIL"
   paymentQrImage?: string; // Custom uploaded QR code image (Base64/URL)
   paymentBankDetails?: string; // Instructions or bank account notes
 }
 
 export const DEFAULT_HERO_CONFIG: SiteHeroConfig = {
   heroSession: 'SYS.2026-27',
-  heroForumTitle: 'PIET ECE FORUM',
+  heroForumTitle: 'PCE-NAGPUR ECE FORUM',
   heroHighlight: 'INSTALLATION: 30 JULY',
   flagshipBadge: 'Flagship Event Initialization',
   flagshipTitle: 'SPACE & SINC Installation',
@@ -1296,8 +1314,8 @@ export const DEFAULT_HERO_CONFIG: SiteHeroConfig = {
   flagshipTargetDate: '2026-08-30T10:00:00',
   flagshipTargetVenue: 'AUDITORIUM',
   flagshipButtonText: 'Register for Flagship',
-  paymentUpiId: 'pieteceforum@okhdfcbank',
-  paymentPayeeName: 'PIET ECE COUNCIL',
+  paymentUpiId: 'pceeceforum@okhdfcbank',
+  paymentPayeeName: 'PCE-NAGPUR ECE COUNCIL',
   paymentQrImage: '',
   paymentBankDetails: 'Scan using Google Pay, PhonePe, Paytm, or any UPI app and upload the confirmation screenshot below.',
 };

@@ -74,7 +74,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
 
     ctx.fillStyle = '#94A3B8';
     ctx.font = '20px monospace';
-    ctx.fillText('PIET • ECE Department Forum', 48, 115);
+    ctx.fillText('PCE-NAGPUR • ECE Department Forum', 48, 115);
 
     // Status
     ctx.fillStyle = passData.status === 'CHECKED_IN' ? '#10B981' : passData.status === 'UNVERIFIED' ? '#F59E0B' : '#00E5CC';
@@ -408,7 +408,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
             <div class="header">
               <div>
                 <div class="header-title">â˜… OFFICIAL ENTRY PASS</div>
-                <div class="header-sub">PIET â€¢ ECE Department Forum</div>
+                <div class="header-sub">PCE-NAGPUR • ECE Department Forum</div>
               </div>
               <div class="badge">${pass.status}</div>
             </div>
@@ -439,7 +439,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <div class="details-val" style="color: #00E5CC;">${pass.userEmail}</div>
 
                 <span class="details-label">COLLEGE / INSTITUTION</span>
-                <div class="details-val" style="color: #FFD60A;">${pass.collegeName || 'PIET, Nagpur'}</div>
+                <div class="details-val" style="color: #FFD60A;">${pass.collegeName || 'PCE-NAGPUR'}</div>
 
                 <span class="details-label">DEPARTMENT / YEAR</span>
                 <div class="details-val">${pass.department} (${pass.year})</div>
@@ -504,7 +504,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <Sparkles className="w-2.5 h-2.5 text-amber" />
                 <span>OFFICIAL ENTRY PASS</span>
               </div>
-              <div className="text-[9px] font-mono text-slate-400">PIET • ECE Department Forum</div>
+              <div className="text-[9px] font-mono text-slate-400">PCE-NAGPUR • ECE Department Forum</div>
             </div>
           </div>
 
@@ -665,7 +665,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
             <div>
               <span className="text-[9px] text-slate-500 uppercase block">INSTITUTION &amp; DEPT</span>
               <strong className="text-slate-200 text-[10px] block truncate" title={pass.collegeName}>
-                {pass.collegeName || 'PIET, Nagpur'}
+                {pass.collegeName || 'PCE-NAGPUR'}
               </strong>
               <span className="text-slate-400 text-[9px] block truncate">
                 {pass.department}
@@ -714,6 +714,26 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                   <span>{idx + 2}. <strong className="text-white">{m.name}</strong></span>
                   <span className="text-slate-500">{m.email}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Questionnaire Answers (If any) */}
+        {pass.customFields && Object.keys(pass.customFields).length > 0 && (
+          <div className="mb-4 p-3 rounded-2xl bg-[#03060E] border border-white/10 space-y-1.5 font-mono text-[10px]">
+            <span className="text-slate-500 uppercase block text-[9px] font-bold">
+              EVENT QUESTIONNAIRE DETAILS:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(pass.customFields).map(([k, v]) => (
+                <span
+                  key={k}
+                  className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-[9px]"
+                >
+                  <strong className="text-white capitalize">{k.replace(/_/g, ' ')}:</strong>{' '}
+                  {typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)}
+                </span>
               ))}
             </div>
           </div>

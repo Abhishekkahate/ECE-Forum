@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users, Calendar, Wrench, Cpu, Award, Trophy, Activity, ShieldCheck } from 'lucide-react';
 import { useScrollReveal } from './useScrollReveal';
 
@@ -76,7 +76,7 @@ export const StatsSection: React.FC = () => {
 
         {/* footer strip */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] font-mono tracking-[0.12em] text-white/30">
-          <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FF4A15] animate-pulse shadow-[0_0_8px_rgba(255,74,21,0.5)]" /> DATA SOURCE — DEPT OF ECE · PIET NAGPUR — 2026—27</span>
+          <span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FF4A15] animate-pulse shadow-[0_0_8px_rgba(255,74,21,0.5)]" /> DATA SOURCE — DEPT OF ECE · PCE-NAGPUR — 2026—27</span>
           <span className="inline-flex items-center gap-1.5 font-semibold text-white/50"><ShieldCheck className="w-3.5 h-3.5 text-[#FF4A15]" /> AUDITED & VERIFIED</span>
         </div>
       </div>

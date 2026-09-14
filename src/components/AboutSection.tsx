@@ -47,7 +47,7 @@ export const AboutSection: React.FC = () => {
       {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
       <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
         <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
-          SPACE (2012) × SINC (2018) — PIET ECE
+          SPACE (2012) × SINC (2018) — PCE-NAGPUR ECE
         </span>
         <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
           SCALE 1:1 // 21.14°N
@@ -88,7 +88,7 @@ export const AboutSection: React.FC = () => {
                 <strong className="text-[#FF4A15] font-semibold">SINC</strong> engineers production hardware — autonomous rovers, RISC-V silicon cores, and LoRa edge nodes.
               </p>
               <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
-                <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" /> PIET ECE DEPARTMENT OPERATING SYSTEM 2026–27
+                <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" /> PCE-NAGPUR ECE DEPARTMENT OPERATING SYSTEM 2026–27
               </div>
             </div>
           </div>

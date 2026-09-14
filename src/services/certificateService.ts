@@ -80,7 +80,7 @@ export const DEFAULT_CERTIFICATE_SIGNATORIES: CertificateSignatory[] = [
   {
     name: 'Dr. G. M. Asutkar',
     title: 'Principal & Patron',
-    role: 'Priyadarshini Institute of Engineering & Technology',
+    role: 'PCE-NAGPUR (Priyadarshini College of Engineering)',
   },
   {
     name: 'Dr. (Mrs.) R. S. Somkuwar',
@@ -167,7 +167,7 @@ class CertificateService {
           userEmail: c.user_email,
           userPhoto: c.user_photo,
           department: c.department || 'Electronics & Communication Engineering',
-          collegeName: c.college_name || 'PIET, Nagpur',
+          collegeName: c.college_name || 'PCE-NAGPUR',
           certType: c.cert_type || 'PARTICIPATION',
           title: c.title || 'Certificate of Participation',
           rankText: c.rank_text || 'Participant',

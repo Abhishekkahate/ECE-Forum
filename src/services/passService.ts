@@ -43,6 +43,7 @@ export interface EventPass {
   registeredAt: string;
   qrData: string;
   securityHash: string;
+  customFields?: Record<string, any>;
 }
 
 export interface VerificationResult {
@@ -115,7 +116,7 @@ class PassService {
           userEmail: p.user_email,
           userPhoto: p.user_photo,
           department: p.department,
-          collegeName: p.college_name || 'PIET, Nagpur',
+          collegeName: p.college_name || 'PCE-NAGPUR',
           year: p.year,
           phone: p.phone,
           paymentId: p.payment_id,

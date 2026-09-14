@@ -66,7 +66,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({ isOpen, onClos
 
         <div className="text-center space-y-3 mb-7">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] border border-white/12 text-[11px] font-mono font-bold tracking-widest text-[#FF4A15]">
-            <Sparkles className="w-3 h-3" /> PIET ECE FORUM SSO
+            <Sparkles className="w-3 h-3" /> PCE-NAGPUR ECE FORUM SSO
           </div>
           <h3 className="font-[Syne] font-[800] text-2xl sm:text-3xl tracking-[-0.02em] text-white">
             Sign in with Google

@@ -50,12 +50,13 @@ export const supabaseDb = {
       status: eventData.status || 'Upcoming',
       date: eventData.date || 'Aug 25, 2026',
       time: eventData.time || '10:00 AM IST',
-      venue: eventData.venue || 'PIET Campus',
+      venue: eventData.venue || 'PCE-NAGPUR Campus',
       description: eventData.description || '',
       badge: eventData.badge || 'EVENT',
       image: eventData.image || '/event_images/tarang.webp',
       price: Number(eventData.price) || 0,
       total_seats: Number(eventData.totalSeats || eventData.total_seats) || 100,
+      custom_fields: eventData.customFields || eventData.custom_fields || [],
     };
 
     try {
@@ -95,7 +96,7 @@ export const supabaseDb = {
     try {
       const columns = includeScreenshot
         ? '*'
-        : 'pass_id, event_id, event_title, event_date, event_time, event_venue, user_name, user_email, user_photo, college_name, department, year, phone, registration_type, team_name, team_members, payment_id, amount, original_amount, discount_amount, coupon_code, payment_status, transaction_id, status, admin_verified, verified_at, verified_by, rejection_reason, checked_in_at, checked_in_by, registered_at, security_hash, created_at';
+        : 'pass_id, event_id, event_title, event_date, event_time, event_venue, user_name, user_email, user_photo, college_name, department, year, phone, registration_type, team_name, team_members, payment_id, amount, original_amount, discount_amount, coupon_code, payment_status, transaction_id, status, admin_verified, verified_at, verified_by, rejection_reason, checked_in_at, checked_in_by, registered_at, security_hash, custom_fields, created_at';
 
       let query = supabase
         .from('passes')
@@ -142,11 +143,11 @@ export const supabaseDb = {
       event_title: pass.eventTitle || pass.event_title || 'Event',
       event_date: pass.eventDate || pass.event_date || '',
       event_time: pass.eventTime || pass.event_time || '10:00 AM IST',
-      event_venue: pass.eventVenue || pass.event_venue || 'PIET Campus',
+      event_venue: pass.eventVenue || pass.event_venue || 'PCE-NAGPUR Campus',
       user_name: pass.userName || pass.user_name || 'Attendee',
       user_email: (pass.userEmail || pass.user_email || '').trim().toLowerCase(),
       user_photo: pass.userPhoto || pass.user_photo || null,
-      college_name: pass.collegeName || pass.college_name || 'PIET, Nagpur',
+      college_name: pass.collegeName || pass.college_name || 'PCE-NAGPUR',
       department: pass.department || 'Electronics & Communication Engineering',
       year: pass.year || '3rd Year',
       phone: pass.phone || '',
@@ -169,6 +170,7 @@ export const supabaseDb = {
       checked_in_by: pass.checkedInBy || pass.checked_in_by || null,
       registered_at: pass.registeredAt || pass.registered_at || new Date().toLocaleString('en-IN'),
       security_hash: pass.securityHash || pass.security_hash || 'SEC_HASH',
+      custom_fields: pass.customFields || pass.custom_fields || {},
     };
 
     // Only set payment_screenshot if explicitly provided so we never overwrite an existing screenshot with NULL
@@ -442,7 +444,7 @@ export const supabaseDb = {
       user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
       user_photo: cert.userPhoto || cert.user_photo || null,
       department: cert.department || 'Electronics & Communication Engineering',
-      college_name: cert.collegeName || cert.college_name || 'PIET, Nagpur',
+      college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
       cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
       title: cert.title || 'Certificate of Participation',
       rank_text: cert.rankText || cert.rank_text || 'Participant',
@@ -482,7 +484,7 @@ export const supabaseDb = {
       user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
       user_photo: cert.userPhoto || cert.user_photo || null,
       department: cert.department || 'Electronics & Communication Engineering',
-      college_name: cert.collegeName || cert.college_name || 'PIET, Nagpur',
+      college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
       cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
       title: cert.title || 'Certificate of Participation',
       rank_text: cert.rankText || cert.rank_text || 'Participant',

@@ -60,7 +60,7 @@ export const ContactFooter: React.FC = () => {
       {/* RIGHT RAIL — vertical margin ruler on ultrawide */}
       <div className="hidden 2xl:flex absolute right-0 top-0 bottom-0 w-[48px] border-l border-white/[0.06] bg-[rgba(10,10,12,0.25)] flex-col items-center py-8 z-20 pointer-events-none">
         <span className="text-[9.5px] font-mono tracking-[0.20em] text-white/20 [writing-mode:vertical-rl] rotate-180">
-          PIET ECE CAMPUS // NAGPUR
+          PCE-NAGPUR ECE CAMPUS
         </span>
         <span className="mt-auto text-[9.5px] font-mono tracking-[0.16em] text-white/30 [writing-mode:vertical-rl] rotate-180">
           21.14°N 79.08°E // 2026
@@ -76,7 +76,7 @@ export const ContactFooter: React.FC = () => {
                 <div className="inline-flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-2 rounded-full bg-[rgba(255,74,21,0.09)] border border-[rgba(255,74,21,0.18)] px-3.5 py-1.5 text-[10.5px] font-mono tracking-[0.14em] font-bold text-[#FF4A15] backdrop-blur">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.6)] animate-pulse" />
-                    ELECTRONICS &amp; COMMUNICATION — PIET NAGPUR
+                    ELECTRONICS &amp; COMMUNICATION — PCE-NAGPUR
                   </span>
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono tracking-[0.10em] px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-white/45">
                   <Verified className="w-3 h-3 text-[#FF4A15]" /> ATELIER No.08 — 2026–27
@@ -123,7 +123,7 @@ export const ContactFooter: React.FC = () => {
                     required
                     autoComplete="off"
                     spellCheck={false}
-                    placeholder="student@piet.edu"
+                    placeholder="student@pce-nagpur.edu"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full rounded-full bg-[#08080A] border border-white/[0.08] pl-4 pr-[52px] py-3 text-[12px] font-mono text-[#F5F3EF] placeholder:text-white/25 focus:outline-none focus:border-[rgba(255,74,21,0.35)] focus:shadow-[0_0_0_3px_rgba(255,74,21,0.12)] transition-all"
@@ -156,7 +156,7 @@ export const ContactFooter: React.FC = () => {
                 <div className="rounded-2xl bg-[rgba(255,74,21,0.06)] border border-[rgba(255,74,21,0.12)] p-4">
                   <div className="text-[#FF4A15] tracking-[0.10em] font-bold text-[10px]">SESSION</div>
                   <div className="font-display font-bold text-white text-[16px] mt-1">2026–27</div>
-                  <div className="text-white/50 mt-0.5">PIET ECE Forum</div>
+                  <div className="text-white/50 mt-0.5">PCE-NAGPUR ECE Forum</div>
                 </div>
               </div>
             </div>
@@ -165,7 +165,7 @@ export const ContactFooter: React.FC = () => {
           {/* massive watermark */}
           <div className="reveal mt-10 border-y border-white/[0.05] py-5 overflow-hidden">
             <div className="font-display font-[800] tracking-[-0.06em] leading-none text-[14vw] lg:text-[11.5vw] text-transparent whitespace-nowrap select-none pointer-events-none" style={{ WebkitTextStroke: '1px rgba(245,243,239,0.07)', color: 'transparent' }}>
-              SPACE × SINC — PIET ECE FORUM
+              SPACE × SINC — PCE-NAGPUR ECE FORUM
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] font-mono tracking-[0.12em] text-white/20">
               <span>ATELIER BLUEPRINT — SCALE 1:1 — ECE BLOCK — NAGPUR</span>
@@ -192,7 +192,7 @@ export const ContactFooter: React.FC = () => {
               </div>
               <div>
                 <div className="font-display font-bold text-[#F5F3EF] text-[15px] leading-tight">SPACE &amp; SINC FORUM</div>
-                <div className="text-[10.5px] font-mono tracking-[0.08em] text-white/35">Dept of ECE · PIET Nagpur · Atelier No.08</div>
+                <div className="text-[10.5px] font-mono tracking-[0.08em] text-white/35">Dept of ECE · PCE-NAGPUR · Atelier No.08</div>
               </div>
             </div>
             <p className="text-[13px] leading-relaxed font-mono text-white/45">
@@ -231,11 +231,11 @@ export const ContactFooter: React.FC = () => {
             <div className="space-y-3 text-[12px] font-mono text-white/50">
               <div className="flex gap-2.5">
                 <MapPin className="w-4 h-4 text-[#FF4A15] shrink-0 mt-0.5" />
-                <span className="leading-relaxed">PIET Campus, ECE Dept,<br />Hingna Rd, Nagpur, MH — 441110</span>
+                <span className="leading-relaxed">PCE-NAGPUR Campus, ECE Dept,<br />Hingna Rd, Nagpur, MH — 441110</span>
               </div>
               <div className="flex gap-2.5 items-center">
                 <Mail className="w-4 h-4 text-[#FF4A15] shrink-0" />
-                <a href="mailto:ece.forum@piet.edu" onClick={() => soundFx.playClick()} className="hover:text-[#F5F3EF] hover:underline decoration-[#FF4A15]/40 underline-offset-4">ece.forum@piet.edu</a>
+                <a href="mailto:ece.forum@pce-nagpur.edu" onClick={() => soundFx.playClick()} className="hover:text-[#F5F3EF] hover:underline decoration-[#FF4A15]/40 underline-offset-4">ece.forum@pce-nagpur.edu</a>
               </div>
               <div className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.10em] px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/40">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> VISITING HOURS 10:00—17:00
@@ -263,7 +263,7 @@ export const ContactFooter: React.FC = () => {
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-mono">
           <span className="inline-flex items-center gap-2 text-white/30">
-            <span className="w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.5)] animate-pulse" /> © 2026–27 SPACE &amp; SINC · PIET ECE FORUM — ATELIER No.08
+            <span className="w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.5)] animate-pulse" /> © 2026–27 SPACE &amp; SINC · PCE-NAGPUR ECE FORUM — ATELIER No.08
           </span>
           <div className="flex flex-wrap items-center gap-4 text-white/25">
             <a href="/register" className="hover:text-white inline-flex items-center gap-1 transition-colors">Registration Portal <ArrowUpRight className="w-3 h-3" /></a>

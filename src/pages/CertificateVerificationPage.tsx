@@ -162,7 +162,7 @@ export const CertificateVerificationPage: React.FC = () => {
 
           <p className="text-sm sm:text-base text-white/60 max-w-xl mx-auto font-sans">
             Validate official academic and technical achievement certificates issued by the Department of
-            Electronics &amp; Communication Engineering, PIET.
+            Electronics &amp; Communication Engineering, PCE-NAGPUR.
           </p>
         </div>
 
@@ -323,7 +323,7 @@ export const CertificateVerificationPage: React.FC = () => {
                       Issuing Institution
                     </span>
                     <div className="text-xs font-semibold text-white">
-                      PIET Nagpur · SPACE × SINC
+                      PCE-NAGPUR · SPACE × SINC
                     </div>
                   </div>
 

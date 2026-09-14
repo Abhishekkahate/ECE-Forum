@@ -5,7 +5,7 @@ import {
   CheckCircle2, User, Phone, School, 
   ChevronRight, AlertCircle, Loader2, Layers, Users, UserPlus, 
   Trash2, Tag, Check, X, Building2, Sparkles, QrCode, Upload,
-  Copy, Image as ImageIcon, AlertTriangle, Shield, CheckSquare
+  Copy, Image as ImageIcon, AlertTriangle, Shield, CheckSquare, HelpCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import QRCode from 'qrcode';
@@ -19,8 +19,8 @@ import { soundFx } from '../utils/audio';
 import { compressImage } from '../utils/imageCompressor';
 import { api, type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
 
-const UPI_ID = 'pieteceforum@okhdfcbank';
-const UPI_PAYEE_NAME = 'PIET ECE COUNCIL';
+const UPI_ID = 'pceeceforum@okhdfcbank';
+const UPI_PAYEE_NAME = 'PCE-NAGPUR ECE COUNCIL';
 
 interface RegisterPageProps {
   eventsList: EventItem[];
@@ -75,6 +75,16 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
     year: '',
     email: user?.email || '',
     phone: '',
+  });
+
+  // Dynamic Event Questionnaire Answers State (JSONB)
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  const activeCustomFields = (selectedEvent?.customFields || []).filter((f) => {
+    if (!f.appliesTo || f.appliesTo === 'all') return true;
+    if (regType === 'team' && f.appliesTo === 'team_only') return true;
+    if (regType === 'individual' && f.appliesTo === 'individual_only') return true;
+    return false;
   });
 
   // Payment Proof & UPI QR State
@@ -285,7 +295,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       userEmail: (user?.email || formData.email || '').trim().toLowerCase(),
       userPhoto: user?.photoURL,
       department: formData.department || 'ECE',
-      collegeName: formData.collegeName || 'PIET, Nagpur',
+      collegeName: formData.collegeName || 'PCE-NAGPUR',
       year: formData.year,
       phone: formData.phone,
       paymentId: payId,
@@ -299,6 +309,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       paymentStatus: status,
       paymentScreenshot: proofScreenshot || undefined,
       transactionId: utr || undefined,
+      customFields: customFieldValues,
     });
 
     await api.createPass(pass);
@@ -402,7 +413,24 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       }
     }
 
-    // 3. Strict Mandatory Payment Proof Validation (For Paid Events)
+    // 3. Dynamic Event Questionnaire Validation (JSONB)
+    for (const field of activeCustomFields) {
+      if (field.required) {
+        const val = customFieldValues[field.id];
+        if (
+          val === undefined ||
+          val === null ||
+          val === '' ||
+          (field.type === 'checkbox' && !val)
+        ) {
+          soundFx.playLaser();
+          setFormValidationWarning(`Please complete the required field: "${field.label}"`);
+          return;
+        }
+      }
+    }
+
+    // 4. Strict Mandatory Payment Proof Validation (For Paid Events)
     if (finalPayableAmount > 0) {
       if (!paymentScreenshot) {
         soundFx.playLaser();
@@ -430,6 +458,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
     setPaymentScreenshot('');
     setScreenshotFileName('');
     setTransactionId('');
+    setCustomFieldValues({});
     setFormValidationWarning(null);
   };
 
@@ -460,7 +489,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
               ◈
             </div>
             <div className="hidden sm:block text-left">
-              <span className="block font-[Syne] font-[800] text-xs text-white leading-none">PIET ECE FORUM</span>
+              <span className="block font-[Syne] font-[800] text-xs text-white leading-none">PCE-NAGPUR ECE FORUM</span>
               <span className="block text-[9px] font-mono text-[#FF4A15] tracking-widest mt-0.5">EVENT ADMISSION TERMINAL</span>
             </div>
           </div>
@@ -786,7 +815,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                             spellCheck={false}
                             value={formData.collegeName}
                             onChange={(e) => setFormData({ ...formData, collegeName: e.target.value })}
-                            placeholder="College Name (e.g. PIET)"
+                            placeholder="College Name (e.g. PCE-NAGPUR)"
                             className="w-full bg-[#121216] border border-white/10 rounded-2xl p-3 text-white text-xs font-mono focus:outline-none focus:border-[#FF4A15] transition-colors"
                           />
                         </div>
@@ -934,6 +963,121 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* ── Event-Specific Custom Questionnaire (JSONB Dynamic Form) ── */}
+                    {activeCustomFields.length > 0 && (
+                      <div className="space-y-4 pt-2 border-t border-white/[0.06]">
+                        <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                          <span className="text-xs font-mono font-bold text-[#00E5CC] uppercase tracking-wider flex items-center gap-1.5">
+                            <HelpCircle className="w-3.5 h-3.5 text-[#00E5CC]" />
+                            <span>Additional Event Information</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-white/40">* Required fields marked</span>
+                        </div>
+
+                        <div className="p-4 sm:p-5 rounded-2xl bg-black/40 border border-[#00E5CC]/25 space-y-4 shadow-[0_0_20px_rgba(0,229,204,0.04)]">
+                          <p className="text-[11px] text-white/60 leading-relaxed font-mono">
+                            The organizer requires the following additional details for <strong className="text-white">{selectedEvent?.title}</strong>:
+                          </p>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {activeCustomFields.map((field) => {
+                              const val = customFieldValues[field.id] ?? '';
+                              const isSpanFull = field.type === 'textarea';
+
+                              return (
+                                <div key={field.id} className={isSpanFull ? 'sm:col-span-2 space-y-1.5' : 'space-y-1.5'}>
+                                  <label className="text-xs text-white/70 font-mono block">
+                                    {field.label} {field.required && <span className="text-red-400 font-bold">*</span>}
+                                  </label>
+
+                                  {field.type === 'text' && (
+                                    <input
+                                      type="text"
+                                      value={val}
+                                      onChange={(e) =>
+                                        setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })
+                                      }
+                                      placeholder={field.placeholder || `Enter ${field.label}`}
+                                      className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#00E5CC] transition-colors"
+                                    />
+                                  )}
+
+                                  {field.type === 'number' && (
+                                    <input
+                                      type="number"
+                                      value={val}
+                                      onChange={(e) =>
+                                        setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })
+                                      }
+                                      placeholder={field.placeholder || '0'}
+                                      className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#00E5CC] transition-colors"
+                                    />
+                                  )}
+
+                                  {field.type === 'url' && (
+                                    <input
+                                      type="url"
+                                      value={val}
+                                      onChange={(e) =>
+                                        setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })
+                                      }
+                                      placeholder={field.placeholder || 'https://...'}
+                                      className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#00E5CC] transition-colors"
+                                    />
+                                  )}
+
+                                  {field.type === 'select' && (
+                                    <select
+                                      value={val}
+                                      onChange={(e) =>
+                                        setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })
+                                      }
+                                      className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#00E5CC] transition-colors cursor-pointer"
+                                    >
+                                      <option value="">-- Select {field.label} --</option>
+                                      {(field.options || []).map((opt) => (
+                                        <option key={opt} value={opt}>
+                                          {opt}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+
+                                  {field.type === 'textarea' && (
+                                    <textarea
+                                      rows={3}
+                                      value={val}
+                                      onChange={(e) =>
+                                        setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })
+                                      }
+                                      placeholder={field.placeholder || `Enter ${field.label}...`}
+                                      className="w-full bg-[#121216] border border-white/10 rounded-xl p-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#00E5CC] transition-colors resize-none"
+                                    />
+                                  )}
+
+                                  {field.type === 'checkbox' && (
+                                    <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={Boolean(val)}
+                                        onChange={(e) =>
+                                          setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.checked })
+                                        }
+                                        className="w-4 h-4 accent-[#00E5CC] rounded cursor-pointer"
+                                      />
+                                      <span className="text-xs text-white/80 font-mono">
+                                        {field.placeholder || `Confirm / Request ${field.label}`}
+                                      </span>
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     )}
 
