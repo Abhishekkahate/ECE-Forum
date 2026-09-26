@@ -152,7 +152,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
     ctx.fillText('PAYMENT REF', 72, 755);
     ctx.fillStyle = '#10B981';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText(`${passData.paymentId} Â· ${passData.paymentStatus}`, 72, 788);
+    ctx.fillText(`${passData.paymentId} · ${passData.paymentStatus}`, 72, 788);
 
     // Draw QR Code image
     if (qrUrl) {
@@ -407,7 +407,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <div class="pass-box">
             <div class="header">
               <div>
-                <div class="header-title">â˜… OFFICIAL ENTRY PASS</div>
+                <div class="header-title">★ OFFICIAL ENTRY PASS</div>
                 <div class="header-sub">PCE-NAGPUR • ECE Department Forum</div>
               </div>
               <div class="badge">${pass.status}</div>
@@ -415,8 +415,8 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
 
             <div class="event-title">${pass.eventTitle}</div>
             <div class="event-meta">
-              ðŸ“… ${pass.eventDate} Â· â° ${pass.eventTime}<br>
-              <span class="venue">ðŸ“ ${pass.eventVenue}</span>
+              📅 ${pass.eventDate} · ⏰ ${pass.eventTime}<br>
+              <span class="venue">📍 ${pass.eventVenue}</span>
             </div>
 
             <div class="id-box">
@@ -445,7 +445,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
                 <div class="details-val">${pass.department} (${pass.year})</div>
 
                 <span class="details-label">PAYMENT REF</span>
-                <div class="details-val">${pass.paymentId} Â· ${pass.paymentStatus}</div>
+                <div class="details-val">${pass.paymentId} · ${pass.paymentStatus}</div>
               </div>
 
               <div class="qr-col">
@@ -743,7 +743,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
         {pass.couponCode && (
           <div className="mb-4 p-2.5 rounded-xl bg-cyber-emerald/10 border border-cyber-emerald/30 flex items-center justify-between text-[10px] font-mono text-cyber-emerald">
             <span>PROMO COUPON: <strong className="text-white">{pass.couponCode}</strong></span>
-            <span>-â‚¹{pass.discountAmount || 0} DISCOUNT APPLIED</span>
+            <span>-₹{pass.discountAmount || 0} DISCOUNT APPLIED</span>
           </div>
         )}
 
@@ -763,7 +763,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClose, showActions =
           <div className="flex items-center gap-1.5 text-emerald-400">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span className="font-bold uppercase tracking-wider">
-              {pass.amount > 0 ? `Paid â‚¹${pass.amount} (Razorpay)` : 'Free Admission Pass'}
+              {pass.amount > 0 ? `Paid ₹${pass.amount} (Razorpay)` : 'Free Admission Pass'}
             </span>
           </div>
           <div className="text-right text-[9px] text-slate-500">

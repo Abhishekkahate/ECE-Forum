@@ -89,6 +89,20 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
     setIsDownloading(true);
 
     try {
+      if (certificate.certificateImage) {
+        const link = document.createElement('a');
+        link.href = certificate.certificateImage;
+        const cleanName = (certificate.userName || 'Student').replace(/\s+/g, '_');
+        link.download = `ECE_CERT_${certificate.certId}_${cleanName}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        soundFx.playSuccess();
+        return;
+      }
+
+      if (!cardRef.current) return;
+
       // 1. Direct html2canvas capture
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
@@ -351,6 +365,18 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
 
       {/* Printable / Visual Certificate Container */}
       <div className="relative w-full overflow-hidden rounded-[28px] p-1 sm:p-2 bg-gradient-to-b from-white/15 via-white/5 to-transparent shadow-2xl">
+        {certificate.certificateImage ? (
+          <div
+            ref={cardRef}
+            className="relative w-full aspect-[1.414/1] rounded-[24px] overflow-hidden bg-[#0A0A0E] border border-white/10 flex items-center justify-center shadow-2xl"
+          >
+            <img
+              src={certificate.certificateImage}
+              alt={certificate.title || 'Official Certificate'}
+              className="w-full h-full object-contain select-none"
+            />
+          </div>
+        ) : (
         <div
           ref={cardRef}
           className={`relative w-full aspect-[1.414/1] min-h-[480px] sm:min-h-[580px] md:min-h-[660px] rounded-[24px] p-6 sm:p-10 md:p-14 flex flex-col justify-between overflow-hidden select-none ${
@@ -536,7 +562,8 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
+  </div>
   );
 };

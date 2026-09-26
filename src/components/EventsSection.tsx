@@ -470,21 +470,34 @@ const EventCard: React.FC<{
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11] via-transparent to-transparent" />
 
-        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur border border-white/20 text-white px-3 py-1 text-[10.5px] font-mono font-bold">
-            <Sparkles className="w-3 h-3 text-[#FF4A15]" /> {evt.badge || evt.category.toUpperCase()}
-          </span>
-          {evt.participationType === 'team_only' && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#FF4A15] text-white px-2.5 py-1 text-[10px] font-mono font-bold shadow-md">
-              <Users className="w-3 h-3" /> Team of {evt.requiredTeamSize || `${evt.minTeamSize || 2}—${evt.maxTeamSize || 5}`}
-            </span>
-          )}
-          {evt.participationType === 'individual_only' && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 text-white px-2.5 py-1 text-[10px] font-mono font-bold">
-              <User className="w-3 h-3" /> Solo Only
-            </span>
-          )}
-        </div>
+        {(() => {
+          const pType = (evt.participationType || 'both').toString().trim().toLowerCase();
+          const isTeamOnly = pType === 'team_only' || pType === 'team';
+          const isIndOnly = pType === 'individual_only' || pType === 'individual' || pType === 'solo';
+
+          return (
+            <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 max-w-[calc(100%-84px)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur border border-white/20 text-white px-3 py-1 text-[10.5px] font-mono font-bold">
+                <Sparkles className="w-3 h-3 text-[#FF4A15]" /> {evt.badge || evt.category.toUpperCase()}
+              </span>
+              {isTeamOnly && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#FF4A15] text-white px-2.5 py-1 text-[10px] font-mono font-bold shadow-md">
+                  <Users className="w-3 h-3" /> Team of {evt.requiredTeamSize || `${evt.minTeamSize || 2}—${evt.maxTeamSize || 5}`}
+                </span>
+              )}
+              {isIndOnly && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 text-white px-2.5 py-1 text-[10px] font-mono font-bold">
+                  <User className="w-3 h-3" /> Solo Only
+                </span>
+              )}
+              {!isTeamOnly && !isIndOnly && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#00E5CC]/20 border border-[#00E5CC]/40 text-[#00E5CC] px-2.5 py-1 text-[10px] font-mono font-bold">
+                  <Users className="w-3 h-3" /> Solo & Team
+                </span>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="absolute top-3 right-3 flex gap-1.5">
           <a
@@ -508,11 +521,11 @@ const EventCard: React.FC<{
           )}
         </div>
 
-        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 text-[11px] font-mono">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-black px-3 py-1 font-bold leading-none shadow-md">
+        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-mono">
+          <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-white text-black px-2.5 sm:px-3 py-1 font-bold leading-none shadow-md">
             <Calendar className="w-3 h-3" /> {evt.date}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#FF4A15] text-white px-3 py-1 font-bold leading-none shadow-md">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FF4A15] text-white px-2.5 sm:px-3 py-1 font-bold leading-none shadow-md">
             <Clock className="w-3 h-3" /> {evt.time}
           </span>
           <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/60 backdrop-blur border border-white/10 text-white/70">

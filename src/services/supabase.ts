@@ -398,13 +398,13 @@ export const supabaseDb = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (eventId && eventId !== 'all') {
+      if (eventId && eventId !== 'all' && eventId !== 'ALL') {
         query = query.eq('event_id', eventId);
       }
       if (email) {
-        query = query.ilike('user_email', email.trim());
+        query = query.ilike('user_email', email.trim().toLowerCase());
       }
-      if (certType && certType !== 'all') {
+      if (certType && certType !== 'all' && certType !== 'ALL') {
         query = query.eq('cert_type', certType);
       }
 
@@ -435,25 +435,29 @@ export const supabaseDb = {
   },
 
   async insertCertificate(cert: any) {
-    const payload = {
-      cert_id: cert.certId || cert.cert_id,
-      event_id: cert.eventId || cert.event_id,
-      event_title: cert.eventTitle || cert.event_title,
-      event_date: cert.eventDate || cert.event_date,
-      user_name: cert.userName || cert.user_name,
+    const certId = cert.certId || cert.cert_id;
+    const certImg = cert.certificateImage || cert.certificate_image || null;
+    const templateBg = certImg || cert.templateBg || cert.template_bg || null;
+
+    const payload: any = {
+      cert_id: certId,
+      event_id: cert.eventId || cert.event_id || 'evt-general',
+      event_title: cert.eventTitle || cert.event_title || 'ECE Forum Event',
+      event_date: cert.eventDate || cert.event_date || new Date().toLocaleDateString('en-IN'),
+      user_name: cert.userName || cert.user_name || 'Participant',
       user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
       user_photo: cert.userPhoto || cert.user_photo || null,
-      department: cert.department || 'Electronics & Communication Engineering',
+      department: cert.department || cert.dept || 'Electronics & Communication Engineering',
       college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
       cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
       title: cert.title || 'Certificate of Participation',
       rank_text: cert.rankText || cert.rank_text || 'Participant',
       description: cert.description || '',
       template_id: cert.templateId || cert.template_id || 'classic_gold',
-      template_bg: cert.templateBg || cert.template_bg || null,
+      template_bg: templateBg,
       signatories: cert.signatories || [],
-      qr_data: cert.qrData || cert.qr_data,
-      security_hash: cert.securityHash || cert.security_hash,
+      qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
+      security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
       status: cert.status || 'VALID',
       issued_at: cert.issuedAt || cert.issued_at || new Date().toLocaleDateString('en-IN'),
       issued_by: cert.issuedBy || cert.issued_by || 'ECE Forum Executive Council',
@@ -468,36 +472,42 @@ export const supabaseDb = {
 
       if (error) throw error;
       return data;
-    } catch (err) {
-      console.warn('Supabase insertCertificate error:', err);
+    } catch (err: any) {
+      console.warn('Supabase insertCertificate error:', err.message || err);
       return null;
     }
   },
 
   async insertCertificatesBulk(certs: any[]) {
-    const payloads = certs.map((cert) => ({
-      cert_id: cert.certId || cert.cert_id,
-      event_id: cert.eventId || cert.event_id,
-      event_title: cert.eventTitle || cert.event_title,
-      event_date: cert.eventDate || cert.event_date,
-      user_name: cert.userName || cert.user_name,
-      user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
-      user_photo: cert.userPhoto || cert.user_photo || null,
-      department: cert.department || 'Electronics & Communication Engineering',
-      college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
-      cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
-      title: cert.title || 'Certificate of Participation',
-      rank_text: cert.rankText || cert.rank_text || 'Participant',
-      description: cert.description || '',
-      template_id: cert.templateId || cert.template_id || 'classic_gold',
-      template_bg: cert.templateBg || cert.template_bg || null,
-      signatories: cert.signatories || [],
-      qr_data: cert.qrData || cert.qr_data,
-      security_hash: cert.securityHash || cert.security_hash,
-      status: cert.status || 'VALID',
-      issued_at: cert.issuedAt || cert.issued_at || new Date().toLocaleDateString('en-IN'),
-      issued_by: cert.issuedBy || cert.issued_by || 'ECE Forum Executive Council',
-    }));
+    const payloads = certs.map((cert) => {
+      const certId = cert.certId || cert.cert_id;
+      const certImg = cert.certificateImage || cert.certificate_image || null;
+      const templateBg = certImg || cert.templateBg || cert.template_bg || null;
+
+      return {
+        cert_id: certId,
+        event_id: cert.eventId || cert.event_id || 'evt-general',
+        event_title: cert.eventTitle || cert.event_title || 'ECE Forum Event',
+        event_date: cert.eventDate || cert.event_date || new Date().toLocaleDateString('en-IN'),
+        user_name: cert.userName || cert.user_name || 'Participant',
+        user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
+        user_photo: cert.userPhoto || cert.user_photo || null,
+        department: cert.department || cert.dept || 'Electronics & Communication Engineering',
+        college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
+        cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
+        title: cert.title || 'Certificate of Participation',
+        rank_text: cert.rankText || cert.rank_text || 'Participant',
+        description: cert.description || '',
+        template_id: cert.templateId || cert.template_id || 'classic_gold',
+        template_bg: templateBg,
+        signatories: cert.signatories || [],
+        qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
+        security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
+        status: cert.status || 'VALID',
+        issued_at: cert.issuedAt || cert.issued_at || new Date().toLocaleDateString('en-IN'),
+        issued_by: cert.issuedBy || cert.issued_by || 'ECE Forum Executive Council',
+      };
+    });
 
     try {
       const { data, error } = await supabase
@@ -507,8 +517,8 @@ export const supabaseDb = {
 
       if (error) throw error;
       return data;
-    } catch (err) {
-      console.warn('Supabase insertCertificatesBulk error:', err);
+    } catch (err: any) {
+      console.warn('Supabase insertCertificatesBulk error:', err.message || err);
       return null;
     }
   },

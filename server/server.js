@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,8 +20,8 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ── SUPABASE CLOUD DATABASE CONFIGURATION ──────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
@@ -161,7 +162,14 @@ app.get('/api/events', async (req, res) => {
             price: Number(e.price) || 0,
             totalSeats: e.total_seats || 100,
             participationType: e.participation_type || e.participationType || 'both',
-            customFields: e.custom_fields || [],
+            minTeamSize: e.min_team_size || e.minTeamSize || 2,
+            maxTeamSize: e.max_team_size || e.maxTeamSize || 5,
+            requiredTeamSize: e.required_team_size || e.requiredTeamSize || undefined,
+            paymentQr: e.payment_qr || e.paymentQr || undefined,
+            upiId: e.upi_id || e.upiId || undefined,
+            payeeName: e.payee_name || e.payeeName || undefined,
+            paymentInstructions: e.payment_instructions || e.paymentInstructions || undefined,
+            customFields: e.custom_fields || e.customFields || [],
           }))
         );
       }
@@ -190,6 +198,13 @@ app.post('/api/events', async (req, res) => {
     price: Number(eventData.price) || 0,
     totalSeats: Number(eventData.totalSeats) || 100,
     participationType: eventData.participationType || 'both',
+    minTeamSize: eventData.minTeamSize ? Number(eventData.minTeamSize) : 2,
+    maxTeamSize: eventData.maxTeamSize ? Number(eventData.maxTeamSize) : 5,
+    requiredTeamSize: eventData.requiredTeamSize ? Number(eventData.requiredTeamSize) : undefined,
+    paymentQr: eventData.paymentQr || undefined,
+    upiId: eventData.upiId || undefined,
+    payeeName: eventData.payeeName || undefined,
+    paymentInstructions: eventData.paymentInstructions || undefined,
     customFields: eventData.customFields || [],
   };
 
@@ -645,6 +660,8 @@ app.get('/api/certificates', async (req, res) => {
           status: c.status || 'VALID',
           issuedAt: c.issued_at,
           issuedBy: c.issued_by || 'ECE Forum Executive Council',
+          certificateImage: c.certificate_image || (c.template_bg && c.template_bg.startsWith('data:image/') ? c.template_bg : undefined),
+          canvasConfig: c.canvas_config || null,
         }));
 
         if (search) {
@@ -720,6 +737,8 @@ app.get('/api/certificates/:certId', async (req, res) => {
           status: data.status || 'VALID',
           issuedAt: data.issued_at,
           issuedBy: data.issued_by || 'ECE Forum Executive Council',
+          certificateImage: data.certificate_image || (data.template_bg && data.template_bg.startsWith('data:image/') ? data.template_bg : undefined),
+          canvasConfig: data.canvas_config || null,
         });
       }
     } catch {}
@@ -768,6 +787,8 @@ app.get('/api/certificates/verify/:certId', async (req, res) => {
           status: data.status || 'VALID',
           issuedAt: data.issued_at,
           issuedBy: data.issued_by || 'ECE Forum Executive Council',
+          certificateImage: data.certificate_image || (data.template_bg && data.template_bg.startsWith('data:image/') ? data.template_bg : undefined),
+          canvasConfig: data.canvas_config || null,
         };
       }
     } catch {}
@@ -934,14 +955,14 @@ app.post('/api/certificates/issue', async (req, res) => {
     let rand = '';
     for (let r = 0; r < 5; r++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
 
-    const certId = `ECE-CERT-${new Date().getFullYear()}-${rand}`;
-    const securityHash = `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+    const certId = p.certId || `ECE-CERT-${new Date().getFullYear()}-${rand}`;
+    const securityHash = p.securityHash || `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 
     const certObj = {
       certId,
-      eventId: eventId || 'evt-general',
-      eventTitle: eventTitle || 'ECE Forum Event',
-      eventDate: eventDate || issueDate,
+      eventId: eventId || p.eventId || 'evt-general',
+      eventTitle: eventTitle || p.eventTitle || 'ECE Forum Event',
+      eventDate: eventDate || p.eventDate || issueDate,
       userName: p.name || p.userName || 'Participant',
       userEmail: (p.email || p.userEmail || '').trim().toLowerCase(),
       userPhoto: p.photo || p.userPhoto || null,
@@ -951,9 +972,9 @@ app.post('/api/certificates/issue', async (req, res) => {
       title: p.title || title,
       rankText: p.rankText || rankText,
       description: p.description || description,
-      templateId,
-      templateBg,
-      signatories,
+      templateId: p.templateId || templateId,
+      templateBg: p.certificateImage || p.templateBg || templateBg || null,
+      signatories: p.signatories || signatories,
       qrData: JSON.stringify({
         certId,
         name: p.name || p.userName,
@@ -963,8 +984,10 @@ app.post('/api/certificates/issue', async (req, res) => {
       }),
       securityHash,
       status: 'VALID',
-      issuedAt: issueDate,
-      issuedBy,
+      issuedAt: p.issuedAt || issueDate,
+      issuedBy: p.issuedBy || issuedBy,
+      certificateImage: p.certificateImage || null,
+      canvasConfig: p.canvasConfig || null,
     };
 
     generatedCerts.push(certObj);
@@ -1058,6 +1081,74 @@ app.delete('/api/certificates/:certId', async (req, res) => {
   writeLocalDb(db);
 
   res.json({ success: true, deletedCertId: cleanId });
+});
+
+// ── SMTP & Certificate Email Delivery Endpoints ─────────────────────────
+app.post('/api/test-smtp', async (req, res) => {
+  const { smtp } = req.body;
+  if (!smtp || !smtp.host || !smtp.user || !smtp.pass) {
+    return res.status(400).json({ error: 'Host, Username, and Password/App Password are required.' });
+  }
+  try {
+    const port = parseInt(smtp.port, 10) || 587;
+    const transporter = nodemailer.createTransport({
+      host: smtp.host,
+      port,
+      secure: port === 465,
+      auth: { user: smtp.user, pass: smtp.pass },
+      tls: { rejectUnauthorized: false },
+    });
+    await transporter.verify();
+    res.json({ ok: true, message: 'SMTP connection verified successfully!' });
+  } catch (err) {
+    console.error('SMTP test error:', err.message);
+    res.status(500).json({ error: err.message || 'SMTP Connection Failed' });
+  }
+});
+
+app.post('/api/send-email', async (req, res) => {
+  const { smtp, to, subject, html, attachmentBase64, filename } = req.body;
+
+  if (!smtp || !to || !subject || !attachmentBase64) {
+    return res.status(400).json({ error: 'Missing required fields: smtp, to, subject, and attachment are required.' });
+  }
+
+  try {
+    const port = parseInt(smtp.port, 10) || 587;
+    const transporter = nodemailer.createTransport({
+      host: smtp.host,
+      port,
+      secure: port === 465,
+      auth: { user: smtp.user, pass: smtp.pass },
+      tls: { rejectUnauthorized: false },
+    });
+
+    await transporter.sendMail({
+      from: smtp.fromName ? `"${smtp.fromName}" <${smtp.user}>` : smtp.user,
+      to,
+      subject,
+      html: html || '<p>Please find your official ECE Forum certificate attached.</p>',
+      priority: 'high',
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        Importance: 'High',
+      },
+      attachments: [
+        {
+          filename: filename || 'certificate.png',
+          content: attachmentBase64,
+          encoding: 'base64',
+          contentType: 'image/png',
+        },
+      ],
+    });
+
+    res.json({ ok: true, message: `Email delivered to ${to}` });
+  } catch (err) {
+    console.error('Email sending error:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to dispatch email' });
+  }
 });
 
 // ── Hero & Site Content ──────────────────────────────────────────────────

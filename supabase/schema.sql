@@ -87,6 +87,8 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     description TEXT,
     template_id TEXT NOT NULL DEFAULT 'classic_gold', -- 'classic_gold', 'cyber_neon', 'sapphire_prestige', 'ruby_crimson', 'custom_upload'
     template_bg TEXT,
+    certificate_image TEXT,
+    canvas_config JSONB DEFAULT '{}'::jsonb,
     signatories JSONB DEFAULT '[]'::jsonb,
     qr_data TEXT NOT NULL,
     security_hash TEXT NOT NULL,
@@ -95,6 +97,10 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     issued_by TEXT NOT NULL DEFAULT 'ECE Forum Executive Council',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Schema Migration for Existing Deployments
+ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS certificate_image TEXT;
+ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS canvas_config JSONB DEFAULT '{}'::jsonb;
 
 -- 7. Enable Row Level Security (RLS)
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;

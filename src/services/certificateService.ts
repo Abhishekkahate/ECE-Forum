@@ -1,4 +1,4 @@
-import { supabaseDb } from './supabase';
+import { supabase, isSupabaseConfigured, supabaseDb } from './supabase';
 import { forumApi, type ApiCertificate, type CertificateType, type CertificateSignatory } from './api';
 
 export interface CertificateTemplatePreset {
@@ -105,6 +105,7 @@ class CertificateService {
   private certificates: ApiCertificate[] = [];
   private lastSyncTimestamp = 0;
   private isSyncing = false;
+  private realtimeChannel: any = null;
 
   constructor() {
     this.loadFromStorage();
@@ -112,6 +113,10 @@ class CertificateService {
       window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY) this.loadFromStorage();
       });
+      window.addEventListener('ece_certificates_updated', () => {
+        this.loadFromStorage();
+      });
+      this.setupRealtimeChannel();
     }
   }
 
@@ -128,6 +133,104 @@ class CertificateService {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
     } catch {}
+  }
+
+  public notifyListeners() {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ece_certificates_updated'));
+    }
+  }
+
+  public subscribe(listener: () => void): () => void {
+    if (typeof window === 'undefined') return () => {};
+    const handler = () => listener();
+    window.addEventListener('ece_certificates_updated', handler);
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) handler();
+    });
+    return () => {
+      window.removeEventListener('ece_certificates_updated', handler);
+    };
+  }
+
+  private setupRealtimeChannel() {
+    if (!isSupabaseConfigured || typeof window === 'undefined') return;
+    try {
+      if (this.realtimeChannel) {
+        supabase.removeChannel(this.realtimeChannel);
+      }
+      this.realtimeChannel = supabase
+        .channel('ece_certificates_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'certificates' },
+          (payload: any) => {
+            this.handleRealtimePayload(payload);
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('Realtime Supabase certificate subscription failed:', err);
+    }
+  }
+
+  private handleRealtimePayload(payload: any) {
+    try {
+      const eventType = payload.eventType;
+      if (eventType === 'DELETE') {
+        const deletedId = (payload.old?.cert_id || '').trim().toUpperCase();
+        if (deletedId) {
+          this.certificates = this.certificates.filter(
+            (c) => c.certId.toUpperCase() !== deletedId && (c.securityHash || '').toUpperCase() !== deletedId
+          );
+          this.saveToStorage();
+          this.notifyListeners();
+        }
+        return;
+      }
+
+      const row = payload.new;
+      if (!row || !row.cert_id) return;
+
+      const cert: ApiCertificate = {
+        certId: row.cert_id,
+        eventId: row.event_id,
+        eventTitle: row.event_title,
+        eventDate: row.event_date,
+        userName: row.user_name,
+        userEmail: row.user_email,
+        userPhoto: row.user_photo,
+        department: row.department || 'Electronics & Communication Engineering',
+        collegeName: row.college_name || 'PCE-NAGPUR',
+        certType: row.cert_type || 'PARTICIPATION',
+        title: row.title || 'Certificate of Participation',
+        rankText: row.rank_text || 'Participant',
+        description: row.description || '',
+        templateId: row.template_id || 'classic_gold',
+        templateBg: row.template_bg || undefined,
+        certificateImage: row.certificate_image || (row.template_bg && row.template_bg.startsWith('data:image/') ? row.template_bg : undefined),
+        canvasConfig: row.canvas_config || undefined,
+        signatories: row.signatories || DEFAULT_CERTIFICATE_SIGNATORIES,
+        qrData: row.qr_data,
+        securityHash: row.security_hash,
+        status: (row.status || 'VALID') as 'VALID' | 'REVOKED',
+        issuedAt: row.issued_at,
+        issuedBy: row.issued_by || 'ECE Forum Executive Council',
+      };
+
+      const idx = this.certificates.findIndex(
+        (c) => c.certId.toUpperCase() === cert.certId.toUpperCase()
+      );
+      if (idx >= 0) {
+        this.certificates[idx] = { ...this.certificates[idx], ...cert };
+      } else {
+        this.certificates.unshift(cert);
+      }
+      this.saveToStorage();
+      this.notifyListeners();
+    } catch (e) {
+      console.warn('Error handling realtime certificate update:', e);
+    }
   }
 
   public async syncWithBackend(force = false, userEmail?: string, isAdmin = false): Promise<ApiCertificate[]> {
@@ -174,6 +277,8 @@ class CertificateService {
           description: c.description || '',
           templateId: c.template_id || 'classic_gold',
           templateBg: c.template_bg || undefined,
+          certificateImage: c.certificate_image || (c.template_bg && c.template_bg.startsWith('data:image/') ? c.template_bg : undefined),
+          canvasConfig: c.canvas_config || undefined,
           signatories: c.signatories || DEFAULT_CERTIFICATE_SIGNATORIES,
           qrData: c.qr_data,
           securityHash: c.security_hash,
@@ -194,6 +299,7 @@ class CertificateService {
         }
 
         this.saveToStorage();
+        this.notifyListeners();
         return this.certificates;
       }
     } catch (err) {
@@ -212,6 +318,7 @@ class CertificateService {
     );
     this.certificates = [...otherCerts, ...authoritativeCerts];
     this.saveToStorage();
+    this.notifyListeners();
   }
 
   public removeCertificate(certId: string) {
@@ -220,6 +327,7 @@ class CertificateService {
       (c) => c.certId.toUpperCase() !== clean && (c.securityHash || '').toUpperCase() !== clean
     );
     this.saveToStorage();
+    this.notifyListeners();
   }
 
   public getAllCertificates(): ApiCertificate[] {

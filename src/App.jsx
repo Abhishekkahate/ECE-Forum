@@ -391,10 +391,10 @@ const DEFAULT_INITIAL_EVENTS = [
     status: 'Upcoming',
     date: 'September 26, 2026',
     time: '09:00 AM IST',
-    venue: 'Robotics Arena Â· SINC Lab',
+    venue: 'Robotics Arena · SINC Lab',
     description: 'Build and race autonomous rovers through obstacle mazes using ROS 2, LiDAR sensors, and camera telemetry.',
     image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=900&q=80',
-    badge: 'â‚¹50,000 PRIZE',
+    badge: '₹50,000 PRIZE',
     price: 400,
     participationType: 'team_only',
   },
@@ -719,6 +719,17 @@ export default function App() {
           onOpenGoogleAuth={() => {
             setShowMyCertificates(false);
             setShowGoogleAuth(true);
+          }}
+          onExploreEvents={() => {
+            setShowMyCertificates(false);
+            const el = document.getElementById('events');
+            if (el) {
+              if (window.__lenis) {
+                window.__lenis.scrollTo(el, { offset: -70, duration: 1.15 });
+              } else {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }
           }}
         />
       )}

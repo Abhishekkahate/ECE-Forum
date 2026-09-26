@@ -31,6 +31,7 @@ import {
   DEFAULT_CERTIFICATE_SIGNATORIES,
 } from '../services/certificateService';
 import { CertificateCard } from '../components/CertificateCard';
+import { CertificateStudio } from '../components/CertificateStudio';
 import { soundFx } from '../utils/audio';
 import { supabaseDb } from '../services/supabase';
 
@@ -79,6 +80,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [selectedEventFilter, setSelectedEventFilter] = useState<string>('ALL');
 
   // E-Certificates Hub State
+  const [certSubTab, setCertSubTab] = useState<'studio' | 'ledger'>('studio');
   const [certificates, setCertificates] = useState<ApiCertificate[]>([]);
   const [selectedCertPreview, setSelectedCertPreview] = useState<ApiCertificate | null>(null);
   const [showIssueCertModal, setShowIssueCertModal] = useState(false);
@@ -562,8 +564,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     totalSeats: 100,
     image: '',
     participationType: 'both',
-    minTeamSize: undefined,
-    maxTeamSize: undefined,
+    minTeamSize: 2,
+    maxTeamSize: 5,
     requiredTeamSize: undefined,
     paymentQr: '',
     upiId: '',
@@ -1987,7 +1989,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                       <div className="rounded-[20px] bg-[#121216] border border-white/[0.08] overflow-hidden">
                         <div className="max-h-[480px] overflow-auto">
-                          <table className="w-full text-xs font-mono">
+                          <table className="w-full min-w-[720px] text-xs font-mono">
                             <thead className="sticky top-0 bg-[#0A0A0C] border-b border-white/10 text-[10px] tracking-widest text-white/40 uppercase">
                               <tr>
                                 <th className="text-left p-3.5">Attendee / Team</th>
@@ -2208,6 +2210,71 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         </div>
                       )}
 
+                      {/* Studio & Ledger Sub-navigation Tab */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-[24px] bg-[#121216] border border-white/[0.08]">
+                        <div className="flex items-center gap-2 p-1 bg-black/60 border border-white/10 rounded-2xl">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              soundFx.playClick();
+                              setCertSubTab('studio');
+                            }}
+                            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                              certSubTab === 'studio'
+                                ? 'bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Certificate Studio &amp; Dispatcher</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              soundFx.playClick();
+                              setCertSubTab('ledger');
+                            }}
+                            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                              certSubTab === 'ledger'
+                                ? 'bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Issued Registry ({certificates.length})</span>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => refreshCertificates()}
+                            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                            title="Synchronize Certificates from Database"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Sync Registry</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* VIEW 1: CERTIFICATE STUDIO */}
+                      {certSubTab === 'studio' && (
+                        <div className="rounded-[28px] bg-[#0E0E12] border border-white/[0.08] p-3 sm:p-6 shadow-2xl">
+                          <CertificateStudio
+                            eventsList={eventsList}
+                            passesList={passes}
+                            onCertificatesIssued={(certs) => {
+                              setCertSuccessMsg(`Successfully processed ${certs.length} certificates!`);
+                              refreshCertificates();
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* VIEW 2: ISSUED CERTIFICATES LEDGER */}
+                      {certSubTab === 'ledger' && (
+                        <div className="space-y-6">
                       {/* Telemetry Row */}
                       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
@@ -2504,7 +2571,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       {/* Certificates Roster Table */}
                       <div className="rounded-[24px] bg-[#121216] border border-white/[0.08] overflow-hidden">
                         <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs font-mono">
+                          <table className="w-full min-w-[820px] text-left text-xs font-mono">
                             <thead className="bg-[#0A0A0C] border-b border-white/[0.08] text-white/50 uppercase text-[10px] tracking-wider">
                               <tr>
                                 <th className="p-3.5">Credential ID</th>
@@ -2667,6 +2734,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                       </div>
                     </div>
                   )}
+                </div>
+              )}
 
 
                   {/* COUPONS TAB */}
@@ -4158,663 +4227,49 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ISSUE CERTIFICATES MODAL & DESIGNER */}
+      {/* ISSUE CERTIFICATES STUDIO MODAL */}
       <AnimatePresence>
         {showIssueCertModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-2xl overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full max-w-5xl rounded-[32px] bg-[#0F0F12] border border-[#FFD700]/40 p-5 sm:p-8 space-y-6 font-sans shadow-[0_25px_80px_rgba(255,215,0,0.2)] max-h-[92vh] overflow-y-auto custom-scrollbar"
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="w-full max-w-7xl max-h-[96vh] rounded-[32px] bg-[#0A0A0E] border border-[#FFD700]/30 shadow-[0_25px_80px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
+              <div className="flex items-center justify-between p-4 px-6 border-b border-white/10 bg-[#121216]">
                 <div className="flex items-center gap-3">
-                  <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FFD700] to-[#FF4A15] text-black grid place-items-center font-bold shadow-[0_0_15px_rgba(255,215,0,0.3)]">
-                    <Award className="w-6 h-6" />
+                  <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FFD700] to-[#FF4A15] text-black grid place-items-center font-bold shadow-[0_0_15px_rgba(255,215,0,0.3)]">
+                    <Award className="w-5 h-5" />
                   </span>
                   <div>
-                    <h3 className="font-[Syne] font-[800] text-lg sm:text-xl text-white">
+                    <h3 className="font-[Syne] font-[800] text-base text-white">
                       E-Certificate Studio &amp; Dispatcher
                     </h3>
-                    <p className="text-xs font-mono text-white/50">
-                      Configure design templates, assign honors, and preview live before issuing
+                    <p className="text-[11px] font-mono text-white/50">
+                      Visual Drag &amp; Drop Designer, Database Recipient Loader &amp; Bulk Dispatcher
                     </p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  {/* Mode / Preview Switcher */}
-                  <div className="flex items-center p-1 bg-white/5 rounded-xl border border-white/10 text-xs font-mono">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        soundFx.playClick();
-                        setModalActiveTab('form');
-                      }}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                        modalActiveTab === 'form'
-                          ? 'bg-[#FFD700] text-black font-bold shadow'
-                          : 'text-white/60 hover:text-white'
-                      }`}
-                    >
-                      ⚙️ Setup Form
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        soundFx.playClick();
-                        setModalActiveTab('preview');
-                      }}
-                      className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                        modalActiveTab === 'preview'
-                          ? 'bg-[#FFD700] text-black font-bold shadow'
-                          : 'text-white/60 hover:text-white'
-                      }`}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Live Certificate Preview</span>
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={() => setShowIssueCertModal(false)}
-                    className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-white/70 hover:text-white cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowIssueCertModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-white/70 hover:text-white cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-
-              {/* TAB 1: FORM VIEW */}
-              {modalActiveTab === 'form' ? (
-                <form onSubmit={handleIssueCertificatesSubmit} className="space-y-6">
-                {/* 1. Event Selection */}
-                <div className="space-y-2">
-                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
-                    1. Target Event
-                  </label>
-                  <select
-                    value={certEventSelect}
-                    onChange={(e) => {
-                      setCertEventSelect(e.target.value);
-                      setSelectedPassIdsForCerts([]);
-                    }}
-                    className="w-full px-4 py-3 rounded-2xl bg-black border border-white/15 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
-                  >
-                    {eventsList.map((ev) => {
-                      const count = passes.filter(
-                        (p) => p.eventId === ev.id || p.eventTitle.toLowerCase().trim() === ev.title.toLowerCase().trim()
-                      ).length;
-                      return (
-                        <option key={ev.id} value={ev.id}>
-                          {ev.title} — ({count} registered participants)
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                {/* 2. Issuance Mode Selection */}
-                <div className="space-y-2">
-                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
-                    2. Issuance Mode
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        soundFx.playClick();
-                        setIssueMode('all_participants');
-                        setCertRankAwardType('PARTICIPATION');
-                        setCertCustomTitle('Certificate of Participation');
-                        setCertCustomRankText('Participant');
-                      }}
-                      className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                        issueMode === 'all_participants'
-                          ? 'bg-[#FFD700]/10 border-[#FFD700] text-white shadow-[0_0_15px_rgba(255,215,0,0.15)]'
-                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded-full border mt-0.5 grid place-items-center ${
-                          issueMode === 'all_participants' ? 'border-[#FFD700]' : 'border-white/30'
-                        }`}
-                      >
-                        {issueMode === 'all_participants' && (
-                          <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-white">Issue to ALL Participants</div>
-                        <p className="text-[11px] text-white/50 font-mono mt-0.5">
-                          Automatically generates participation certificates for all registered/checked-in attendees.
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        soundFx.playClick();
-                        setIssueMode('selective_ranks');
-                        setCertRankAwardType('WINNER_1ST');
-                        setCertCustomTitle('Certificate of Excellence');
-                        setCertCustomRankText('1st Place Winner');
-                      }}
-                      className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                        issueMode === 'selective_ranks'
-                          ? 'bg-[#FFD700]/10 border-[#FFD700] text-white shadow-[0_0_15px_rgba(255,215,0,0.15)]'
-                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded-full border mt-0.5 grid place-items-center ${
-                          issueMode === 'selective_ranks' ? 'border-[#FFD700]' : 'border-white/30'
-                        }`}
-                      >
-                        {issueMode === 'selective_ranks' && (
-                          <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-white">Selective / Rank Honors (1st, 2nd, 3rd)</div>
-                        <p className="text-[11px] text-white/50 font-mono mt-0.5">
-                          Select specific individuals or teams to assign winner, merit, or runner-up awards.
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        soundFx.playClick();
-                        setIssueMode('manual_entry');
-                        setCertRankAwardType('PARTICIPATION');
-                        setCertCustomTitle('Certificate of Participation');
-                        setCertCustomRankText('Participant');
-                      }}
-                      className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                        issueMode === 'manual_entry'
-                          ? 'bg-[#FFD700]/10 border-[#FFD700] text-white shadow-[0_0_15px_rgba(255,215,0,0.15)]'
-                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded-full border mt-0.5 grid place-items-center ${
-                          issueMode === 'manual_entry' ? 'border-[#FFD700]' : 'border-white/30'
-                        }`}
-                      >
-                        {issueMode === 'manual_entry' && (
-                          <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-white">Manual / Direct Recipient Entry</div>
-                        <p className="text-[11px] text-white/50 font-mono mt-0.5">
-                          Directly issue to any attendee or speaker by typing their official Name &amp; Email.
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3. Manual Recipient Details (if Mode 3) */}
-                {issueMode === 'manual_entry' && (
-                  <div className="space-y-3 p-4 rounded-2xl bg-black/50 border border-white/10">
-                    <span className="text-xs font-mono text-[#FFD700] font-bold block uppercase tracking-wider">
-                      Recipient Attendee Details
-                    </span>
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <label className="space-y-1">
-                        <span className="text-xs font-mono text-white/60">Full Name *</span>
-                        <input
-                          type="text"
-                          required
-                          value={manualRecipientName}
-                          onChange={(e) => setManualRecipientName(e.target.value)}
-                          placeholder="e.g. Aarav Sharma"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
-                        />
-                      </label>
-                      <label className="space-y-1">
-                        <span className="text-xs font-mono text-white/60">Email Address *</span>
-                        <input
-                          type="email"
-                          required
-                          value={manualRecipientEmail}
-                          onChange={(e) => setManualRecipientEmail(e.target.value)}
-                          placeholder="student@gmail.com"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
-                        />
-                      </label>
-                      <label className="space-y-1">
-                        <span className="text-xs font-mono text-white/60">Department</span>
-                        <input
-                          type="text"
-                          value={manualRecipientDept}
-                          onChange={(e) => setManualRecipientDept(e.target.value)}
-                          placeholder="Electronics & Communication Engineering"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
-                        />
-                      </label>
-                      <label className="space-y-1">
-                        <span className="text-xs font-mono text-white/60">College / Institution</span>
-                        <input
-                          type="text"
-                          value={manualRecipientCollege}
-                          onChange={(e) => setManualRecipientCollege(e.target.value)}
-                          placeholder="PCE-NAGPUR"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-mono text-white focus:border-[#FFD700] outline-none"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                )}
-                {issueMode === 'selective_ranks' && (
-                  <div className="space-y-3 p-4 rounded-2xl bg-black/50 border border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-white/80 font-bold">
-                        Select Winners / Awardees ({selectedPassIdsForCerts.length} selected)
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const eventPassesList = passes.filter(
-                              (p) =>
-                                p.eventId === certEventSelect ||
-                                p.eventTitle.toLowerCase().trim() ===
-                                  (eventsList.find((e) => e.id === certEventSelect)?.title || '').toLowerCase().trim()
-                            );
-                            setSelectedPassIdsForCerts(eventPassesList.map((p) => p.passId));
-                          }}
-                          className="text-[11px] font-mono text-[#00E5CC] hover:underline cursor-pointer"
-                        >
-                          Select All
-                        </button>
-                        <span className="text-white/20">·</span>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPassIdsForCerts([])}
-                          className="text-[11px] font-mono text-white/40 hover:text-white cursor-pointer"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="max-h-48 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
-                      {passes
-                        .filter(
-                          (p) =>
-                            p.eventId === certEventSelect ||
-                            p.eventTitle.toLowerCase().trim() ===
-                              (eventsList.find((e) => e.id === certEventSelect)?.title || '').toLowerCase().trim()
-                        )
-                        .map((p) => {
-                          const isSelected = selectedPassIdsForCerts.includes(p.passId);
-                          return (
-                            <div
-                              key={p.passId}
-                              onClick={() => {
-                                soundFx.playClick();
-                                if (isSelected) {
-                                  setSelectedPassIdsForCerts((prev) => prev.filter((id) => id !== p.passId));
-                                } else {
-                                  setSelectedPassIdsForCerts((prev) => [...prev, p.passId]);
-                                }
-                              }}
-                              className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-mono transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#FFD700]/15 border-[#FFD700] text-white'
-                                  : 'bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/[0.05]'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => {}}
-                                  className="w-4 h-4 accent-[#FFD700] rounded"
-                                />
-                                <span className="font-bold text-white truncate">{p.userName}</span>
-                                <span className="text-white/40 text-[11px] truncate">({p.userEmail})</span>
-                              </div>
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white/70">
-                                {p.passId}
-                              </span>
-                            </div>
-                          );
-                        })}
-
-                      {passes.filter(
-                        (p) =>
-                          p.eventId === certEventSelect ||
-                          p.eventTitle.toLowerCase().trim() ===
-                            (eventsList.find((e) => e.id === certEventSelect)?.title || '').toLowerCase().trim()
-                      ).length === 0 && (
-                        <div className="py-6 text-center text-xs font-mono text-white/40">
-                          No registered participants found for this event.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. Honor Details & Commendation Text */}
-                <div className="space-y-3">
-                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
-                    3. Honor Classification &amp; Commendation
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label className="space-y-1">
-                      <span className="text-xs font-mono text-white/60">Honor Type</span>
-                      <select
-                        value={certRankAwardType}
-                        onChange={(e) => {
-                          const val = e.target.value as CertificateType;
-                          setCertRankAwardType(val);
-                          if (val === 'WINNER_1ST') {
-                            setCertCustomTitle('Certificate of Excellence');
-                            setCertCustomRankText('1st Place Winner');
-                          } else if (val === 'RUNNER_UP_2ND') {
-                            setCertCustomTitle('Certificate of Excellence');
-                            setCertCustomRankText('2nd Place Runner Up');
-                          } else if (val === 'RUNNER_UP_3RD') {
-                            setCertCustomTitle('Certificate of Excellence');
-                            setCertCustomRankText('3rd Place');
-                          } else if (val === 'MERIT') {
-                            setCertCustomTitle('Certificate of Merit');
-                            setCertCustomRankText('Outstanding Merit');
-                          } else if (val === 'APPRECIATION') {
-                            setCertCustomTitle('Certificate of Appreciation');
-                            setCertCustomRankText('Special Recognition');
-                          } else {
-                            setCertCustomTitle('Certificate of Participation');
-                            setCertCustomRankText('Participant');
-                          }
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
-                      >
-                        <option value="PARTICIPATION">Participation</option>
-                        <option value="WINNER_1ST">1st Place Winner</option>
-                        <option value="RUNNER_UP_2ND">2nd Place Runner Up</option>
-                        <option value="RUNNER_UP_3RD">3rd Place</option>
-                        <option value="MERIT">Certificate of Merit</option>
-                        <option value="APPRECIATION">Certificate of Appreciation</option>
-                      </select>
-                    </label>
-
-                    <label className="space-y-1">
-                      <span className="text-xs font-mono text-white/60">Certificate Main Title</span>
-                      <input
-                        type="text"
-                        value={certCustomTitle}
-                        onChange={(e) => setCertCustomTitle(e.target.value)}
-                        placeholder="Certificate of Participation"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
-                      />
-                    </label>
-
-                    <label className="space-y-1">
-                      <span className="text-xs font-mono text-white/60">Rank / Award Subtitle</span>
-                      <input
-                        type="text"
-                        value={certCustomRankText}
-                        onChange={(e) => setCertCustomRankText(e.target.value)}
-                        placeholder="1st Place Winner"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/10 text-xs font-mono text-white focus:border-[#FFD700] outline-none"
-                      />
-                    </label>
-                  </div>
-
-                  <label className="space-y-1 block">
-                    <span className="text-xs font-mono text-white/60">
-                      Custom Commendation Text (Leave blank for official default wording)
-                    </span>
-                    <textarea
-                      rows={2}
-                      value={certCustomDesc}
-                      onChange={(e) => setCertCustomDesc(e.target.value)}
-                      placeholder="e.g. for exceptional performance and securing 1st position in the 24-Hour Autonomous LiDAR Rover Hackathon."
-                      className="w-full px-3.5 py-2 rounded-xl bg-black border border-white/10 text-xs text-white placeholder:text-white/30 font-sans focus:border-[#FFD700] outline-none"
-                    />
-                  </label>
-                </div>
-
-                {/* 5. Design Template Selection & Custom Background */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
-                      4. Design Template &amp; Background
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => certBgInputRef.current?.click()}
-                      className="text-xs font-mono text-[#00E5CC] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" /> Upload Custom Background
-                    </button>
-                    <input
-                      ref={certBgInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCustomBgUpload}
-                      className="hidden"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {CERTIFICATE_TEMPLATES.map((tmpl) => {
-                      const isSelected = certTemplateId === tmpl.id;
-                      return (
-                        <div
-                          key={tmpl.id}
-                          onClick={() => {
-                            soundFx.playClick();
-                            setCertTemplateId(tmpl.id);
-                            if (tmpl.id !== 'custom_upload') setCertTemplateBg('');
-                          }}
-                          className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-white/10 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.2)]'
-                              : 'bg-white/[0.03] border-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          <div
-                            className={`h-12 rounded-xl mb-2 bg-gradient-to-br ${tmpl.theme.borderGradient} p-0.5`}
-                          >
-                            <div
-                              className={`w-full h-full rounded-[10px] bg-gradient-to-br ${tmpl.theme.bgGradient} flex items-center justify-center`}
-                            >
-                              <Award className="w-5 h-5 text-white/70" />
-                            </div>
-                          </div>
-                          <div className="font-bold text-xs text-white truncate">{tmpl.name}</div>
-                          <span className="text-[9px] font-mono text-white/40 uppercase">{tmpl.badge}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {certTemplateBg && (
-                    <div className="p-3 rounded-xl bg-white/5 border border-[#00E5CC]/30 flex items-center justify-between text-xs font-mono text-[#00E5CC]">
-                      <span>✓ Custom template background image active</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCertTemplateBg('');
-                          setCertTemplateId('classic_gold');
-                        }}
-                        className="text-white/40 hover:text-white"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* 6. Signatory Verification Customizer */}
-                <div className="space-y-2">
-                  <label className="text-xs font-mono text-[#FFD700] font-bold uppercase tracking-wider block">
-                    5. Signatories &amp; Endorsement
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                      <span className="text-white/40 text-[10px] uppercase">Signatory 1 (Patron)</span>
-                      <input
-                        type="text"
-                        value={certSignatories[0]?.name || ''}
-                        onChange={(e) => {
-                          const updated = [...certSignatories];
-                          if (updated[0]) updated[0].name = e.target.value;
-                          setCertSignatories(updated);
-                        }}
-                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white"
-                      />
-                      <input
-                        type="text"
-                        value={certSignatories[0]?.title || ''}
-                        onChange={(e) => {
-                          const updated = [...certSignatories];
-                          if (updated[0]) updated[0].title = e.target.value;
-                          setCertSignatories(updated);
-                        }}
-                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white/60 text-[10px]"
-                      />
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                      <span className="text-white/40 text-[10px] uppercase">Signatory 2 (Head of Dept)</span>
-                      <input
-                        type="text"
-                        value={certSignatories[1]?.name || ''}
-                        onChange={(e) => {
-                          const updated = [...certSignatories];
-                          if (updated[1]) updated[1].name = e.target.value;
-                          setCertSignatories(updated);
-                        }}
-                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white"
-                      />
-                      <input
-                        type="text"
-                        value={certSignatories[1]?.title || ''}
-                        onChange={(e) => {
-                          const updated = [...certSignatories];
-                          if (updated[1]) updated[1].title = e.target.value;
-                          setCertSignatories(updated);
-                        }}
-                        className="w-full px-2 py-1 rounded bg-white/5 border border-white/10 text-white/60 text-[10px]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Modal Footer Actions */}
-                <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundFx.playClick();
-                      setModalActiveTab('preview');
-                    }}
-                    className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-[#00E5CC]/30 text-xs font-mono text-[#00E5CC] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Preview This Certificate Before Issuing</span>
-                  </button>
-
-                  <div className="flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowIssueCertModal(false)}
-                      className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-
-                    <button
-                      type="submit"
-                      disabled={isIssuingCerts}
-                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-bold text-xs font-mono tracking-wide shadow-[0_0_20px_rgba(255,215,0,0.35)] hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {isIssuingCerts ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      <span>{isIssuingCerts ? 'Generating Certificates...' : 'Generate & Issue Certificates'}</span>
-                    </button>
-                  </div>
-                </div>
-              </form>
-            ) : (
-              /* TAB 2: LIVE CERTIFICATE PREVIEW VIEW */
-              <div className="space-y-6">
-                <div className="p-4 rounded-2xl bg-[#00E5CC]/10 border border-[#00E5CC]/30 text-xs font-mono text-[#00E5CC] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>
-                      Live Real-Time Preview: Showing template <strong>"{CERTIFICATE_TEMPLATES.find((t) => t.id === certTemplateId)?.name || certTemplateId}"</strong> with honor <strong>"{certRankAwardType}"</strong>.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundFx.playClick();
-                      setModalActiveTab('form');
-                    }}
-                    className="text-white hover:underline text-xs shrink-0 cursor-pointer"
-                  >
-                    Edit Settings ✏️
-                  </button>
-                </div>
-
-                {/* Live Card Renderer */}
-                <div className="py-2">
-                  <CertificateCard certificate={getLivePreviewCertificate()} />
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundFx.playClick();
-                      setModalActiveTab('form');
-                    }}
-                    className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/80 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <span>← Back to Setup Form</span>
-                  </button>
-
-                  <div className="flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowIssueCertModal(false)}
-                      className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white/70 hover:text-white cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => handleIssueCertificatesSubmit(e as any)}
-                      disabled={isIssuingCerts}
-                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FF4A15] text-black font-bold text-xs font-mono tracking-wide shadow-[0_0_20px_rgba(255,215,0,0.35)] hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {isIssuingCerts ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      <span>{isIssuingCerts ? 'Generating Certificates...' : 'Confirm & Issue Certificates'}</span>
-                    </button>
-                  </div>
-                </div>
+              <div className="flex-1 overflow-y-auto p-3 sm:p-6 custom-scrollbar">
+                <CertificateStudio
+                  eventsList={eventsList}
+                  passesList={passes}
+                  onCertificatesIssued={(certs) => {
+                    setCertSuccessMsg(`Successfully processed ${certs.length} certificates!`);
+                    setShowIssueCertModal(false);
+                    refreshCertificates();
+                  }}
+                  onClose={() => setShowIssueCertModal(false)}
+                />
               </div>
-            )}
             </motion.div>
           </div>
         )}

@@ -186,14 +186,14 @@ export const CertificateVerificationPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => {
                   soundFx.playClick();
                   setShowScanner(!showScanner);
                 }}
-                className={`px-4 py-3.5 rounded-2xl border flex items-center justify-center gap-2 text-xs font-mono font-bold transition-all cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-4 py-3.5 rounded-2xl border flex items-center justify-center gap-2 text-xs font-mono font-bold transition-all cursor-pointer ${
                   showScanner
                     ? 'bg-[#FF4A15] border-[#FF4A15] text-white shadow-lg'
                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
@@ -201,13 +201,13 @@ export const CertificateVerificationPage: React.FC = () => {
                 title="Scan QR Code via Camera"
               >
                 <Camera className="w-4 h-4" />
-                <span className="hidden sm:inline">{showScanner ? 'Close Cam' : 'Scan QR'}</span>
+                <span className="inline">{showScanner ? 'Close Cam' : 'Scan QR'}</span>
               </button>
 
               <button
                 type="submit"
                 disabled={isVerifying || !inputCertId.trim()}
-                className="px-7 py-3.5 rounded-2xl bg-[#FFD700] hover:bg-[#F5C700] text-black font-bold text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(255,215,0,0.3)] transition-all cursor-pointer disabled:opacity-50"
+                className="flex-1 sm:flex-initial px-6 sm:px-7 py-3.5 rounded-2xl bg-[#FFD700] hover:bg-[#F5C700] text-black font-bold text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(255,215,0,0.3)] transition-all cursor-pointer disabled:opacity-50"
               >
                 {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 <span>{isVerifying ? 'Validating...' : 'Verify Now'}</span>

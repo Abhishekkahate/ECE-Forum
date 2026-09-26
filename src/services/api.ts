@@ -111,6 +111,8 @@ export interface ApiCertificate {
   status: 'VALID' | 'REVOKED';
   issuedAt: string;
   issuedBy: string;
+  certificateImage?: string; // base64 or URL of custom canvas rendered certificate
+  canvasConfig?: any; // layout configuration from certificate designer studio
 }
 
 export interface CertificateVerificationResponse {
@@ -838,7 +840,7 @@ export const forumApi = {
           eventTitle: c.event_title,
           eventDate: c.event_date,
           userName: c.user_name,
-          userEmail: c.user_email,
+          userEmail: (c.user_email || '').trim().toLowerCase(),
           userPhoto: c.user_photo,
           department: c.department || 'Electronics & Communication Engineering',
           collegeName: c.college_name || 'PCE-NAGPUR',
@@ -854,6 +856,8 @@ export const forumApi = {
           status: c.status || 'VALID',
           issuedAt: c.issued_at,
           issuedBy: c.issued_by || 'ECE Forum Executive Council',
+          certificateImage: c.certificate_image || c.certificateImage || (c.template_bg && c.template_bg.startsWith('data:image/') ? c.template_bg : undefined),
+          canvasConfig: c.canvas_config || c.canvasConfig,
         }));
 
         if (search) {
@@ -868,7 +872,15 @@ export const forumApi = {
         }
 
         try {
-          localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(formatted));
+          const cached = localStorage.getItem('ece_forum_certificates_cache');
+          const existing: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+          if (!email && (!eventId || eventId === 'ALL' || eventId === 'all')) {
+            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(formatted));
+          } else {
+            const map = new Map(existing.map((c) => [c.certId, c]));
+            formatted.forEach((c) => map.set(c.certId, c));
+            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(Array.from(map.values())));
+          }
         } catch {}
 
         return formatted;
@@ -890,7 +902,11 @@ export const forumApi = {
         const data = await res.json();
         if (Array.isArray(data)) {
           try {
-            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(data));
+            const cached = localStorage.getItem('ece_forum_certificates_cache');
+            const existing: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+            const map = new Map(existing.map((c) => [c.certId, c]));
+            data.forEach((c) => map.set(c.certId, c));
+            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(Array.from(map.values())));
           } catch {}
           return data;
         }
@@ -902,9 +918,9 @@ export const forumApi = {
       const cached = localStorage.getItem('ece_forum_certificates_cache');
       if (cached) {
         let list: ApiCertificate[] = JSON.parse(cached);
-        if (eventId && eventId !== 'all') list = list.filter((c) => c.eventId === eventId);
-        if (email) list = list.filter((c) => c.userEmail.toLowerCase() === email.toLowerCase());
-        if (certType && certType !== 'all') list = list.filter((c) => c.certType === certType);
+        if (eventId && eventId !== 'all' && eventId !== 'ALL') list = list.filter((c) => c.eventId === eventId);
+        if (email) list = list.filter((c) => (c.userEmail || '').toLowerCase().trim() === email.toLowerCase().trim());
+        if (certType && certType !== 'all' && certType !== 'ALL') list = list.filter((c) => c.certType === certType);
         return list;
       }
     } catch {}
@@ -925,7 +941,7 @@ export const forumApi = {
           eventTitle: supa.event_title,
           eventDate: supa.event_date,
           userName: supa.user_name,
-          userEmail: supa.user_email,
+          userEmail: (supa.user_email || '').trim().toLowerCase(),
           userPhoto: supa.user_photo,
           department: supa.department,
           collegeName: supa.college_name,
@@ -941,6 +957,8 @@ export const forumApi = {
           status: supa.status,
           issuedAt: supa.issued_at,
           issuedBy: supa.issued_by,
+          certificateImage: supa.certificate_image || supa.certificateImage || (supa.template_bg && supa.template_bg.startsWith('data:image/') ? supa.template_bg : undefined),
+          canvasConfig: supa.canvas_config || supa.canvasConfig,
         };
       }
     } catch {}
@@ -1100,6 +1118,8 @@ export const forumApi = {
     templateBg?: string;
     signatories?: CertificateSignatory[];
     issuedBy?: string;
+    certificateImage?: string;
+    canvasConfig?: any;
     participants: Array<{
       name: string;
       email: string;
@@ -1108,6 +1128,10 @@ export const forumApi = {
       rankText?: string;
       certType?: CertificateType;
       photo?: string;
+      certificateImage?: string;
+      canvasConfig?: any;
+      certId?: string;
+      securityHash?: string;
     }>;
   }): Promise<{ success: boolean; count: number; certificates: ApiCertificate[] }> {
     const issueDate = new Date().toLocaleDateString('en-IN', {
@@ -1124,8 +1148,8 @@ export const forumApi = {
       let rand = '';
       for (let r = 0; r < 5; r++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
 
-      const certId = `ECE-CERT-${new Date().getFullYear()}-${rand}`;
-      const securityHash = `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+      const certId = p.certId || `ECE-CERT-${new Date().getFullYear()}-${rand}`;
+      const securityHash = p.securityHash || `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 
       const certObj: ApiCertificate = {
         certId,
@@ -1142,7 +1166,7 @@ export const forumApi = {
         rankText: p.rankText || payload.rankText || 'Participant',
         description: payload.description || '',
         templateId: payload.templateId || 'classic_gold',
-        templateBg: payload.templateBg,
+        templateBg: p.certificateImage || payload.certificateImage || payload.templateBg,
         signatories: payload.signatories || [],
         qrData: JSON.stringify({
           certId,
@@ -1155,6 +1179,8 @@ export const forumApi = {
         status: 'VALID',
         issuedAt: issueDate,
         issuedBy: payload.issuedBy || 'ECE Forum Executive Council',
+        certificateImage: p.certificateImage || payload.certificateImage,
+        canvasConfig: p.canvasConfig || payload.canvasConfig,
       };
 
       generatedCerts.push(certObj);
@@ -1254,6 +1280,43 @@ export const forumApi = {
 
     window.dispatchEvent(new CustomEvent('ece_certificates_updated', { detail: { deletedId: cleanId } }));
     return true;
+  },
+
+  async testSmtp(smtp: { host: string; port: number | string; user: string; pass: string; fromName?: string }): Promise<{ ok: boolean; message?: string; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/test-smtp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ smtp }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'SMTP Connection Test Failed');
+      return data;
+    } catch (err: any) {
+      return { ok: false, error: err.message || 'Cannot reach SMTP backend server.' };
+    }
+  },
+
+  async sendCertificateEmail(payload: {
+    smtp: { host: string; port: number | string; user: string; pass: string; fromName?: string };
+    to: string;
+    subject: string;
+    html: string;
+    attachmentBase64: string;
+    filename?: string;
+  }): Promise<{ ok: boolean; message?: string; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to deliver email');
+      return data;
+    } catch (err: any) {
+      return { ok: false, error: err.message || 'Network error sending certificate email.' };
+    }
   },
 };
 

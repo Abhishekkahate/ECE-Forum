@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Lock, Mail, KeyRound, AlertCircle, Loader2 } from 'lucide-react';
+import { Shield, Lock, Mail, KeyRound, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { api } from '../services/api';
 
@@ -10,6 +10,7 @@ interface AdminLoginProps {
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -89,15 +90,28 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             <KeyRound className="w-3.5 h-3.5 text-[#FFD60A]" />
             <span>Password *</span>
           </label>
-          <input
-            type="password"
-            required
-            autoComplete="off"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full bg-[#08080A] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-[#FF4A15]"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              autoComplete="off"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-[#08080A] border border-white/10 rounded-xl pl-4 pr-11 py-3 text-white placeholder-white/25 focus:outline-none focus:border-[#FF4A15]"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playClick();
+                setShowPassword(!showPassword);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1"
+              title={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Submit CTA */}

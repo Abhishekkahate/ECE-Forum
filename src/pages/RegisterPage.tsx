@@ -117,21 +117,24 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
     if (!selectedEvent) return;
 
     const reqSize = selectedEvent.requiredTeamSize;
-    const isTeamOnly = selectedEvent.participationType === 'team_only';
-    const isIndOnly = selectedEvent.participationType === 'individual_only';
+    const minSize = selectedEvent.minTeamSize || 2;
+    const pType = (selectedEvent.participationType || 'both').toString().trim().toLowerCase();
+    const isTeamOnly = pType === 'team_only' || pType === 'team';
+    const isIndOnly = pType === 'individual_only' || pType === 'individual' || pType === 'solo';
 
     if (isIndOnly) {
-      setRegType('individual');
+      if (regType !== 'individual') setRegType('individual');
       setTeamMembers([]);
       return;
     }
 
     if (isTeamOnly) {
-      setRegType('team');
-      const targetAdditionalMembers = reqSize ? Math.max(1, reqSize - 1) : Math.max(1, (selectedEvent.minTeamSize || 2) - 1);
+      if (regType !== 'team') setRegType('team');
+      const targetAdditionalMembers = reqSize ? Math.max(1, reqSize - 1) : Math.max(1, minSize - 1);
       
       setTeamMembers((prev) => {
-        if (prev.length === targetAdditionalMembers) return prev;
+        if (reqSize && prev.length === targetAdditionalMembers) return prev;
+        if (!reqSize && prev.length >= targetAdditionalMembers) return prev;
         const current = [...prev];
         while (current.length < targetAdditionalMembers) {
           current.push({
@@ -143,12 +146,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
             phone: '',
           });
         }
-        return current.slice(0, targetAdditionalMembers);
+        return reqSize ? current.slice(0, targetAdditionalMembers) : current;
       });
-    } else if (regType === 'team' && reqSize) {
-      const targetAdditionalMembers = Math.max(1, reqSize - 1);
+    } else if (regType === 'team') {
+      const targetAdditionalMembers = reqSize ? Math.max(1, reqSize - 1) : Math.max(1, minSize - 1);
       setTeamMembers((prev) => {
-        if (prev.length === targetAdditionalMembers) return prev;
+        if (reqSize && prev.length === targetAdditionalMembers) return prev;
+        if (!reqSize && prev.length >= targetAdditionalMembers) return prev;
         const current = [...prev];
         while (current.length < targetAdditionalMembers) {
           current.push({
@@ -160,10 +164,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
             phone: '',
           });
         }
-        return current.slice(0, targetAdditionalMembers);
+        return reqSize ? current.slice(0, targetAdditionalMembers) : current;
       });
     }
-  }, [selectedEvent?.id, selectedEvent?.participationType, selectedEvent?.requiredTeamSize, regType]);
+  }, [selectedEvent?.id, selectedEvent?.participationType, selectedEvent?.requiredTeamSize, selectedEvent?.minTeamSize, regType]);
 
   // Price calculations
   const perPersonPrice = selectedEvent?.price || 0;
@@ -202,6 +206,51 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
   const existingUserPass = (userEffectiveEmail && selectedEvent)
     ? passService.findExistingPass(userEffectiveEmail, selectedEvent.id)
     : null;
+
+  // Registration mode switcher (Individual vs Team)
+  const handleRegTypeChange = (type: 'individual' | 'team') => {
+    soundFx.playClick();
+    setRegType(type);
+    setFormValidationWarning(null);
+
+    if (type === 'team' && selectedEvent) {
+      const reqSize = selectedEvent.requiredTeamSize;
+      const minAdditional = reqSize 
+        ? Math.max(1, reqSize - 1) 
+        : Math.max(1, (selectedEvent.minTeamSize || 2) - 1);
+
+      setTeamMembers((prev) => {
+        if (reqSize) {
+          const current = [...prev];
+          while (current.length < minAdditional) {
+            current.push({
+              name: '',
+              email: '',
+              collegeName: '',
+              department: '',
+              year: '',
+              phone: '',
+            });
+          }
+          return current.slice(0, minAdditional);
+        } else {
+          if (prev.length >= minAdditional) return prev;
+          const current = [...prev];
+          while (current.length < minAdditional) {
+            current.push({
+              name: '',
+              email: '',
+              collegeName: '',
+              department: '',
+              year: '',
+              phone: '',
+            });
+          }
+          return current;
+        }
+      });
+    }
+  };
 
   // Handle Team Member management
   const handleAddTeamMember = () => {
@@ -383,9 +432,32 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       }
 
       const reqSize = selectedEvent.requiredTeamSize;
+      const minSize = selectedEvent.minTeamSize || 2;
+      const maxSize = selectedEvent.maxTeamSize;
+
       if (reqSize && totalAttendees !== reqSize) {
         setFormValidationWarning(`This event strictly requires exactly ${reqSize} team members (1 Team Leader + ${reqSize - 1} Teammates). You currently have ${totalAttendees}.`);
         return;
+      }
+
+      if (!reqSize && totalAttendees < minSize) {
+        setFormValidationWarning(`Team registration requires at least ${minSize} members (1 Team Leader + at least ${minSize - 1} teammate${minSize - 1 > 1 ? 's' : ''}).`);
+        return;
+      }
+
+      if (maxSize && totalAttendees > maxSize) {
+        setFormValidationWarning(`This event allows a maximum of ${maxSize} members per team. You currently have ${totalAttendees}.`);
+        return;
+      }
+
+      if (teamMembers.length === 0) {
+        setFormValidationWarning('Please add at least one teammate to register as a team.');
+        return;
+      }
+
+      const seenEmails = new Set<string>();
+      if (userEffectiveEmail) {
+        seenEmails.add(userEffectiveEmail);
       }
 
       for (let i = 0; i < teamMembers.length; i++) {
@@ -404,6 +476,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
           setFormValidationWarning(`Team Member #${i + 2} (${m.name}) has the same email as the Team Leader. Every member must have a distinct email.`);
           return;
         }
+
+        if (seenEmails.has(memberCleanEmail)) {
+          setFormValidationWarning(`Team Member #${i + 2} (${memberCleanEmail}) is entered multiple times. Each teammate must have a distinct email.`);
+          return;
+        }
+        seenEmails.add(memberCleanEmail);
 
         const memberExistingPass = passService.findExistingPass(memberCleanEmail, selectedEvent.id);
         if (memberExistingPass) {
@@ -460,7 +538,23 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
     setTransactionId('');
     setCustomFieldValues({});
     setFormValidationWarning(null);
+
+    const targetEvt = eventsList.find((e) => e.id === evtId);
+    if (targetEvt) {
+      const pType = (targetEvt.participationType || 'both').toString().trim().toLowerCase();
+      if (pType === 'team_only' || pType === 'team') {
+        setRegType('team');
+      } else if (pType === 'individual_only' || pType === 'individual' || pType === 'solo') {
+        setRegType('individual');
+        setTeamMembers([]);
+      }
+    }
   };
+
+  const currentPType = (selectedEvent?.participationType || 'both').toString().trim().toLowerCase();
+  const isTeamOnlyMode = currentPType === 'team_only' || currentPType === 'team';
+  const isIndOnlyMode = currentPType === 'individual_only' || currentPType === 'individual' || currentPType === 'solo';
+  const isBothModesAllowed = !isTeamOnlyMode && !isIndOnlyMode;
 
   return (
     <div className="min-h-screen bg-[#08080A] text-[#F5F3EF] relative selection:bg-[#FF4A15]/30 selection:text-white font-sans overflow-x-hidden pb-16">
@@ -660,13 +754,34 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
                     </div>
                   </div>
 
-                  {/* Mandatory Team Size Badge */}
-                  {selectedEvent.requiredTeamSize && (
+                  {/* Team Rules Indicator */}
+                  {!isIndOnlyMode && (
                     <div className="p-3.5 rounded-2xl bg-[#00E5CC]/10 border border-[#00E5CC]/30 flex items-center gap-3">
                       <Users className="w-5 h-5 text-[#00E5CC] shrink-0" />
                       <div className="text-xs font-mono text-white/80">
-                        <strong className="text-[#00E5CC] block">Mandatory {selectedEvent.requiredTeamSize} Members</strong>
-                        <span>All {selectedEvent.requiredTeamSize} teammate profiles must be filled before pass issuance.</span>
+                        {selectedEvent.requiredTeamSize ? (
+                          <>
+                            <strong className="text-[#00E5CC] block">
+                              Mandatory {selectedEvent.requiredTeamSize} Members (For Teams)
+                            </strong>
+                            <span>
+                              {regType === 'team'
+                                ? `All ${selectedEvent.requiredTeamSize} teammate profiles must be filled before pass issuance.`
+                                : `You are currently viewing Solo mode. Switch to Team mode in the form if entering as a squad.`}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <strong className="text-[#00E5CC] block">
+                              Team Size: {selectedEvent.minTeamSize || 2} to {selectedEvent.maxTeamSize || 5} Members
+                            </strong>
+                            <span>
+                              {regType === 'team'
+                                ? `1 Leader + ${teamMembers.length} Teammate(s) currently configured.`
+                                : `Eligible for both individual and team registrations.`}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -775,6 +890,155 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
 
                   <form onSubmit={handleSubmit} className="space-y-6">
                     
+                    {/* ── STEP 1: Registration Mode Selection (Individual vs Team) ── */}
+                    <div className="space-y-3 pb-3 border-b border-white/[0.08]">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-mono font-bold text-white/90 uppercase tracking-wider flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-[#FF4A15]" />
+                          <span>Select Registration Type *</span>
+                        </label>
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-white/60">
+                          {isTeamOnlyMode
+                            ? '👥 Team Only'
+                            : isIndOnlyMode
+                            ? '👤 Solo Only'
+                            : '⚡ Solo or Team'}
+                        </span>
+                      </div>
+
+                      {/* If Both Options Allowed (or participationType not set) */}
+                      {isBothModesAllowed && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          {/* Option 1: Individual */}
+                          <button
+                            type="button"
+                            onClick={() => handleRegTypeChange('individual')}
+                            className={`p-4 rounded-2xl text-left transition-all border relative cursor-pointer group ${
+                              regType === 'individual'
+                                ? 'bg-[#FF4A15]/10 border-[#FF4A15] shadow-[0_0_20px_rgba(255,74,21,0.25)] ring-1 ring-[#FF4A15]/50'
+                                : 'bg-[#121216]/70 border-white/10 hover:border-white/20 text-white/70 hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                                  regType === 'individual'
+                                    ? 'bg-[#FF4A15] text-white shadow-[0_0_12px_rgba(255,74,21,0.4)]'
+                                    : 'bg-white/5 text-white/40 group-hover:text-white'
+                                }`}
+                              >
+                                <User className="w-4 h-4" />
+                              </div>
+                              <span
+                                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+                                  regType === 'individual'
+                                    ? 'bg-[#FF4A15]/20 text-[#FF4A15] border-[#FF4A15]/40'
+                                    : 'bg-black/40 text-white/40 border-white/10'
+                                }`}
+                              >
+                                {regType === 'individual' ? '✓ SELECTED' : 'SELECT SOLO'}
+                              </span>
+                            </div>
+                            <div className="font-[Syne] font-bold text-sm text-white flex items-center gap-1.5">
+                              <span>Individual Registration</span>
+                            </div>
+                            <p className="text-[11px] font-mono text-white/50 mt-1 leading-relaxed">
+                              Register as a solo attendee (1 Participant Pass)
+                            </p>
+                          </button>
+
+                          {/* Option 2: Team */}
+                          <button
+                            type="button"
+                            onClick={() => handleRegTypeChange('team')}
+                            className={`p-4 rounded-2xl text-left transition-all border relative cursor-pointer group ${
+                              regType === 'team'
+                                ? 'bg-[#00E5CC]/10 border-[#00E5CC] shadow-[0_0_20px_rgba(0,229,204,0.25)] ring-1 ring-[#00E5CC]/50'
+                                : 'bg-[#121216]/70 border-white/10 hover:border-white/20 text-white/70 hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                                  regType === 'team'
+                                    ? 'bg-[#00E5CC] text-black shadow-[0_0_12px_rgba(0,229,204,0.4)] font-bold'
+                                    : 'bg-white/5 text-white/40 group-hover:text-white'
+                                }`}
+                              >
+                                <Users className="w-4 h-4" />
+                              </div>
+                              <span
+                                className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+                                  regType === 'team'
+                                    ? 'bg-[#00E5CC]/20 text-[#00E5CC] border-[#00E5CC]/40'
+                                    : 'bg-black/40 text-white/40 border-white/10'
+                                }`}
+                              >
+                                {regType === 'team' ? '✓ SELECTED' : 'SELECT TEAM'}
+                              </span>
+                            </div>
+                            <div className="font-[Syne] font-bold text-sm text-white flex items-center gap-1.5">
+                              <span>Team Registration</span>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#00E5CC]/20 text-[#00E5CC] font-bold">
+                                SQUAD
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-mono text-white/50 mt-1 leading-relaxed">
+                              {selectedEvent.requiredTeamSize
+                                ? `Team Leader + ${selectedEvent.requiredTeamSize - 1} Teammates (Strict ${selectedEvent.requiredTeamSize} members)`
+                                : `Enroll your team (${selectedEvent.minTeamSize || 2} to ${selectedEvent.maxTeamSize || 5} members total)`}
+                            </p>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* If Team Only */}
+                      {isTeamOnlyMode && (
+                        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#00E5CC]/15 via-black/40 to-black/40 border border-[#00E5CC]/30 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#00E5CC]/20 border border-[#00E5CC]/40 flex items-center justify-center text-[#00E5CC] shrink-0">
+                              <Users className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="font-[Syne] font-bold text-sm text-white flex items-center gap-2">
+                                <span>Mandatory Team Registration</span>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#00E5CC]/20 text-[#00E5CC] font-bold">
+                                  ENFORCED
+                                </span>
+                              </div>
+                              <p className="text-xs font-mono text-white/60 mt-0.5">
+                                {selectedEvent.requiredTeamSize
+                                  ? `This event strictly requires teams of exactly ${selectedEvent.requiredTeamSize} members.`
+                                  : `This event requires teams between ${selectedEvent.minTeamSize || 2} and ${selectedEvent.maxTeamSize || 5} members.`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* If Individual Only */}
+                      {isIndOnlyMode && (
+                        <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FF4A15]/15 via-black/40 to-black/40 border border-[#FF4A15]/30 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#FF4A15]/20 border border-[#FF4A15]/40 flex items-center justify-center text-[#FF4A15] shrink-0">
+                              <User className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="font-[Syne] font-bold text-sm text-white flex items-center gap-2">
+                                <span>Individual Solo Registration Only</span>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#FF4A15]/20 text-[#FF4A15] font-bold">
+                                  SOLO ONLY
+                                </span>
+                              </div>
+                              <p className="text-xs font-mono text-white/60 mt-0.5">
+                                Team entries are not permitted for this competition or workshop.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Primary Attendee Fields */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
