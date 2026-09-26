@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, Menu, X, Ticket, LogOut, ChevronDown, Search, Command, Award, CheckCircle2, Code2, ArrowUpRight } from 'lucide-react';
+import { Shield, Menu, X, Ticket, LogOut, ChevronDown, Search, Command, Award, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { passService } from '../services/passService';
 import { certificateService } from '../services/certificateService';
@@ -223,16 +223,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                   <Shield className="w-3 h-3 text-[#FF4A15]" /> Admin
                 </button>
 
-                <a
-                  href="/developer"
-                  onClick={() => soundFx.playLaser()}
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#CCFF00]/30 bg-[#CCFF00]/10 text-[#CCFF00] hover:bg-[#CCFF00] hover:text-black text-[11px] font-mono uppercase font-bold transition-all shadow-[0_0_15px_rgba(204,255,0,0.15)] group shrink-0"
-                  title="Meet the Developer — Abhishek Kahate"
-                >
-                  <Code2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-                  <span>Meet the Developer</span>
-                </a>
-
                 {isAuthenticated && user ? (
                   <div className="relative" ref={dropdownRef}>
                     <button onClick={() => setUserDropdownOpen(!userDropdownOpen)} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white/[0.07] border border-white/10 hover:bg-white/[0.10] text-[#F5F3EF] transition-colors">
@@ -250,7 +240,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                         <button onClick={() => { setUserDropdownOpen(false); onOpenMyPasses(); }} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-white/80"><Ticket className="w-3.5 h-3.5 text-[#FF4A15]" /> My Passes {userPassCount>0 && <span className="ml-auto bg-[#FF4A15] text-white text-[10px] px-1.5 py-0.5 rounded-full">{userPassCount}</span>}</button>
                         <button onClick={() => { setUserDropdownOpen(false); onOpenMyCertificates(); }} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-white/80"><Award className="w-3.5 h-3.5 text-[#FFD700]" /> My Certificates {userCertCount>0 && <span className="ml-auto bg-[#FFD700] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{userCertCount}</span>}</button>
                         <a href="/verify" onClick={() => setUserDropdownOpen(false)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-white/80"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Verify Certificate</a>
-                        <a href="/developer" onClick={() => setUserDropdownOpen(false)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-[#CCFF00] font-medium"><Code2 className="w-3.5 h-3.5 text-[#CCFF00]" /> Meet the Developer</a>
                         <button onClick={() => { setUserDropdownOpen(false); logout(); soundFx.playClick(); }} className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 flex items-center gap-2.5 text-[12.5px] text-white/60 hover:text-red-300"><LogOut className="w-3.5 h-3.5" /> Sign out</button>
                       </div>
                     )}
@@ -375,20 +364,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                   <span>Admin Hub</span>
                 </button>
               </div>
-
-              {/* Meet the Developer Mobile CTA */}
-              <a
-                href="/developer"
-                onClick={() => { setMobileMenuOpen(false); soundFx.playLaser(); }}
-                className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-[#CCFF00]/15 via-[#7000FF]/15 to-transparent border border-[#CCFF00]/35 text-[#CCFF00] hover:bg-[#CCFF00]/25 font-mono text-xs font-bold flex items-center justify-between transition-all shadow-[0_0_15px_rgba(204,255,0,0.08)]"
-              >
-                <span className="flex items-center gap-2">
-                  <Code2 className="w-4 h-4 text-[#CCFF00]" /> Meet the Developer
-                </span>
-                <span className="text-[10px] text-[#CCFF00]/80 font-mono flex items-center gap-1">
-                  Profile <ArrowUpRight className="w-3.5 h-3.5 text-[#CCFF00]" />
-                </span>
-              </a>
 
               {/* Command Palette Launcher */}
               <button

@@ -539,32 +539,113 @@ export const TeamSection: React.FC = () => {
         )}
 
         {/* Architect & Developer Spotlight Card */}
-        <div className="mt-14 rounded-3xl border border-[#CCFF00]/30 bg-gradient-to-r from-[#0E0E12] via-[#14141A] to-[#0A0A0D] p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_16px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(204,255,0,0.06)] relative overflow-hidden group">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/60 to-transparent" />
-          <div className="absolute -right-20 -bottom-20 w-64 h-64 rounded-full bg-[#CCFF00]/10 blur-[80px] pointer-events-none" />
+        <div className="mt-16 rounded-[32px] border border-[#CCFF00]/30 bg-gradient-to-br from-[#0F1117] via-[#0A0C10] to-[#050608] p-6 sm:p-9 md:p-11 shadow-[0_24px_70px_rgba(0,0,0,0.8),0_0_40px_rgba(204,255,0,0.08)] relative overflow-hidden group">
+          {/* Neon Top Laser Rule */}
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/70 to-transparent" />
+          <div className="absolute -right-24 -top-24 w-80 h-80 rounded-full bg-[#CCFF00]/10 blur-[90px] pointer-events-none" />
+          <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-[#7000FF]/15 blur-[100px] pointer-events-none" />
+          <div className="absolute inset-0 editorial-grid opacity-[0.06] pointer-events-none" />
 
-          <div className="space-y-2 text-center md:text-left relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/25 text-[10px] font-mono tracking-widest text-[#CCFF00] uppercase font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#CCFF00] animate-ping" />
-              LEAD ARCHITECT &amp; DEVELOPER SPOTLIGHT
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left: Avatar + Bio highlights */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+              {/* Profile Avatar Frame with Cybernetic Rings */}
+              <div className="relative shrink-0">
+                <div className="absolute -inset-2 rounded-full border border-[#CCFF00]/30 border-dashed animate-[spin_20s_linear_infinite]" />
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-[#CCFF00] shadow-[0_0_24px_rgba(204,255,0,0.35)] bg-black">
+                  <img
+                    src="/team_images/Abhi.webp"
+                    alt="Abhishek Kahate"
+                    className="w-full h-full object-cover object-[center_15%]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+                <span className="absolute bottom-0 right-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[9px] font-mono font-black uppercase tracking-wider shadow-md">
+                  DEV
+                </span>
+              </div>
+
+              {/* Bio & Title */}
+              <div className="space-y-2.5 max-w-xl">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/25 text-[10px] font-mono tracking-widest text-[#CCFF00] uppercase font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#CCFF00] animate-ping" />
+                    ARCHITECT &amp; LEAD DEVELOPER
+                  </span>
+                  <span className="text-[10px] font-mono text-white/40 tracking-wider">
+                    SINC COUNCIL &bull; 2ND YEAR ECE
+                  </span>
+                </div>
+
+                <h3 className="font-[Syne] font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                  Abhishek Kahate
+                </h3>
+
+                <p className="text-xs sm:text-sm font-mono text-white/60 leading-relaxed">
+                  Architected the entire ECE Forum digital ecosystem — including the 3D WebGL silicon core, automated certificate studio, pass dispatcher, and role-based Supabase platform.
+                </p>
+
+                {/* Tech Pills */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-1">
+                  {['React 19', 'Three.js / R3F', 'Supabase Cloud', 'Framer Motion', 'TailwindCSS'].map((tech) => (
+                    <span
+                      key={tech}
+                      className="px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/10 text-white/50 text-[10px] font-mono"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h3 className="font-[Syne] font-extrabold text-xl sm:text-2xl text-white">
-              Curious about the engineering behind ECE Forum?
-            </h3>
-            <p className="text-xs sm:text-sm font-mono text-white/55 leading-relaxed">
-              Explore the interactive 3D WebGL silicon core, custom particle universe, Supabase cloud architecture, and personal dossier of the developer.
-            </p>
-          </div>
 
-          <a
-            href="/developer"
-            onClick={() => soundFx.playLaser()}
-            className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#CCFF00] text-black font-mono font-bold text-xs sm:text-sm hover:bg-white hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] transition-all cursor-pointer shrink-0 relative z-10"
-          >
-            <Code2 className="w-4 h-4" />
-            <span>Meet the Developer</span>
-            <ArrowUpRight className="w-4 h-4" />
-          </a>
+            {/* Right: CTA & Interactive Badges */}
+            <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-3 shrink-0 w-full sm:w-auto">
+              <a
+                href="/developer"
+                onClick={() => soundFx.playLaser()}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-[#CCFF00] text-black font-mono font-bold text-xs sm:text-sm hover:bg-white hover:shadow-[0_0_36px_rgba(204,255,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow-[0_0_24px_rgba(204,255,0,0.3)] group"
+              >
+                <Code2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                <span>Meet the Developer</span>
+                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://github.com/Abhishekkahate"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => soundFx.playClick()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-[11px] font-mono transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                  </svg>
+                  <span>GitHub</span>
+                </a>
+
+                <a
+                  href="mailto:abhishek.k@ece-elevate.org"
+                  onClick={() => soundFx.playClick()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-[11px] font-mono transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Email</span>
+                </a>
+              </div>
+
+              <div className="flex items-center gap-3 text-[10px] font-mono text-white/40">
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF88]" /> 3D Portfolio
+                </span>
+                <span>&bull;</span>
+                <span>System Specs</span>
+                <span>&bull;</span>
+                <span>Live Dossier</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       </div>
