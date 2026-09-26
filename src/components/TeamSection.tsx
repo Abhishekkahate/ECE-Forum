@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mail, ExternalLink, Shield, Sparkles, Search, X, Check, Award, ArrowUpRight,
-  Users, Layers, Hash, LayoutGrid, List, Zap, Cpu, BookOpen, ChevronRight, ChevronLeft, Activity
+  Users, Layers, Hash, LayoutGrid, List, Zap, Cpu, BookOpen, ChevronRight, ChevronLeft, Activity, Code2
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { OptimizedImage } from './OptimizedImage';
@@ -537,6 +537,35 @@ export const TeamSection: React.FC = () => {
             })}
           </div>
         )}
+
+        {/* Architect & Developer Spotlight Card */}
+        <div className="mt-14 rounded-3xl border border-[#CCFF00]/30 bg-gradient-to-r from-[#0E0E12] via-[#14141A] to-[#0A0A0D] p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_16px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(204,255,0,0.06)] relative overflow-hidden group">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#CCFF00]/60 to-transparent" />
+          <div className="absolute -right-20 -bottom-20 w-64 h-64 rounded-full bg-[#CCFF00]/10 blur-[80px] pointer-events-none" />
+
+          <div className="space-y-2 text-center md:text-left relative z-10 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/25 text-[10px] font-mono tracking-widest text-[#CCFF00] uppercase font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#CCFF00] animate-ping" />
+              LEAD ARCHITECT &amp; DEVELOPER SPOTLIGHT
+            </div>
+            <h3 className="font-[Syne] font-extrabold text-xl sm:text-2xl text-white">
+              Curious about the engineering behind ECE Forum?
+            </h3>
+            <p className="text-xs sm:text-sm font-mono text-white/55 leading-relaxed">
+              Explore the interactive 3D WebGL silicon core, custom particle universe, Supabase cloud architecture, and personal dossier of the developer.
+            </p>
+          </div>
+
+          <a
+            href="/developer"
+            onClick={() => soundFx.playLaser()}
+            className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#CCFF00] text-black font-mono font-bold text-xs sm:text-sm hover:bg-white hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] transition-all cursor-pointer shrink-0 relative z-10"
+          >
+            <Code2 className="w-4 h-4" />
+            <span>Meet the Developer</span>
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        </div>
       </div>
       </div>
 

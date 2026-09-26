@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, VolumeX, Menu, X, Ticket, LogOut, ChevronDown, ArrowUpRight, Search, Command, Award, CheckCircle2 } from 'lucide-react';
+import { Shield, Menu, X, Ticket, LogOut, ChevronDown, Search, Command, Award, CheckCircle2, Code2, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { passService } from '../services/passService';
 import { certificateService } from '../services/certificateService';
@@ -19,7 +19,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
   const [progress, setProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [isAudioActive, setIsAudioActive] = useState(false);
   const [activeLink, setActiveLink] = useState('#hero');
   const [userPassCount, setUserPassCount] = useState(0);
   const [userCertCount, setUserCertCount] = useState(0);
@@ -38,7 +37,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
   };
 
   useEffect(() => {
-    setIsAudioActive(soundFx.isEnabled());
     let ticking = false;
     let lastProg = 0;
     const onScroll = () => {
@@ -108,17 +106,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const toggleSoundEffects = () => setIsAudioActive(soundFx.toggleSound());
-
   const navLinks = [
     { label: 'Overview', href: '#hero', num: '01' },
     { label: 'Atelier', href: '#about', num: '02' },
-    { label: 'Telemetry', href: '#stats', num: '03' },
-    { label: 'Events', href: '#events', num: '04' },
-    { label: 'Archive', href: '#gallery', num: '05' },
-    { label: 'Prestige', href: '#achievements', num: '06' },
-    { label: 'Advisors', href: '#faculty', num: '07' },
-    { label: 'Command', href: '#team', num: '08' },
+    { label: 'Events', href: '#events', num: '03' },
+    { label: 'Archive', href: '#gallery', num: '04' },
+    { label: 'Prestige', href: '#achievements', num: '05' },
+    { label: 'Advisors', href: '#faculty', num: '06' },
+    { label: 'Command', href: '#team', num: '07' },
   ];
 
   useEffect(() => {
@@ -149,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
           {/* signal hairline when scrolled */}
           <span className={`pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF4A15]/40 to-transparent transition-opacity ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
           <div className="hidden xl:flex absolute left-0 top-0 bottom-0 w-[56px] border-r border-white/[0.06] items-center justify-center">
-            <span className="text-[10px] font-mono tracking-[0.18em] text-white/30 [writing-mode:vertical-rl] rotate-180">ATELIER — 08 — {String(activeIdx + 1).padStart(2,'0')}/08</span>
+            <span className="text-[10px] font-mono tracking-[0.18em] text-white/30 [writing-mode:vertical-rl] rotate-180">ATELIER — 07 — {String(Math.max(1, activeIdx + 1)).padStart(2,'0')}/07</span>
           </div>
 
           <div className="mx-auto max-w-[1600px] xl:pl-[56px] px-3 sm:px-6 lg:px-8">
@@ -224,16 +219,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                   {userCertCount > 0 && <span className="ml-0.5 min-w-5 h-5 px-1.5 rounded-full bg-[#FFD700] text-black text-[10px] font-bold grid place-items-center shadow-[0_0_10px_rgba(255,215,0,0.5)]">{userCertCount}</span>}
                 </button>
 
-                <button onClick={toggleSoundEffects} aria-pressed={isAudioActive} className={`hidden sm:inline-flex w-8 h-8 rounded-full border grid place-items-center transition-colors ${isAudioActive ? 'bg-[#FF4A15]/10 border-[#FF4A15]/25 text-[#FF4A15]' : 'bg-white/[0.04] border-white/[0.08] text-white/30 hover:text-white'}`}>
-                  {isAudioActive ? <span className="flex items-end gap-[2px] h-3"><span className="w-[2px] bg-[#FF4A15] eq-bar-1 rounded-full" /><span className="w-[2px] bg-[#FF4A15] eq-bar-2 rounded-full" /><span className="w-[2px] bg-[#FF4A15] eq-bar-3 rounded-full" /></span> : <VolumeX className="w-3.5 h-3.5" />}
-                </button>
-
                 <button onClick={() => { soundFx.playLaser(); onOpenAdmin(); }} className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.07] text-white/50 hover:text-white hover:bg-white/[0.06] text-[11px] font-mono uppercase">
                   <Shield className="w-3 h-3 text-[#FF4A15]" /> Admin
                 </button>
 
+                <a
+                  href="/developer"
+                  onClick={() => soundFx.playLaser()}
+                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#CCFF00]/30 bg-[#CCFF00]/10 text-[#CCFF00] hover:bg-[#CCFF00] hover:text-black text-[11px] font-mono uppercase font-bold transition-all shadow-[0_0_15px_rgba(204,255,0,0.15)] group shrink-0"
+                  title="Meet the Developer — Abhishek Kahate"
+                >
+                  <Code2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                  <span>Meet the Developer</span>
+                </a>
+
                 {isAuthenticated && user ? (
-                  <div className="relative hidden sm:block" ref={dropdownRef}>
+                  <div className="relative" ref={dropdownRef}>
                     <button onClick={() => setUserDropdownOpen(!userDropdownOpen)} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white/[0.07] border border-white/10 hover:bg-white/[0.10] text-[#F5F3EF] transition-colors">
                       <img src={user.photoURL || `https://i.pravatar.cc/100?u=${encodeURIComponent(user.email)}`} alt={user.name} className="w-6 h-6 rounded-full object-cover border border-white/15" />
                       <span className="text-[12px] font-medium hidden md:inline max-w-[84px] truncate">{user.name.split(' ')[0]}</span>
@@ -249,19 +250,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                         <button onClick={() => { setUserDropdownOpen(false); onOpenMyPasses(); }} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-white/80"><Ticket className="w-3.5 h-3.5 text-[#FF4A15]" /> My Passes {userPassCount>0 && <span className="ml-auto bg-[#FF4A15] text-white text-[10px] px-1.5 py-0.5 rounded-full">{userPassCount}</span>}</button>
                         <button onClick={() => { setUserDropdownOpen(false); onOpenMyCertificates(); }} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-white/80"><Award className="w-3.5 h-3.5 text-[#FFD700]" /> My Certificates {userCertCount>0 && <span className="ml-auto bg-[#FFD700] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{userCertCount}</span>}</button>
                         <a href="/verify" onClick={() => setUserDropdownOpen(false)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-white/80"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Verify Certificate</a>
+                        <a href="/developer" onClick={() => setUserDropdownOpen(false)} className="w-full text-left px-3 py-2 rounded-xl hover:bg-white/[0.06] flex items-center gap-2.5 text-[12.5px] text-[#CCFF00] font-medium"><Code2 className="w-3.5 h-3.5 text-[#CCFF00]" /> Meet the Developer</a>
                         <button onClick={() => { setUserDropdownOpen(false); logout(); soundFx.playClick(); }} className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 flex items-center gap-2.5 text-[12.5px] text-white/60 hover:text-red-300"><LogOut className="w-3.5 h-3.5" /> Sign out</button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <button onClick={() => { soundFx.playClick(); onOpenGoogleAuth(); }} className="hidden sm:inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1 rounded-full bg-[#F5F3EF] text-[#08080A] font-semibold text-[12px] hover:bg-white transition-colors">
-                    <span className="w-5 h-5 rounded-full bg-white grid place-items-center border border-black/5"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg></span> Sign in
+                  <button onClick={() => { soundFx.playClick(); onOpenGoogleAuth(); }} className="inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full bg-[#F5F3EF] text-[#08080A] font-semibold text-[12px] hover:bg-white hover:shadow-[0_4px_16px_rgba(255,255,255,0.25)] transition-all shrink-0 cursor-pointer">
+                    <span className="w-5 h-5 rounded-full bg-white grid place-items-center border border-black/5 shadow-xs shrink-0"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg></span>
+                    <span className="hidden sm:inline">Sign in with Google</span>
+                    <span className="sm:hidden font-medium">Sign in</span>
                   </button>
                 )}
-
-                <a href="#events" onClick={() => soundFx.playClick()} className="inline-flex items-center gap-2 pl-4 pr-1 py-1 rounded-full bg-[#FF4A15] text-white font-bold text-[12px] hover:bg-[#E84410] hover:shadow-[0_8px_20px_rgba(255,74,21,0.35)] transition-all group/cta shrink-0">
-                  <span className="uppercase tracking-[0.02em]">Register</span><span className="w-6 h-6 rounded-full bg-white text-[#FF4A15] grid place-items-center group-hover/cta:rotate-45 transition-transform"><ArrowUpRight className="w-3 h-3" /></span>
-                </a>
 
                 <button onClick={() => { soundFx.playClick(); setMobileMenuOpen(!mobileMenuOpen); }} className={`xl:hidden w-8 h-8 rounded-full grid place-items-center border transition-colors shrink-0 ${mobileMenuOpen ? 'bg-[#FF4A15] border-[#FF4A15] text-white' : 'bg-[#F5F3EF] text-[#08080A] border-white/10'}`} aria-expanded={mobileMenuOpen}>
                   {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -314,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                   </svg>
-                  <span>Sign in with Google Account</span>
+                  <span>Sign in with Google</span>
                 </button>
               )}
 
@@ -358,7 +358,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <a
                   href="/verify"
                   onClick={() => setMobileMenuOpen(false)}
@@ -374,20 +374,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
                   <Shield className="w-4 h-4 text-[#FF4A15]" />
                   <span>Admin Hub</span>
                 </button>
-                <button
-                  onClick={() => {
-                    toggleSoundEffects();
-                  }}
-                  className={`py-2.5 px-2 rounded-xl border font-mono text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors ${
-                    isAudioActive
-                      ? 'bg-[#FF4A15]/10 border-[#FF4A15]/25 text-[#FF4A15]'
-                      : 'bg-white/[0.05] border-white/[0.08] text-white/50'
-                  }`}
-                >
-                  {isAudioActive ? <span className="flex items-end gap-[2px] h-4 mb-0.5"><span className="w-[2px] bg-[#FF4A15] eq-bar-1 rounded-full" /><span className="w-[2px] bg-[#FF4A15] eq-bar-2 rounded-full" /><span className="w-[2px] bg-[#FF4A15] eq-bar-3 rounded-full" /></span> : <VolumeX className="w-4 h-4" />}
-                  <span>Sound: {isAudioActive ? 'ON' : 'OFF'}</span>
-                </button>
               </div>
+
+              {/* Meet the Developer Mobile CTA */}
+              <a
+                href="/developer"
+                onClick={() => { setMobileMenuOpen(false); soundFx.playLaser(); }}
+                className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-[#CCFF00]/15 via-[#7000FF]/15 to-transparent border border-[#CCFF00]/35 text-[#CCFF00] hover:bg-[#CCFF00]/25 font-mono text-xs font-bold flex items-center justify-between transition-all shadow-[0_0_15px_rgba(204,255,0,0.08)]"
+              >
+                <span className="flex items-center gap-2">
+                  <Code2 className="w-4 h-4 text-[#CCFF00]" /> Meet the Developer
+                </span>
+                <span className="text-[10px] text-[#CCFF00]/80 font-mono flex items-center gap-1">
+                  Profile <ArrowUpRight className="w-3.5 h-3.5 text-[#CCFF00]" />
+                </span>
+              </a>
 
               {/* Command Palette Launcher */}
               <button

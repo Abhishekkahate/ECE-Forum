@@ -129,7 +129,7 @@ function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
   const items = [
     { id: '#hero', label: 'Overview — Hero & Silicon Core', category: 'Section', icon: Hexagon, kbd: '0' },
     { id: '#about', label: 'Dual Council — SPACE × SINC', category: 'Section', icon: Layers, kbd: '1' },
-    { id: '#stats', label: 'Department Telemetry — Metrics', category: 'Section', icon: Activity, kbd: '2' },
+    { id: '#stats', label: 'Department Audit — Metrics', category: 'Section', icon: Activity, kbd: '2' },
     { id: '#events', label: 'Events & Registration — Live Calendar', category: 'Section', icon: Calendar, kbd: '3' },
     { id: '#gallery', label: 'Visual Archive — Labs & Hackathons', category: 'Section', icon: ImageIcon, kbd: '4' },
     { id: '#achievements', label: 'Prestige — Patents & Trophies', category: 'Section', icon: Trophy, kbd: '5' },
