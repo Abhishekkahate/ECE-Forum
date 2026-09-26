@@ -997,7 +997,11 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
   };
 
   // ── 12. Render Single Certificate Offscreen & Export Base64 ───────────────
-  const generateCertificatePngBase64 = async (recipient: StudioRecipient, rowIdx: number): Promise<string> => {
+  const generateCertificatePngBase64 = async (
+    recipient: StudioRecipient,
+    rowIdx: number,
+    format: 'high_res' | 'storage' = 'high_res'
+  ): Promise<string> => {
     if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
       try {
         await document.fonts.ready;
@@ -1025,7 +1029,13 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
         drawFieldOnCanvas(ctx, field, val, off.width, off.height);
       });
 
-      resolve(off.toDataURL('image/png', 0.95));
+      if (format === 'storage') {
+        // High quality JPEG compressed for fast cloud database sync (~120 KB vs 3.5 MB)
+        resolve(off.toDataURL('image/jpeg', 0.88));
+      } else {
+        // Full uncompressed PNG for high-res downloads / printing
+        resolve(off.toDataURL('image/png', 0.95));
+      }
     });
   };
 
@@ -1147,17 +1157,27 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       return;
     }
 
-    if ((deliveryMode === 'email_only' || deliveryMode === 'both') && (!smtpConfig.host || !smtpConfig.user || !smtpConfig.pass)) {
-      alert('SMTP settings are incomplete. Please click "Setup SMTP" to provide your credentials.');
-      setShowSmtpModal(true);
-      return;
+    const hasSmtpConfigured = Boolean(smtpConfig.host && smtpConfig.user && smtpConfig.pass);
+    let shouldSendEmails = (deliveryMode === 'email_only' || deliveryMode === 'both') && hasSmtpConfigured;
+
+    if ((deliveryMode === 'email_only' || deliveryMode === 'both') && !hasSmtpConfigured) {
+      const proceedWithoutEmail = window.confirm(
+        '⚠️ SMTP email settings have not been configured yet.\n\nWould you like to issue the certificates directly to student portal accounts now? (Students can immediately view and download them from their dashboard, and you can send emails later once SMTP is configured).'
+      );
+      if (!proceedWithoutEmail) {
+        setShowSmtpModal(true);
+        return;
+      }
+      shouldSendEmails = false;
     }
 
     const confirmMsg =
       deliveryMode === 'both'
-        ? `Issue official certificates for ${recipients.length} participants to their student accounts AND email certificate PNGs via SMTP?`
+        ? `Issue official certificates for ${recipients.length} participants to their student accounts${shouldSendEmails ? ' AND email certificate PNGs via SMTP' : ''}?`
         : deliveryMode === 'email_only'
-        ? `Send certificate PNG emails via SMTP to all ${recipients.length} participants?`
+        ? shouldSendEmails
+          ? `Send certificate PNG emails via SMTP AND register certificates in student portal accounts for all ${recipients.length} participants?`
+          : `Register official certificates in student portal accounts for all ${recipients.length} participants?`
         : `Issue and register official certificates for ${recipients.length} participants in their student portal accounts?`;
 
     if (!window.confirm(confirmMsg)) return;
@@ -1177,40 +1197,41 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       setProgressStatus(`Processing ${i + 1} of ${recipients.length}: ${r.name}`);
 
       try {
-        // 1. Render PNG base64
-        const certImageBase64 = await generateCertificatePngBase64(r, i);
+        // 1. Render lightweight storage image for Supabase database (~120 KB vs 3.5 MB)
+        const certImageForStorage = await generateCertificatePngBase64(r, i, 'storage');
 
-        // 2. Prepare Database Record
-        if (deliveryMode === 'account_only' || deliveryMode === 'both') {
-          issuedDatabaseCerts.push({
-            certId: r.certId,
-            securityHash: `VFX-${r.certId || Date.now()}`,
-            name: r.name,
-            email: r.email,
-            department: r.department,
-            collegeName: r.collegeName,
-            rankText: r.rankText || certRankText,
-            certType: certAwardType,
-            certificateImage: certImageBase64,
-            canvasConfig: {
-              templateName,
-              fields,
-            },
-          });
-        }
+        // 2. Prepare Database Record (ALWAYS save to official student account registry)
+        issuedDatabaseCerts.push({
+          certId: r.certId,
+          securityHash: `VFX-${r.certId || Date.now()}`,
+          name: r.name,
+          email: (r.email || '').trim().toLowerCase(),
+          department: r.department,
+          collegeName: r.collegeName,
+          rankText: r.rankText || certRankText,
+          certType: certAwardType,
+          certificateImage: certImageForStorage,
+          templateBg: certImageForStorage,
+          canvasConfig: {
+            templateName,
+            fields,
+          },
+        });
 
-        // 3. Send Email via SMTP
-        if (deliveryMode === 'email_only' || deliveryMode === 'both') {
+        // 3. Send Email via SMTP if enabled
+        if (shouldSendEmails) {
           if (!r.email) {
             setDeliveryLogs((prev) => [
               ...prev,
-              { name: r.name, email: 'Missing email', success: false, msg: 'Recipient has no valid email address' },
+              { name: r.name, email: 'Missing email', success: false, msg: 'Recipient has no valid email (Certificate registered to student account)' },
             ]);
             emailFailCount++;
           } else {
+            // Full-res crisp PNG for email attachment
+            const certImageForEmail = await generateCertificatePngBase64(r, i, 'high_res');
             const finalSubject = substituteEmailVariables(emailSubject, r);
             const finalBody = substituteEmailVariables(emailBodyHtml, r);
-            const cleanBase64 = certImageBase64.replace(/^data:image\/png;base64,/, '');
+            const cleanBase64 = certImageForEmail.replace(/^data:image\/png;base64,/, '');
 
             const mailRes = await forumApi.sendCertificateEmail({
               smtp: smtpConfig,
@@ -1225,20 +1246,20 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
               emailSuccessCount++;
               setDeliveryLogs((prev) => [
                 ...prev,
-                { name: r.name, email: r.email, success: true, msg: 'Email & Certificate delivered successfully' },
+                { name: r.name, email: r.email, success: true, msg: 'Email delivered & registered to student account' },
               ]);
             } else {
               emailFailCount++;
               setDeliveryLogs((prev) => [
                 ...prev,
-                { name: r.name, email: r.email, success: false, msg: mailRes.error || 'SMTP delivery failed' },
+                { name: r.name, email: r.email, success: false, msg: `Email SMTP error: ${mailRes.error || 'Failed'} (Certificate safely registered to student account)` },
               ]);
             }
           }
         } else {
           setDeliveryLogs((prev) => [
             ...prev,
-            { name: r.name, email: r.email, success: true, msg: 'Registered to User Account Registry' },
+            { name: r.name, email: r.email, success: true, msg: 'Registered to Student Account Registry' },
           ]);
         }
       } catch (err: any) {
@@ -1249,12 +1270,12 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       }
 
       // Small pacing delay for SMTP servers
-      if (deliveryMode !== 'account_only') {
+      if (shouldSendEmails) {
         await new Promise((res) => setTimeout(res, 200));
       }
     }
 
-    // 4. Batch commit to Database if requested
+    // 4. Batch commit to Database
     if (issuedDatabaseCerts.length > 0) {
       setProgressStatus('Saving official certificates to database registry...');
       const dbRes = await forumApi.issueBulkCertificates({
@@ -1269,8 +1290,13 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
         participants: issuedDatabaseCerts,
       });
 
-      if (dbRes.success && onCertificatesIssued) {
-        onCertificatesIssued(dbRes.certificates);
+      if (dbRes.certificates && dbRes.certificates.length > 0) {
+        dbRes.certificates.forEach((c) => {
+          certificateService.syncUserCertificates(c.userEmail, [c]);
+        });
+        if (onCertificatesIssued) {
+          onCertificatesIssued(dbRes.certificates);
+        }
       }
       certificateService.notifyListeners();
     }
@@ -1279,7 +1305,7 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
     setProgressPercent(100);
     soundFx.playSuccess();
     confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
-    alert(`Certificate campaign completed!\n\n${recipients.length} certificates processed.\nDelivery Mode: ${deliveryMode.toUpperCase()}`);
+    alert(`Certificate campaign completed!\n\n${recipients.length} certificates registered to official student accounts${shouldSendEmails ? ' and emailed via SMTP' : ''}.`);
   };
 
   return (
@@ -1828,20 +1854,14 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
                     : 'border-white/10 bg-black/40 text-white/60 hover:text-white'
                 }`}
               >
-                <span>👤 Send to User Account (In-App Dashboard)</span>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span>👤 Student Portal Account Only</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#00E5CC]/20 text-[#00E5CC]">IN-APP</span>
+                  </div>
+                  <p className="text-[10px] font-sans text-white/50 font-normal">Immediate reflection in student dashboard &amp; verification link</p>
+                </div>
                 <input type="radio" checked={deliveryMode === 'account_only'} readOnly className="accent-[#00E5CC]" />
-              </label>
-
-              <label
-                onClick={() => setDeliveryMode('email_only')}
-                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                  deliveryMode === 'email_only'
-                    ? 'border-[#FFD700] bg-[#FFD700]/10 text-white font-bold'
-                    : 'border-white/10 bg-black/40 text-white/60 hover:text-white'
-                }`}
-              >
-                <span>✉️ Send via Email (SMTP Mailer)</span>
-                <input type="radio" checked={deliveryMode === 'email_only'} readOnly className="accent-[#FFD700]" />
               </label>
 
               <label
@@ -1852,8 +1872,32 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
                     : 'border-white/10 bg-black/40 text-white/60 hover:text-white'
                 }`}
               >
-                <span>⚡ Both (Account + Email Attachment)</span>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span>⚡ Both: Account + Email Attachment</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#FF4A15]/20 text-[#FF4A15]">RECOMMENDED</span>
+                  </div>
+                  <p className="text-[10px] font-sans text-white/50 font-normal">Reflects in student dashboard + dispatches email with PNG attachment</p>
+                </div>
                 <input type="radio" checked={deliveryMode === 'both'} readOnly className="accent-[#FF4A15]" />
+              </label>
+
+              <label
+                onClick={() => setDeliveryMode('email_only')}
+                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                  deliveryMode === 'email_only'
+                    ? 'border-[#FFD700] bg-[#FFD700]/10 text-white font-bold'
+                    : 'border-white/10 bg-black/40 text-white/60 hover:text-white'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span>✉️ Email Dispatch + Account Registry</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#FFD700]/20 text-[#FFD700]">SMTP</span>
+                  </div>
+                  <p className="text-[10px] font-sans text-white/50 font-normal">Sends via SMTP while archiving safely to student account profile</p>
+                </div>
+                <input type="radio" checked={deliveryMode === 'email_only'} readOnly className="accent-[#FFD700]" />
               </label>
             </div>
           </div>

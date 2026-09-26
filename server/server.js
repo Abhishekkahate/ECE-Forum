@@ -24,8 +24,12 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ── SUPABASE CLOUD DATABASE CONFIGURATION ──────────────────────────────────
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const SUPABASE_PROJECT_URL = 'https://whygrfjcibyhuoedtsor.supabase.co';
+const SUPABASE_PROJECT_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoeWdyZmpjaWJ5aHVvZWR0c29yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwNzc4ODMsImV4cCI6MjEwMzY1Mzg4M30.BXlEbix-uxJjaFhHRz3m-OWdTmE1OXmGiRXWdxYW6fg';
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || SUPABASE_PROJECT_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || SUPABASE_PROJECT_ANON_KEY;
 
 const isSupabaseEnabled = Boolean(
   SUPABASE_URL &&
@@ -890,7 +894,6 @@ app.post('/api/certificates', async (req, res) => {
           event_date: newCert.eventDate,
           user_name: newCert.userName,
           user_email: newCert.userEmail,
-          user_photo: newCert.userPhoto,
           department: newCert.department,
           college_name: newCert.collegeName,
           cert_type: newCert.certType,
@@ -998,7 +1001,6 @@ app.post('/api/certificates/issue', async (req, res) => {
       event_date: certObj.eventDate,
       user_name: certObj.userName,
       user_email: certObj.userEmail,
-      user_photo: certObj.userPhoto,
       department: certObj.department,
       college_name: certObj.collegeName,
       cert_type: certObj.certType,

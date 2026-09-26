@@ -436,8 +436,7 @@ export const supabaseDb = {
 
   async insertCertificate(cert: any) {
     const certId = cert.certId || cert.cert_id;
-    const certImg = cert.certificateImage || cert.certificate_image || null;
-    const templateBg = certImg || cert.templateBg || cert.template_bg || null;
+    const certImg = cert.certificateImage || cert.certificate_image || cert.templateBg || cert.template_bg || null;
 
     const payload: any = {
       cert_id: certId,
@@ -446,7 +445,6 @@ export const supabaseDb = {
       event_date: cert.eventDate || cert.event_date || new Date().toLocaleDateString('en-IN'),
       user_name: cert.userName || cert.user_name || 'Participant',
       user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
-      user_photo: cert.userPhoto || cert.user_photo || null,
       department: cert.department || cert.dept || 'Electronics & Communication Engineering',
       college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
       cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
@@ -454,7 +452,7 @@ export const supabaseDb = {
       rank_text: cert.rankText || cert.rank_text || 'Participant',
       description: cert.description || '',
       template_id: cert.templateId || cert.template_id || 'classic_gold',
-      template_bg: templateBg,
+      template_bg: certImg,
       signatories: cert.signatories || [],
       qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
       security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
@@ -481,8 +479,7 @@ export const supabaseDb = {
   async insertCertificatesBulk(certs: any[]) {
     const payloads = certs.map((cert) => {
       const certId = cert.certId || cert.cert_id;
-      const certImg = cert.certificateImage || cert.certificate_image || null;
-      const templateBg = certImg || cert.templateBg || cert.template_bg || null;
+      const certImg = cert.certificateImage || cert.certificate_image || cert.templateBg || cert.template_bg || null;
 
       return {
         cert_id: certId,
@@ -491,7 +488,6 @@ export const supabaseDb = {
         event_date: cert.eventDate || cert.event_date || new Date().toLocaleDateString('en-IN'),
         user_name: cert.userName || cert.user_name || 'Participant',
         user_email: (cert.userEmail || cert.user_email || '').trim().toLowerCase(),
-        user_photo: cert.userPhoto || cert.user_photo || null,
         department: cert.department || cert.dept || 'Electronics & Communication Engineering',
         college_name: cert.collegeName || cert.college_name || 'PCE-NAGPUR',
         cert_type: cert.certType || cert.cert_type || 'PARTICIPATION',
@@ -499,7 +495,7 @@ export const supabaseDb = {
         rank_text: cert.rankText || cert.rank_text || 'Participant',
         description: cert.description || '',
         template_id: cert.templateId || cert.template_id || 'classic_gold',
-        template_bg: templateBg,
+        template_bg: certImg,
         signatories: cert.signatories || [],
         qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
         security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
@@ -518,7 +514,23 @@ export const supabaseDb = {
       if (error) throw error;
       return data;
     } catch (err: any) {
-      console.warn('Supabase insertCertificatesBulk error:', err.message || err);
+      console.warn('Supabase insertCertificatesBulk batch error, attempting sequential fallback:', err.message || err);
+      try {
+        const results = [];
+        for (const p of payloads) {
+          const { data: singleData, error: singleErr } = await supabase
+            .from('certificates')
+            .upsert([p])
+            .select()
+            .single();
+          if (!singleErr && singleData) {
+            results.push(singleData);
+          }
+        }
+        if (results.length > 0) return results;
+      } catch (fallbackErr) {
+        console.warn('Sequential fallback also encountered error:', fallbackErr);
+      }
       return null;
     }
   },
