@@ -390,12 +390,16 @@ export const supabaseDb = {
     }
   },
 
-  // Certificates
-  async getCertificates(eventId?: string, email?: string, certType?: string) {
+  // Certificates (Lightweight column projection without heavy base64 images to prevent egress quota exhaustion)
+  async getCertificates(eventId?: string, email?: string, certType?: string, includeImage = false) {
     try {
+      const summaryColumns =
+        'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
+      const columns = includeImage ? '*' : summaryColumns;
+
       let query = supabase
         .from('certificates')
-        .select('*')
+        .select(columns)
         .order('created_at', { ascending: false });
 
       if (eventId && eventId !== 'all' && eventId !== 'ALL') {
@@ -417,12 +421,16 @@ export const supabaseDb = {
     }
   },
 
-  async getCertificateById(certId: string) {
+  async getCertificateById(certId: string, includeImage = true) {
     try {
       const clean = certId.trim();
+      const summaryColumns =
+        'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
+      const columns = includeImage ? '*' : summaryColumns;
+
       const { data, error } = await supabase
         .from('certificates')
-        .select('*')
+        .select(columns)
         .or(`cert_id.ilike.${clean},security_hash.ilike.${clean}`)
         .maybeSingle();
 
@@ -434,9 +442,32 @@ export const supabaseDb = {
     }
   },
 
+  // Lazy-load certificate image on-demand to avoid loading heavy image blobs into list queries
+  async getCertificateImage(certId: string): Promise<string | null> {
+    try {
+      const clean = certId.trim();
+      const { data, error } = await supabase
+        .from('certificates')
+        .select('certificate_image, template_bg')
+        .or(`cert_id.ilike.${clean},security_hash.ilike.${clean}`)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (
+        data?.certificate_image ||
+        (data?.template_bg && data.template_bg.startsWith('data:image/') ? data.template_bg : null) ||
+        null
+      );
+    } catch (err) {
+      console.warn('Supabase getCertificateImage error:', err);
+      return null;
+    }
+  },
+
   async insertCertificate(cert: any) {
     const certId = cert.certId || cert.cert_id;
-    const certImg = cert.certificateImage || cert.certificate_image || cert.templateBg || cert.template_bg || null;
+    const certImg = cert.certificateImage || cert.certificate_image || null;
+    const templateBg = cert.templateBg && !cert.templateBg.startsWith('data:image/') ? cert.templateBg : (cert.templateId || 'classic_gold');
 
     const payload: any = {
       cert_id: certId,
@@ -452,7 +483,9 @@ export const supabaseDb = {
       rank_text: cert.rankText || cert.rank_text || 'Participant',
       description: cert.description || '',
       template_id: cert.templateId || cert.template_id || 'classic_gold',
-      template_bg: certImg,
+      template_bg: templateBg,
+      certificate_image: certImg,
+      canvas_config: cert.canvasConfig || cert.canvas_config || {},
       signatories: cert.signatories || [],
       qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
       security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
@@ -462,10 +495,11 @@ export const supabaseDb = {
     };
 
     try {
+      // Select only cert_id to minimize return egress bandwidth
       const { data, error } = await supabase
         .from('certificates')
         .upsert([payload])
-        .select()
+        .select('cert_id')
         .single();
 
       if (error) throw error;
@@ -479,7 +513,8 @@ export const supabaseDb = {
   async insertCertificatesBulk(certs: any[]) {
     const payloads = certs.map((cert) => {
       const certId = cert.certId || cert.cert_id;
-      const certImg = cert.certificateImage || cert.certificate_image || cert.templateBg || cert.template_bg || null;
+      const certImg = cert.certificateImage || cert.certificate_image || null;
+      const templateBg = cert.templateBg && !cert.templateBg.startsWith('data:image/') ? cert.templateBg : (cert.templateId || 'classic_gold');
 
       return {
         cert_id: certId,
@@ -495,7 +530,9 @@ export const supabaseDb = {
         rank_text: cert.rankText || cert.rank_text || 'Participant',
         description: cert.description || '',
         template_id: cert.templateId || cert.template_id || 'classic_gold',
-        template_bg: certImg,
+        template_bg: templateBg,
+        certificate_image: certImg,
+        canvas_config: cert.canvasConfig || cert.canvas_config || {},
         signatories: cert.signatories || [],
         qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
         security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
@@ -506,10 +543,11 @@ export const supabaseDb = {
     });
 
     try {
+      // Select only cert_id to avoid downloading megabytes of inserted payload back
       const { data, error } = await supabase
         .from('certificates')
         .upsert(payloads)
-        .select();
+        .select('cert_id');
 
       if (error) throw error;
       return data;
@@ -521,7 +559,7 @@ export const supabaseDb = {
           const { data: singleData, error: singleErr } = await supabase
             .from('certificates')
             .upsert([p])
-            .select()
+            .select('cert_id')
             .single();
           if (!singleErr && singleData) {
             results.push(singleData);

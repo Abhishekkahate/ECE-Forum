@@ -265,7 +265,8 @@ app.get('/api/passes', async (req, res) => {
 
   if (supabase) {
     try {
-      let query = supabase.from('passes').select('*').order('created_at', { ascending: false });
+      const passCols = 'pass_id, event_id, event_title, event_date, event_time, event_venue, user_name, user_email, user_photo, college_name, department, year, phone, registration_type, team_name, team_members, payment_id, amount, original_amount, discount_amount, coupon_code, payment_status, transaction_id, status, admin_verified, verified_at, verified_by, rejection_reason, checked_in_at, checked_in_by, registered_at, security_hash, custom_fields, created_at';
+      let query = supabase.from('passes').select(passCols).order('created_at', { ascending: false });
       if (eventId && eventId !== 'all') query = query.eq('event_id', eventId);
       if (email) query = query.ilike('user_email', email);
 
@@ -635,7 +636,8 @@ app.get('/api/certificates', async (req, res) => {
 
   if (supabase) {
     try {
-      let query = supabase.from('certificates').select('*').order('created_at', { ascending: false });
+      const certCols = 'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
+      let query = supabase.from('certificates').select(certCols).order('created_at', { ascending: false });
       if (eventId && eventId !== 'all') query = query.eq('event_id', eventId);
       if (email) query = query.ilike('user_email', email.trim());
       if (certType && certType !== 'all') query = query.eq('cert_type', certType);
@@ -975,8 +977,8 @@ app.post('/api/certificates/issue', async (req, res) => {
       title: p.title || title,
       rankText: p.rankText || rankText,
       description: p.description || description,
-      templateId: p.templateId || templateId,
-      templateBg: p.certificateImage || p.templateBg || templateBg || null,
+      templateId: p.templateId || templateId || 'classic_gold',
+      templateBg: (p.templateBg && !p.templateBg.startsWith('data:image/')) ? p.templateBg : (templateBg && !templateBg.startsWith('data:image/') ? templateBg : (templateId || 'classic_gold')),
       signatories: p.signatories || signatories,
       qrData: JSON.stringify({
         certId,

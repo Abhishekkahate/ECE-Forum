@@ -131,8 +131,20 @@ class CertificateService {
 
   private saveToStorage() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.certificates));
-    } catch {}
+      const sanitized = this.certificates.map((c) => {
+        if (c.certificateImage?.startsWith('data:image/') || c.templateBg?.startsWith('data:image/')) {
+          return {
+            ...c,
+            certificateImage: undefined,
+            templateBg: c.templateBg?.startsWith('data:image/') ? c.templateId || 'classic_gold' : c.templateBg,
+          };
+        }
+        return c;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+    } catch (e) {
+      console.warn('CertificateService localStorage write skipped:', e);
+    }
   }
 
   public notifyListeners() {

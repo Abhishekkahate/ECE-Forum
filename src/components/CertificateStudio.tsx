@@ -1030,10 +1030,28 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       });
 
       if (format === 'storage') {
-        // High quality JPEG compressed for fast cloud database sync (~120 KB vs 3.5 MB)
-        resolve(off.toDataURL('image/jpeg', 0.88));
+        // Downscaled compact preview (~20KB-30KB) for fast cloud sync without blowing database bandwidth
+        const previewCanvas = document.createElement('canvas');
+        const targetWidth = Math.min(800, off.width);
+        const targetHeight = Math.round((off.height * targetWidth) / off.width);
+        previewCanvas.width = targetWidth;
+        previewCanvas.height = targetHeight;
+        const pCtx = previewCanvas.getContext('2d');
+        if (pCtx) {
+          pCtx.drawImage(off, 0, 0, targetWidth, targetHeight);
+          try {
+            const webp = previewCanvas.toDataURL('image/webp', 0.65);
+            if (webp && webp.startsWith('data:image/webp')) {
+              resolve(webp);
+              return;
+            }
+          } catch {}
+          resolve(previewCanvas.toDataURL('image/jpeg', 0.65));
+        } else {
+          resolve(off.toDataURL('image/jpeg', 0.65));
+        }
       } else {
-        // Full uncompressed PNG for high-res downloads / printing
+        // Full uncompressed PNG for high-res downloads / printing / SMTP email attachment
         resolve(off.toDataURL('image/png', 0.95));
       }
     });
@@ -1211,7 +1229,7 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
           rankText: r.rankText || certRankText,
           certType: certAwardType,
           certificateImage: certImageForStorage,
-          templateBg: certImageForStorage,
+          templateBg: templateName || 'custom_upload',
           canvasConfig: {
             templateName,
             fields,

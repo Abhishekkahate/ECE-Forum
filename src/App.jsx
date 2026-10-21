@@ -18,7 +18,6 @@ import { useAuth } from './context/AuthContext';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { MyPassesModal } from './components/MyPassesModal';
 import { MyCertificatesModal } from './components/MyCertificatesModal';
-import { DEFAULT_GALLERY_ITEMS } from './components/GallerySection';
 
 // --- MOBILE FLOATING GLASS DOCK (Mobile Bottom Quick Bar) ---
 function MobileDock() {

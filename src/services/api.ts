@@ -142,6 +142,20 @@ const memoryCache = {
   coupons: { data: null as Coupon[] | null, timestamp: 0 },
 };
 
+// Helper to strip heavy base64 images before saving to localStorage to prevent QuotaExceededError
+function sanitizeCertsForCache(certs: ApiCertificate[]): ApiCertificate[] {
+  return certs.map((c) => {
+    if (c.certificateImage?.startsWith('data:image/') || c.templateBg?.startsWith('data:image/')) {
+      return {
+        ...c,
+        certificateImage: undefined,
+        templateBg: c.templateBg?.startsWith('data:image/') ? c.templateId || 'classic_gold' : c.templateBg,
+      };
+    }
+    return c;
+  });
+}
+
 export const forumApi = {
   // ── Events ───────────────────────────────────────────────────────────────
   async getEvents(force = false): Promise<ApiEvent[]> {
@@ -828,9 +842,11 @@ export const forumApi = {
     } catch {}
   },
 
+
+
   // ── E-Certificates ────────────────────────────────────────────────────────
   async getCertificates(eventId?: string, email?: string, certType?: string, search?: string): Promise<ApiCertificate[]> {
-    // 1. Direct Supabase Query
+    // 1. Direct Supabase Query (lightweight metadata)
     try {
       const supaCerts = await supabaseDb.getCertificates(eventId, email, certType);
       if (Array.isArray(supaCerts)) {
@@ -874,14 +890,17 @@ export const forumApi = {
         try {
           const cached = localStorage.getItem('ece_forum_certificates_cache');
           const existing: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+          const cleanToCache = sanitizeCertsForCache(formatted);
           if (!email && (!eventId || eventId === 'ALL' || eventId === 'all')) {
-            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(formatted));
+            localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(cleanToCache));
           } else {
             const map = new Map(existing.map((c) => [c.certId, c]));
-            formatted.forEach((c) => map.set(c.certId, c));
+            cleanToCache.forEach((c) => map.set(c.certId, c));
             localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(Array.from(map.values())));
           }
-        } catch {}
+        } catch (storageErr) {
+          console.warn('Certificate localStorage write skipped:', storageErr);
+        }
 
         return formatted;
       }
@@ -904,8 +923,9 @@ export const forumApi = {
           try {
             const cached = localStorage.getItem('ece_forum_certificates_cache');
             const existing: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+            const cleanToCache = sanitizeCertsForCache(data);
             const map = new Map(existing.map((c) => [c.certId, c]));
-            data.forEach((c) => map.set(c.certId, c));
+            cleanToCache.forEach((c) => map.set(c.certId, c));
             localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(Array.from(map.values())));
           } catch {}
           return data;
@@ -1098,7 +1118,8 @@ export const forumApi = {
     try {
       const cached = localStorage.getItem('ece_forum_certificates_cache');
       const list: ApiCertificate[] = cached ? JSON.parse(cached) : [];
-      const updated = [newCert, ...list.filter((c) => c.certId !== newCert.certId)];
+      const cleanNewCert = sanitizeCertsForCache([newCert])[0];
+      const updated = [cleanNewCert, ...list.filter((c) => c.certId !== newCert.certId)];
       localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(updated));
     } catch {}
 
@@ -1151,6 +1172,11 @@ export const forumApi = {
       const certId = p.certId || `ECE-CERT-${new Date().getFullYear()}-${rand}`;
       const securityHash = p.securityHash || `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 
+      const safeTemplateBg =
+        payload.templateBg && !payload.templateBg.startsWith('data:image/')
+          ? payload.templateBg
+          : payload.templateId || 'classic_gold';
+
       const certObj: ApiCertificate = {
         certId,
         eventId: payload.eventId || 'evt-general',
@@ -1166,7 +1192,7 @@ export const forumApi = {
         rankText: p.rankText || payload.rankText || 'Participant',
         description: payload.description || '',
         templateId: payload.templateId || 'classic_gold',
-        templateBg: p.certificateImage || payload.certificateImage || payload.templateBg,
+        templateBg: safeTemplateBg,
         signatories: payload.signatories || [],
         qrData: JSON.stringify({
           certId,
@@ -1211,12 +1237,13 @@ export const forumApi = {
       }).catch(() => {});
     } catch {}
 
-    // 3. LocalStorage
+    // 3. LocalStorage (sanitized without heavy base64 images)
     try {
       const cached = localStorage.getItem('ece_forum_certificates_cache');
       const list: ApiCertificate[] = cached ? JSON.parse(cached) : [];
+      const cleanGenerated = sanitizeCertsForCache(generatedCerts);
       const map = new Map(list.map((c) => [c.certId, c]));
-      generatedCerts.forEach((c) => map.set(c.certId, c));
+      cleanGenerated.forEach((c) => map.set(c.certId, c));
       localStorage.setItem('ece_forum_certificates_cache', JSON.stringify(Array.from(map.values())));
     } catch {}
 

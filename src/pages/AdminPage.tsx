@@ -34,6 +34,7 @@ import { CertificateCard } from '../components/CertificateCard';
 import { CertificateStudio } from '../components/CertificateStudio';
 import { soundFx } from '../utils/audio';
 import { supabaseDb } from '../services/supabase';
+import { compressImage } from '../utils/imageCompressor';
 
 interface AdminPageProps {
   eventsList: EventItem[];
@@ -417,18 +418,26 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   }, [eventsList]);
 
   // Certificate Issuance Handlers
-  const handleCustomBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCustomBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCertTemplateBg(reader.result);
-        setCertTemplateId('custom_upload');
-        soundFx.playSuccess();
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      soundFx.playClick();
+      const compressed = await compressImage(file, 1600, 1130, 0.7);
+      setCertTemplateBg(compressed);
+      setCertTemplateId('custom_upload');
+      soundFx.playSuccess();
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setCertTemplateBg(reader.result);
+          setCertTemplateId('custom_upload');
+          soundFx.playSuccess();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleIssueCertificatesSubmit = async (e: React.FormEvent) => {
@@ -639,13 +648,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [announcementText, setAnnouncementText] = useState(currentAnnouncement);
   const [announcementSaved, setAnnouncementSaved] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       soundFx.playClick();
-      const r = new FileReader();
-      r.onloadend = () => setNewEvent({ ...newEvent, image: r.result as string });
-      r.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 900, 600, 0.7);
+        setNewEvent((prev) => ({ ...prev, image: compressed }));
+      } catch {
+        const r = new FileReader();
+        r.onloadend = () => setNewEvent((prev) => ({ ...prev, image: r.result as string }));
+        r.readAsDataURL(file);
+      }
     }
   };
 
@@ -2920,34 +2934,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                         multiple
                         accept="image/*"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const files = e.target.files;
                           if (!files || files.length === 0) return;
                           soundFx.playClick();
                           const fileArray = Array.from(files);
-                          let loadedCount = 0;
-                          const newLoaded: string[] = [];
+                          const compressedArray: string[] = [];
 
-                          fileArray.forEach((file) => {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const result = event.target?.result as string;
-                              if (result) {
-                                newLoaded.push(result);
-                              }
-                              loadedCount++;
-                              if (loadedCount === fileArray.length) {
-                                setGalleryForm((prev) => {
-                                  const combined = [...prev.images, ...newLoaded];
-                                  return {
-                                    ...prev,
-                                    images: combined,
-                                    url: prev.url || combined[0] || '',
-                                  };
-                                });
-                              }
+                          for (const file of fileArray) {
+                            try {
+                              const c = await compressImage(file, 1200, 900, 0.75);
+                              compressedArray.push(c);
+                            } catch {
+                              const r = new FileReader();
+                              await new Promise<void>((resolve) => {
+                                r.onload = () => {
+                                  if (typeof r.result === 'string') compressedArray.push(r.result);
+                                  resolve();
+                                };
+                                r.readAsDataURL(file);
+                              });
+                            }
+                          }
+
+                          setGalleryForm((prev) => {
+                            const combined = [...prev.images, ...compressedArray];
+                            return {
+                              ...prev,
+                              images: combined,
+                              url: prev.url || combined[0] || '',
                             };
-                            reader.readAsDataURL(file);
                           });
                           if (e.target) e.target.value = '';
                         }}

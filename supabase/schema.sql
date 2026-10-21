@@ -1,5 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- ECE FORUM CLOUD DATABASE SCHEMA FOR SUPABASE (PostgreSQL)
+-- Production-Ready, Bandwidth-Optimized, Fully Indexed
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. Create Events Table
@@ -20,24 +21,37 @@ CREATE TABLE IF NOT EXISTS public.events (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Create Passes / Registrations Table
+-- 2. Create Passes / Registrations Table (With Full Multi-Registration & Payment Proof Fields)
 CREATE TABLE IF NOT EXISTS public.passes (
     pass_id TEXT PRIMARY KEY,
     event_id TEXT REFERENCES public.events(id) ON DELETE CASCADE,
     event_title TEXT NOT NULL,
     event_date TEXT NOT NULL,
-    event_time TEXT NOT NULL,
-    event_venue TEXT NOT NULL,
+    event_time TEXT NOT NULL DEFAULT '10:00 AM IST',
+    event_venue TEXT NOT NULL DEFAULT 'PCE-NAGPUR Campus',
     user_name TEXT NOT NULL,
     user_email TEXT NOT NULL,
     user_photo TEXT,
+    college_name TEXT NOT NULL DEFAULT 'PCE-NAGPUR',
     department TEXT NOT NULL DEFAULT 'Electronics & Communication Engineering',
     year TEXT NOT NULL DEFAULT '3rd Year',
     phone TEXT,
+    registration_type TEXT NOT NULL DEFAULT 'individual',
+    team_name TEXT,
+    team_members JSONB DEFAULT '[]'::jsonb,
     payment_id TEXT NOT NULL DEFAULT 'FREE_PASS',
     amount NUMERIC NOT NULL DEFAULT 0,
+    original_amount NUMERIC NOT NULL DEFAULT 0,
+    discount_amount NUMERIC NOT NULL DEFAULT 0,
+    coupon_code TEXT,
     payment_status TEXT NOT NULL DEFAULT 'PAID',
-    status TEXT NOT NULL DEFAULT 'CONFIRMED', -- 'CONFIRMED' or 'CHECKED_IN'
+    transaction_id TEXT,
+    status TEXT NOT NULL DEFAULT 'CONFIRMED', -- 'CONFIRMED', 'CHECKED_IN', 'UNVERIFIED', 'REJECTED'
+    admin_verified BOOLEAN DEFAULT false,
+    verified_at TEXT,
+    verified_by TEXT,
+    rejection_reason TEXT,
+    payment_screenshot TEXT,
     checked_in_at TEXT,
     checked_in_by TEXT,
     registered_at TEXT NOT NULL,
@@ -45,6 +59,22 @@ CREATE TABLE IF NOT EXISTS public.passes (
     custom_fields JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Schema Migration for Existing Deployments of Passes
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS college_name TEXT NOT NULL DEFAULT 'PCE-NAGPUR';
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS registration_type TEXT NOT NULL DEFAULT 'individual';
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS team_name TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS team_members JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS original_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS coupon_code TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS transaction_id TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS admin_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS verified_at TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS verified_by TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS payment_screenshot TEXT;
+ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}'::jsonb;
 
 -- 3. Create Announcements Table
 CREATE TABLE IF NOT EXISTS public.announcements (
@@ -63,14 +93,14 @@ CREATE TABLE IF NOT EXISTS public.admins (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. Create Site Settings Table (Hero Telemetry Pill & Flagship Event Banner)
+-- 5. Create Site Settings Table (Hero Config, Telemetry, Gallery Archive, Coupons)
 CREATE TABLE IF NOT EXISTS public.site_settings (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 6. Create Certificates Table
+-- 6. Create Certificates Table (Bandwidth-Optimized)
 CREATE TABLE IF NOT EXISTS public.certificates (
     cert_id TEXT PRIMARY KEY,
     event_id TEXT REFERENCES public.events(id) ON DELETE CASCADE,
@@ -98,11 +128,19 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Schema Migration for Existing Deployments
+-- Schema Migration for Existing Deployments of Certificates
 ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS certificate_image TEXT;
 ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS canvas_config JSONB DEFAULT '{}'::jsonb;
 
--- 7. Enable Row Level Security (RLS)
+-- 7. High-Performance Query Indexes
+CREATE INDEX IF NOT EXISTS idx_passes_user_email ON public.passes (user_email);
+CREATE INDEX IF NOT EXISTS idx_passes_event_id ON public.passes (event_id);
+CREATE INDEX IF NOT EXISTS idx_certificates_user_email ON public.certificates (user_email);
+CREATE INDEX IF NOT EXISTS idx_certificates_event_id ON public.certificates (event_id);
+CREATE INDEX IF NOT EXISTS idx_certificates_security_hash ON public.certificates (security_hash);
+CREATE INDEX IF NOT EXISTS idx_events_created_at ON public.events (created_at DESC);
+
+-- 8. Enable Row Level Security (RLS)
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.passes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
@@ -110,6 +148,7 @@ ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 
+-- 9. Create RLS Policies
 DROP POLICY IF EXISTS "Allow Public Read Site Settings" ON public.site_settings;
 CREATE POLICY "Allow Public Read Site Settings" ON public.site_settings FOR SELECT USING (true);
 
@@ -125,10 +164,12 @@ CREATE POLICY "Allow Public Read Admins" ON public.admins FOR SELECT USING (true
 DROP POLICY IF EXISTS "Allow Public Insert Admins" ON public.admins;
 CREATE POLICY "Allow Public Insert Admins" ON public.admins FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow Public Update Admins" ON public.admins;
+CREATE POLICY "Allow Public Update Admins" ON public.admins FOR UPDATE USING (true);
+
 DROP POLICY IF EXISTS "Allow Public Delete Admins" ON public.admins;
 CREATE POLICY "Allow Public Delete Admins" ON public.admins FOR DELETE USING (true);
 
--- 8. Create RLS Policies for Events, Passes, Announcements, Certificates
 DROP POLICY IF EXISTS "Allow Public Read Events" ON public.events;
 CREATE POLICY "Allow Public Read Events" ON public.events FOR SELECT USING (true);
 
@@ -171,7 +212,7 @@ CREATE POLICY "Allow Public Update Certificates" ON public.certificates FOR UPDA
 DROP POLICY IF EXISTS "Allow Public Delete Certificates" ON public.certificates;
 CREATE POLICY "Allow Public Delete Certificates" ON public.certificates FOR DELETE USING (true);
 
--- 9. Insert Default Seed Data
+-- 10. Default Seed Data
 INSERT INTO public.events (id, title, category, status, date, time, venue, description, badge, image, price, total_seats)
 VALUES
     ('evt-1', 'SPACE & SINC Forum Installation Ceremony', 'Installation', 'Upcoming', 'July 30, 2026', '10:00 AM IST', 'PCE-NAGPUR Auditorium', 'Official installation ceremony for SPACE & SINC departmental councils for session 2026-27.', 'FLAGSHIP CEREMONY', '/event_images/inst.webp', 150, 250),
@@ -183,7 +224,13 @@ INSERT INTO public.announcements (id, content)
 VALUES (1, 'Registration Open for SPACE & SINC Forum Installation & TARANG 2K26 Fiesta!')
 ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content;
 
--- 10. Dynamic Registration Questionnaire Migration (JSONB)
-ALTER TABLE public.events ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '[]'::jsonb;
-ALTER TABLE public.passes ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}'::jsonb;
+INSERT INTO public.admins (id, name, email, password, role)
+VALUES
+    ('admin-1', 'ECE Executive Admin', 'admin@ece.com', 'admin123', 'Forum President & Executive Council')
+ON CONFLICT (email) DO NOTHING;
 
+INSERT INTO public.site_settings (key, value)
+VALUES
+    ('hero_flagship', '{"badge": "OFFICIAL COUNCIL PORTAL 2026-27", "title": "SPACE & SINC", "subtitle": "Department of Electronics & Communication Engineering", "flagshipEventId": "evt-1"}'::jsonb),
+    ('coupon_codes', '[{"code": "WELCOME10", "type": "PERCENTAGE", "value": 10, "maxUses": 100, "usedCount": 0, "active": true}]'::jsonb)
+ON CONFLICT (key) DO NOTHING;
