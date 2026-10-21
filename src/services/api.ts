@@ -1172,9 +1172,10 @@ export const forumApi = {
       const certId = p.certId || `ECE-CERT-${new Date().getFullYear()}-${rand}`;
       const securityHash = p.securityHash || `VFX-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 
+      const rawBg = p.templateBg || payload.templateBg || payload.templateId || 'classic_gold';
       const safeTemplateBg =
-        payload.templateBg && !payload.templateBg.startsWith('data:image/')
-          ? payload.templateBg
+        rawBg && !rawBg.startsWith('data:image/')
+          ? rawBg
           : payload.templateId || 'classic_gold';
 
       const certObj: ApiCertificate = {

@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
 -- 6. Create Certificates Table (Bandwidth-Optimized)
 CREATE TABLE IF NOT EXISTS public.certificates (
     cert_id TEXT PRIMARY KEY,
-    event_id TEXT REFERENCES public.events(id) ON DELETE CASCADE,
+    event_id TEXT, -- Unconstrained event reference to support all workshops, ceremonies & custom events
     event_title TEXT NOT NULL,
     event_date TEXT NOT NULL,
     user_name TEXT NOT NULL,
@@ -129,8 +129,10 @@ CREATE TABLE IF NOT EXISTS public.certificates (
 );
 
 -- Schema Migration for Existing Deployments of Certificates
+ALTER TABLE public.certificates DROP CONSTRAINT IF EXISTS certificates_event_id_fkey;
 ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS certificate_image TEXT;
 ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS canvas_config JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.certificates ADD COLUMN IF NOT EXISTS template_bg TEXT;
 
 -- 7. High-Performance Query Indexes
 CREATE INDEX IF NOT EXISTS idx_passes_user_email ON public.passes (user_email);

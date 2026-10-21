@@ -636,7 +636,7 @@ app.get('/api/certificates', async (req, res) => {
 
   if (supabase) {
     try {
-      const certCols = 'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
+      const certCols = 'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, template_bg, certificate_image, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
       let query = supabase.from('certificates').select(certCols).order('created_at', { ascending: false });
       if (eventId && eventId !== 'all') query = query.eq('event_id', eventId);
       if (email) query = query.ilike('user_email', email.trim());

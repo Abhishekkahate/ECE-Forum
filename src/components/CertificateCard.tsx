@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { type ApiCertificate } from '../services/api';
 import { CERTIFICATE_TEMPLATES, certificateService } from '../services/certificateService';
+import { supabaseDb } from '../services/supabase';
 import { soundFx } from '../utils/audio';
 
 interface CertificateCardProps {
@@ -38,9 +39,29 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loadedImage, setLoadedImage] = useState<string | null>(certificate.certificateImage || null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
 
   const activeTemplate =
     CERTIFICATE_TEMPLATES.find((t) => t.id === certificate.templateId) || CERTIFICATE_TEMPLATES[0];
+
+  // Lazy-resolve crisp certificate image on demand if not preloaded in list query
+  useEffect(() => {
+    if (certificate.certificateImage) {
+      setLoadedImage(certificate.certificateImage);
+      return;
+    }
+    if (certificate.certId) {
+      setIsLoadingImage(true);
+      supabaseDb
+        .getCertificateImage(certificate.certId)
+        .then((img) => {
+          if (img) setLoadedImage(img);
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingImage(false));
+    }
+  }, [certificate.certId, certificate.certificateImage]);
 
   useEffect(() => {
     const generateQR = async () => {
@@ -89,9 +110,10 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
     setIsDownloading(true);
 
     try {
-      if (certificate.certificateImage) {
+      const activeCertImg = loadedImage || certificate.certificateImage;
+      if (activeCertImg) {
         const link = document.createElement('a');
-        link.href = certificate.certificateImage;
+        link.href = activeCertImg;
         const cleanName = (certificate.userName || 'Student').replace(/\s+/g, '_');
         link.download = `ECE_CERT_${certificate.certId}_${cleanName}.png`;
         document.body.appendChild(link);
@@ -365,16 +387,23 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
 
       {/* Printable / Visual Certificate Container */}
       <div className="relative w-full overflow-hidden rounded-[28px] p-1 sm:p-2 bg-gradient-to-b from-white/15 via-white/5 to-transparent shadow-2xl">
-        {certificate.certificateImage ? (
+        {loadedImage || certificate.certificateImage ? (
           <div
             ref={cardRef}
             className="relative w-full aspect-[1.414/1] rounded-[24px] overflow-hidden bg-[#0A0A0E] border border-white/10 flex items-center justify-center shadow-2xl"
           >
             <img
-              src={certificate.certificateImage}
+              src={loadedImage || certificate.certificateImage}
               alt={certificate.title || 'Official Certificate'}
               className="w-full h-full object-contain select-none"
             />
+          </div>
+        ) : isLoadingImage ? (
+          <div
+            className="relative w-full aspect-[1.414/1] min-h-[380px] rounded-[24px] bg-[#0A0A0E] border border-white/10 flex flex-col items-center justify-center gap-3 shadow-2xl"
+          >
+            <Loader2 className="w-8 h-8 animate-spin text-[#FFD700]" />
+            <span className="text-xs font-mono text-white/50 animate-pulse">Resolving HD Certificate Credential...</span>
           </div>
         ) : (
         <div

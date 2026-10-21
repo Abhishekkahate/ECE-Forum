@@ -810,23 +810,19 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(templateImage, 0, 0, w, h);
 
-    const activeRecipient = recipients[previewRowIdx] || {
-      name: 'Aarav Sharma',
-      firstName: 'Aarav',
-      email: 'aarav.sharma@pcenagpur.edu.in',
-      department: 'Electronics & Communication Engineering',
-      collegeName: 'PCE-NAGPUR',
-      eventTitle: currentEvent?.title || 'SPACE & SINC Forum Installation Ceremony',
-      eventDate: currentEvent?.date || 'July 30, 2026',
-      rankText: certRankText || 'Participant',
-      certId: 'ECE-CERT-2026-X7K89',
-    };
+    const activeRecipient = recipients[previewRowIdx] || null;
 
     fields.forEach((baseField) => {
       const field = getEffectiveField(baseField, previewRowIdx);
-      let val = String(activeRecipient[field.key] ?? `[${field.label}]`);
-      if (field.key === 'title') val = certTitle;
-      if (field.key === 'rankText') val = certRankText;
+      let val = '';
+      if (activeRecipient) {
+        val = String(activeRecipient[field.key] ?? '');
+      } else {
+        // Show clean design bounding placeholder only when no participant data is loaded
+        val = `[${field.label}]`;
+      }
+      if (field.key === 'title') val = certTitle || (activeRecipient ? '' : '[Certificate Title]');
+      if (field.key === 'rankText') val = certRankText || (activeRecipient ? '' : '[Rank / Honor]');
 
       drawFieldOnCanvas(ctx, field, val, w, h);
 
@@ -1066,13 +1062,15 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       } catch {}
     }
     const recipient = recipients[previewRowIdx] || {
-      name: 'Preview Student',
-      certId: 'ECE-CERT-PREVIEW',
+      name: '',
+      certId: '',
     };
     const b64 = await generateCertificatePngBase64(recipient, previewRowIdx);
     const link = document.createElement('a');
     link.href = b64;
-    link.download = `Certificate_${recipient.name.replace(/\s+/g, '_')}_${recipient.certId}.png`;
+    link.download = recipient.name
+      ? `Certificate_${recipient.name.replace(/\s+/g, '_')}_${recipient.certId || 'Preview'}.png`
+      : `Certificate_Design_Preview.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1305,6 +1303,7 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
         rankText: certRankText,
         description: certDescription,
         templateId: 'custom_upload',
+        templateBg: templateName || 'custom_upload',
         participants: issuedDatabaseCerts,
       });
 
@@ -1403,7 +1402,10 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 items-stretch">
         
         {/* LEFT COLUMN: Controls, Typography & Data Selection (4 Cols) */}
-        <div className="lg:col-span-4 bg-[#0B0C0E] border-r border-white/10 p-5 space-y-6 overflow-y-auto max-h-[850px]">
+        <div
+          data-lenis-prevent
+          className="lg:col-span-4 bg-[#0B0C0E] border-r border-white/10 p-5 space-y-6 overflow-y-auto overscroll-contain custom-scrollbar max-h-[calc(100vh-140px)] min-h-[500px]"
+        >
           
           {/* 1. Recipient Data Source Selector */}
           <div className="space-y-3 p-4 rounded-2xl bg-[#12141A] border border-white/10">
@@ -1981,7 +1983,7 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
               ) : (
                 <div className="text-white/60 flex items-center gap-1.5">
                   <Eye className="w-3.5 h-3.5 text-[#00E5CC]" />
-                  <span>Previewing Recipient #{previewRowIdx + 1} of {recipients.length || 1}: <strong>{recipients[previewRowIdx]?.name || 'Sample'}</strong></span>
+                  <span>Previewing Recipient #{previewRowIdx + 1} of {recipients.length || 0}: <strong>{recipients[previewRowIdx]?.name || 'No participants loaded'}</strong></span>
                 </div>
               )}
             </div>
@@ -2007,7 +2009,10 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
           </div>
 
           {/* Interactive Canvas Stage */}
-          <div className="flex-1 my-4 flex items-center justify-center overflow-auto min-h-[460px] p-2 bg-black/50 rounded-2xl border border-white/5 relative">
+          <div
+            data-lenis-prevent
+            className="flex-1 my-4 flex items-center justify-center overflow-auto min-h-[460px] p-2 bg-black/50 rounded-2xl border border-white/5 relative overscroll-contain"
+          >
             <canvas
               ref={canvasRef}
               onPointerDown={handleCanvasPointerDown}
@@ -2031,7 +2036,10 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
               <span className="text-[10px] text-white/40">Use arrow keys or click row</span>
             </div>
 
-            <div className="max-h-[140px] overflow-y-auto rounded-xl border border-white/5 bg-black/40">
+            <div
+              data-lenis-prevent
+              className="max-h-[160px] overflow-y-auto rounded-xl border border-white/5 bg-black/40 overscroll-contain custom-scrollbar"
+            >
               <table className="w-full text-left text-xs font-mono">
                 <thead>
                   <tr className="border-b border-white/10 text-white/40 text-[10px]">

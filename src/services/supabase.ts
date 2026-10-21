@@ -390,11 +390,11 @@ export const supabaseDb = {
     }
   },
 
-  // Certificates (Lightweight column projection without heavy base64 images to prevent egress quota exhaustion)
+  // Certificates (Bandwidth-Optimized with graceful fallback for all schema variations)
   async getCertificates(eventId?: string, email?: string, certType?: string, includeImage = false) {
     try {
       const summaryColumns =
-        'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
+        'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, template_bg, certificate_image, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
       const columns = includeImage ? '*' : summaryColumns;
 
       let query = supabase
@@ -413,7 +413,26 @@ export const supabaseDb = {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (!error && data) return data;
+
+      // Resilient fallback query if canvas_config or custom columns are missing in user DB
+      if (error) {
+        console.warn('Supabase getCertificates select error, retrying with core columns:', error.message);
+        const coreColumns =
+          'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, template_bg, certificate_image, signatories, qr_data, security_hash, status, issued_at, issued_by, created_at';
+        let fallbackQuery = supabase
+          .from('certificates')
+          .select(coreColumns)
+          .order('created_at', { ascending: false });
+
+        if (eventId && eventId !== 'all' && eventId !== 'ALL') fallbackQuery = fallbackQuery.eq('event_id', eventId);
+        if (email) fallbackQuery = fallbackQuery.ilike('user_email', email.trim().toLowerCase());
+        if (certType && certType !== 'all' && certType !== 'ALL') fallbackQuery = fallbackQuery.eq('cert_type', certType);
+
+        const { data: fbData, error: fbErr } = await fallbackQuery;
+        if (!fbErr && fbData) return fbData;
+        throw error;
+      }
       return data;
     } catch (err) {
       console.warn('Supabase getCertificates error:', err);
@@ -425,17 +444,37 @@ export const supabaseDb = {
     try {
       const clean = certId.trim();
       const summaryColumns =
-        'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
+        'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, template_bg, certificate_image, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
       const columns = includeImage ? '*' : summaryColumns;
 
-      const { data, error } = await supabase
+      // 1. Direct cert_id lookup
+      const { data: byId, error: err1 } = await supabase
         .from('certificates')
         .select(columns)
-        .or(`cert_id.ilike.${clean},security_hash.ilike.${clean}`)
+        .eq('cert_id', clean)
         .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (!err1 && byId) return byId;
+
+      // 2. Security Hash lookup
+      const { data: byHash, error: err2 } = await supabase
+        .from('certificates')
+        .select(columns)
+        .eq('security_hash', clean)
+        .maybeSingle();
+
+      if (!err2 && byHash) return byHash;
+
+      // 3. Case-insensitive cert_id lookup
+      const { data: byIlike, error: err3 } = await supabase
+        .from('certificates')
+        .select(columns)
+        .ilike('cert_id', clean)
+        .maybeSingle();
+
+      if (!err3 && byIlike) return byIlike;
+
+      return null;
     } catch (err) {
       console.warn('Supabase getCertificateById error:', err);
       return null;
@@ -446,16 +485,28 @@ export const supabaseDb = {
   async getCertificateImage(certId: string): Promise<string | null> {
     try {
       const clean = certId.trim();
+
+      // 1. Exact cert_id
       const { data, error } = await supabase
         .from('certificates')
         .select('certificate_image, template_bg')
-        .or(`cert_id.ilike.${clean},security_hash.ilike.${clean}`)
+        .eq('cert_id', clean)
         .maybeSingle();
 
-      if (error) throw error;
+      if (!error && data?.certificate_image) {
+        return data.certificate_image;
+      }
+
+      // 2. Hash or case-insensitive fallback
+      const { data: altData } = await supabase
+        .from('certificates')
+        .select('certificate_image, template_bg')
+        .or(`cert_id.ilike."${clean}",security_hash.eq."${clean}"`)
+        .maybeSingle();
+
       return (
-        data?.certificate_image ||
-        (data?.template_bg && data.template_bg.startsWith('data:image/') ? data.template_bg : null) ||
+        altData?.certificate_image ||
+        (altData?.template_bg && altData.template_bg.startsWith('data:image/') ? altData.template_bg : null) ||
         null
       );
     } catch (err) {
@@ -471,7 +522,7 @@ export const supabaseDb = {
 
     const payload: any = {
       cert_id: certId,
-      event_id: cert.eventId || cert.event_id || 'evt-general',
+      event_id: cert.eventId || cert.event_id || null,
       event_title: cert.eventTitle || cert.event_title || 'ECE Forum Event',
       event_date: cert.eventDate || cert.event_date || new Date().toLocaleDateString('en-IN'),
       user_name: cert.userName || cert.user_name || 'Participant',
@@ -495,30 +546,53 @@ export const supabaseDb = {
     };
 
     try {
-      // Select only cert_id to minimize return egress bandwidth
       const { data, error } = await supabase
         .from('certificates')
         .upsert([payload])
         .select('cert_id')
         .single();
 
+      if (!error && data) return data;
       if (error) throw error;
-      return data;
     } catch (err: any) {
-      console.warn('Supabase insertCertificate error:', err.message || err);
+      console.warn('Supabase insertCertificate primary attempt failed, retrying with sanitized payload:', err.message || err);
+      try {
+        // Strip canvas_config if not present in schema
+        const sanitized = { ...payload };
+        delete sanitized.canvas_config;
+        const { data: retryData, error: retryErr } = await supabase
+          .from('certificates')
+          .upsert([sanitized])
+          .select('cert_id')
+          .single();
+
+        if (!retryErr && retryData) return retryData;
+
+        // If event_id foreign key constraint failed, set event_id to null and retry
+        const noFk = { ...sanitized, event_id: null };
+        const { data: noFkData, error: noFkErr } = await supabase
+          .from('certificates')
+          .upsert([noFk])
+          .select('cert_id')
+          .single();
+
+        if (!noFkErr && noFkData) return noFkData;
+      } catch (fallbackErr) {
+        console.warn('Supabase insertCertificate fallbacks exhausted:', fallbackErr);
+      }
       return null;
     }
   },
 
   async insertCertificatesBulk(certs: any[]) {
-    const payloads = certs.map((cert) => {
+    const buildPayload = (cert: any, stripCanvas = false, nullEvent = false) => {
       const certId = cert.certId || cert.cert_id;
       const certImg = cert.certificateImage || cert.certificate_image || null;
       const templateBg = cert.templateBg && !cert.templateBg.startsWith('data:image/') ? cert.templateBg : (cert.templateId || 'classic_gold');
 
-      return {
+      const item: any = {
         cert_id: certId,
-        event_id: cert.eventId || cert.event_id || 'evt-general',
+        event_id: nullEvent ? null : (cert.eventId || cert.event_id || null),
         event_title: cert.eventTitle || cert.event_title || 'ECE Forum Event',
         event_date: cert.eventDate || cert.event_date || new Date().toLocaleDateString('en-IN'),
         user_name: cert.userName || cert.user_name || 'Participant',
@@ -532,7 +606,6 @@ export const supabaseDb = {
         template_id: cert.templateId || cert.template_id || 'classic_gold',
         template_bg: templateBg,
         certificate_image: certImg,
-        canvas_config: cert.canvasConfig || cert.canvas_config || {},
         signatories: cert.signatories || [],
         qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
         security_hash: cert.securityHash || cert.security_hash || `VFX-${certId}`,
@@ -540,34 +613,49 @@ export const supabaseDb = {
         issued_at: cert.issuedAt || cert.issued_at || new Date().toLocaleDateString('en-IN'),
         issued_by: cert.issuedBy || cert.issued_by || 'ECE Forum Executive Council',
       };
-    });
+
+      if (!stripCanvas) {
+        item.canvas_config = cert.canvasConfig || cert.canvas_config || {};
+      }
+
+      return item;
+    };
+
+    const initialPayloads = certs.map((c) => buildPayload(c, false, false));
 
     try {
-      // Select only cert_id to avoid downloading megabytes of inserted payload back
+      // 1. Primary Batch Upsert
       const { data, error } = await supabase
         .from('certificates')
-        .upsert(payloads)
+        .upsert(initialPayloads)
         .select('cert_id');
 
+      if (!error && data) return data;
       if (error) throw error;
-      return data;
     } catch (err: any) {
-      console.warn('Supabase insertCertificatesBulk batch error, attempting sequential fallback:', err.message || err);
+      console.warn('Supabase insertCertificatesBulk batch attempt failed, trying resilient fallbacks:', err.message || err);
+
+      // 2. Retry batch without canvas_config (in case column is unmigrated)
+      try {
+        const withoutCanvas = certs.map((c) => buildPayload(c, true, false));
+        const { data: d2, error: e2 } = await supabase
+          .from('certificates')
+          .upsert(withoutCanvas)
+          .select('cert_id');
+
+        if (!e2 && d2) return d2;
+      } catch {}
+
+      // 3. Retry sequential with complete sanitization
       try {
         const results = [];
-        for (const p of payloads) {
-          const { data: singleData, error: singleErr } = await supabase
-            .from('certificates')
-            .upsert([p])
-            .select('cert_id')
-            .single();
-          if (!singleErr && singleData) {
-            results.push(singleData);
-          }
+        for (const cert of certs) {
+          const res = await this.insertCertificate(cert);
+          if (res) results.push(res);
         }
         if (results.length > 0) return results;
-      } catch (fallbackErr) {
-        console.warn('Sequential fallback also encountered error:', fallbackErr);
+      } catch (seqErr) {
+        console.warn('Sequential fallback also encountered error:', seqErr);
       }
       return null;
     }

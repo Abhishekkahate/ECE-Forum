@@ -267,9 +267,17 @@ export const MyCertificatesModal: React.FC<MyCertificatesModalProps> = ({
                       return (
                         <div
                           key={cert.certId}
-                          onClick={() => {
+                          onClick={async () => {
                             soundFx.playClick();
                             setSelectedCert(cert);
+                            if (!cert.certificateImage) {
+                              try {
+                                const full = await forumApi.getCertificateById(cert.certId);
+                                if (full && full.certificateImage) {
+                                  setSelectedCert(full);
+                                }
+                              } catch {}
+                            }
                           }}
                           className="group relative p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-[#FFD700]/50 transition-all cursor-pointer shadow-md flex flex-col justify-between gap-3 overflow-hidden"
                         >
