@@ -133,7 +133,6 @@ class CertificateService {
       window.addEventListener('ece_certificates_updated', () => {
         this.loadFromStorage();
       });
-      this.setupRealtimeChannel();
     }
   }
 

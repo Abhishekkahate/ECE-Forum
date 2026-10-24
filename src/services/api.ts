@@ -529,21 +529,14 @@ export const forumApi = {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/announcements`);
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.announcement || '';
-        memoryCache.announcement = { data: text, timestamp: now };
-        return text;
-      }
-    } catch {
       const ann = await supabaseDb.getAnnouncement();
-      if (ann) {
-        memoryCache.announcement = { data: ann, timestamp: now };
-        return ann;
-      }
+      const text = typeof ann === 'string' ? ann : '';
+      memoryCache.announcement = { data: text, timestamp: now };
+      return text;
+    } catch {
+      memoryCache.announcement = { data: '', timestamp: now };
+      return '';
     }
-    return memoryCache.announcement.data || '';
   },
 
   async setAnnouncement(announcement: string): Promise<boolean> {
@@ -668,6 +661,7 @@ export const forumApi = {
       }
     } catch {}
 
+    memoryCache.heroConfig = { data: DEFAULT_HERO_CONFIG, timestamp: now };
     return DEFAULT_HERO_CONFIG;
   },
 
@@ -731,6 +725,7 @@ export const forumApi = {
       }
     } catch {}
 
+    memoryCache.gallery = { data: [], timestamp: now };
     return [];
   },
 
@@ -803,6 +798,7 @@ export const forumApi = {
       }
     } catch {}
 
+    memoryCache.coupons = { data: DEFAULT_COUPONS, timestamp: now };
     return DEFAULT_COUPONS;
   },
 

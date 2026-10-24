@@ -64,7 +64,7 @@ export const supabaseDb = {
         .from('events')
         .upsert([payload])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.warn('Supabase insertEvent error:', error.message);
@@ -126,7 +126,7 @@ export const supabaseDb = {
         .from('passes')
         .select('payment_screenshot')
         .eq('pass_id', passId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data?.payment_screenshot || null;
@@ -183,7 +183,7 @@ export const supabaseDb = {
         .from('passes')
         .upsert([payload])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.warn('Supabase insertPass error:', error.message);
@@ -254,7 +254,7 @@ export const supabaseDb = {
         })
         .eq('pass_id', passId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -271,7 +271,7 @@ export const supabaseDb = {
         .from('announcements')
         .select('content')
         .eq('id', 1)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data?.content || '';
@@ -344,7 +344,7 @@ export const supabaseDb = {
 
   async insertAdmin(admin: { id: string; name: string; email: string; password: string; role: string }) {
     try {
-      const { data, error } = await supabase.from('admins').upsert([admin]).select().single();
+      const { data, error } = await supabase.from('admins').upsert([admin]).select().maybeSingle();
       if (error) throw error;
       return data;
     } catch {
@@ -537,7 +537,7 @@ export const supabaseDb = {
         .from('certificates')
         .upsert([payload])
         .select('cert_id')
-        .single();
+        .maybeSingle();
 
       if (!error && data) return data;
       if (error) throw error;
@@ -549,7 +549,7 @@ export const supabaseDb = {
           .from('certificates')
           .upsert([noFk])
           .select('cert_id')
-          .single();
+          .maybeSingle();
 
         if (!noFkErr && noFkData) return noFkData;
       } catch (fallbackErr) {

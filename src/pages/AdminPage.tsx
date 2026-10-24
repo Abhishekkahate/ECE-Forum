@@ -397,12 +397,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     window.addEventListener('ece_passes_updated', onPassesUpdate);
     window.addEventListener('ece_certificates_updated', onCertsUpdate);
 
-    // 60-second gentle polling while actively in Admin Studio (pauses when tab is inactive)
+    // 3-minute passive revalidation while actively in Admin Studio (pauses when tab is inactive)
     const iv = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       refreshLivePasses();
       refreshCertificates();
-    }, 60000);
+    }, 180000);
 
     return () => {
       clearInterval(iv);
