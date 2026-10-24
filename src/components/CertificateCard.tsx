@@ -47,10 +47,26 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
 
   // Lazy-resolve crisp certificate image on demand if not preloaded in list query
   useEffect(() => {
-    if (certificate.certificateImage) {
-      setLoadedImage(certificate.certificateImage);
+    const raw = certificate.certificateImage || (
+      certificate.templateBg && (
+        certificate.templateBg.startsWith('data:image/') ||
+        certificate.templateBg.startsWith('/9j/') ||
+        certificate.templateBg.startsWith('iVBOR') ||
+        certificate.templateBg.startsWith('UklGR')
+      ) ? certificate.templateBg : undefined
+    );
+
+    if (raw) {
+      let normalized = raw;
+      if (!normalized.startsWith('data:image/')) {
+        if (normalized.startsWith('/9j/')) normalized = `data:image/jpeg;base64,${normalized}`;
+        else if (normalized.startsWith('iVBOR')) normalized = `data:image/png;base64,${normalized}`;
+        else if (normalized.startsWith('UklGR')) normalized = `data:image/webp;base64,${normalized}`;
+      }
+      setLoadedImage(normalized);
       return;
     }
+
     if (certificate.certId) {
       setIsLoadingImage(true);
       supabaseDb
@@ -61,7 +77,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
         .catch(() => {})
         .finally(() => setIsLoadingImage(false));
     }
-  }, [certificate.certId, certificate.certificateImage]);
+  }, [certificate.certId, certificate.certificateImage, certificate.templateBg]);
 
   useEffect(() => {
     const generateQR = async () => {
@@ -112,6 +128,45 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
     try {
       const activeCertImg = loadedImage || certificate.certificateImage;
       if (activeCertImg) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = reject;
+            img.src = activeCertImg;
+          });
+
+          // Ultra-HD Canvas export (2400px width with high bicubic smoothing)
+          const targetWidth = Math.max(2400, (img.naturalWidth || 1600) * 1.5);
+          const targetHeight = Math.round(
+            ((img.naturalHeight || 1130) * targetWidth) / (img.naturalWidth || 1600)
+          );
+
+          const hdCanvas = document.createElement('canvas');
+          hdCanvas.width = targetWidth;
+          hdCanvas.height = targetHeight;
+          const hdCtx = hdCanvas.getContext('2d');
+          if (hdCtx) {
+            hdCtx.imageSmoothingEnabled = true;
+            hdCtx.imageSmoothingQuality = 'high';
+            hdCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+            const hdPng = hdCanvas.toDataURL('image/png', 1.0);
+
+            const link = document.createElement('a');
+            link.href = hdPng;
+            const cleanName = (certificate.userName || 'Student').replace(/\s+/g, '_');
+            link.download = `ECE_CERT_${certificate.certId}_${cleanName}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            soundFx.playSuccess();
+            return;
+          }
+        } catch (imgErr) {
+          console.warn('Client-side HD upscale error, downloading original image data:', imgErr);
+        }
+
         const link = document.createElement('a');
         link.href = activeCertImg;
         const cleanName = (certificate.userName || 'Student').replace(/\s+/g, '_');

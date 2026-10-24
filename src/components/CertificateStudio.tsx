@@ -1026,25 +1026,29 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       });
 
       if (format === 'storage') {
-        // Downscaled compact preview (~20KB-30KB) for fast cloud sync without blowing database bandwidth
+        // High-clarity WebP (~75KB-95KB) at 1600px width with 0.85 quality
+        // 4x more pixel density than 800px, razor-sharp typography on all screens
+        // without consuming excessive database bandwidth or storage limits
         const previewCanvas = document.createElement('canvas');
-        const targetWidth = Math.min(800, off.width);
+        const targetWidth = Math.min(1600, off.width);
         const targetHeight = Math.round((off.height * targetWidth) / off.width);
         previewCanvas.width = targetWidth;
         previewCanvas.height = targetHeight;
         const pCtx = previewCanvas.getContext('2d');
         if (pCtx) {
+          pCtx.imageSmoothingEnabled = true;
+          pCtx.imageSmoothingQuality = 'high';
           pCtx.drawImage(off, 0, 0, targetWidth, targetHeight);
           try {
-            const webp = previewCanvas.toDataURL('image/webp', 0.65);
+            const webp = previewCanvas.toDataURL('image/webp', 0.85);
             if (webp && webp.startsWith('data:image/webp')) {
               resolve(webp);
               return;
             }
           } catch {}
-          resolve(previewCanvas.toDataURL('image/jpeg', 0.65));
+          resolve(previewCanvas.toDataURL('image/jpeg', 0.85));
         } else {
-          resolve(off.toDataURL('image/jpeg', 0.65));
+          resolve(off.toDataURL('image/jpeg', 0.85));
         }
       } else {
         // Full uncompressed PNG for high-res downloads / printing / SMTP email attachment

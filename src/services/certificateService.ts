@@ -101,6 +101,23 @@ export const DEFAULT_CERTIFICATE_SIGNATORIES: CertificateSignatory[] = [
 
 const STORAGE_KEY = 'ece_forum_certificates_cache';
 
+function extractCertImage(row: any): string | undefined {
+  const raw = row.certificate_image || (
+    row.template_bg && (
+      row.template_bg.startsWith('data:image/') ||
+      row.template_bg.startsWith('/9j/') ||
+      row.template_bg.startsWith('iVBOR') ||
+      row.template_bg.startsWith('UklGR')
+    ) ? row.template_bg : undefined
+  );
+  if (!raw || typeof raw !== 'string') return undefined;
+  if (raw.startsWith('data:image/')) return raw;
+  if (raw.startsWith('/9j/')) return `data:image/jpeg;base64,${raw}`;
+  if (raw.startsWith('iVBOR')) return `data:image/png;base64,${raw}`;
+  if (raw.startsWith('UklGR')) return `data:image/webp;base64,${raw}`;
+  return raw;
+}
+
 class CertificateService {
   private certificates: ApiCertificate[] = [];
   private lastSyncTimestamp = 0;
@@ -220,7 +237,7 @@ class CertificateService {
         description: row.description || '',
         templateId: row.template_id || 'classic_gold',
         templateBg: row.template_bg || undefined,
-        certificateImage: row.certificate_image || (row.template_bg && row.template_bg.startsWith('data:image/') ? row.template_bg : undefined),
+        certificateImage: extractCertImage(row),
         canvasConfig: row.canvas_config || undefined,
         signatories: row.signatories || DEFAULT_CERTIFICATE_SIGNATORIES,
         qrData: row.qr_data,
@@ -289,7 +306,7 @@ class CertificateService {
           description: c.description || '',
           templateId: c.template_id || 'classic_gold',
           templateBg: c.template_bg || undefined,
-          certificateImage: c.certificate_image || (c.template_bg && c.template_bg.startsWith('data:image/') ? c.template_bg : undefined),
+          certificateImage: extractCertImage(c),
           canvasConfig: c.canvas_config || undefined,
           signatories: c.signatories || DEFAULT_CERTIFICATE_SIGNATORIES,
           qrData: c.qr_data,

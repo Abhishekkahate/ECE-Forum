@@ -49,7 +49,7 @@ export const AchievementsSection: React.FC = () => {
   ];
 
   const items = [
-    {
+   /*{
       index: '01',
       category: 'Competition',
       type: 'NATIONAL CHAMPION',
@@ -105,7 +105,7 @@ export const AchievementsSection: React.FC = () => {
       stamp: 'PLACED',
       dossier: 'DOSSIER / PLACEMENT-2025',
       fullDetails: 'Direct recruitment in ASIC verification, FPGA synthesis, physical design, and embedded firmware engineering across global semiconductor leaders.',
-    },
+    },*/
   ];
 
   const filteredItems = items.filter((it) => activeCategory === 'All' || it.category === activeCategory);

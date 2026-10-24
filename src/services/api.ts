@@ -156,6 +156,23 @@ function sanitizeCertsForCache(certs: ApiCertificate[]): ApiCertificate[] {
   });
 }
 
+const resolveCertImg = (c: any): string | undefined => {
+  const raw = c.certificate_image || c.certificateImage || (
+    c.template_bg && (
+      c.template_bg.startsWith('data:image/') ||
+      c.template_bg.startsWith('/9j/') ||
+      c.template_bg.startsWith('iVBOR') ||
+      c.template_bg.startsWith('UklGR')
+    ) ? c.template_bg : undefined
+  );
+  if (!raw || typeof raw !== 'string') return undefined;
+  if (raw.startsWith('data:image/')) return raw;
+  if (raw.startsWith('/9j/')) return `data:image/jpeg;base64,${raw}`;
+  if (raw.startsWith('iVBOR')) return `data:image/png;base64,${raw}`;
+  if (raw.startsWith('UklGR')) return `data:image/webp;base64,${raw}`;
+  return raw;
+};
+
 export const forumApi = {
   // ── Events ───────────────────────────────────────────────────────────────
   async getEvents(force = false): Promise<ApiEvent[]> {
@@ -842,8 +859,6 @@ export const forumApi = {
     } catch {}
   },
 
-
-
   // ── E-Certificates ────────────────────────────────────────────────────────
   async getCertificates(eventId?: string, email?: string, certType?: string, search?: string): Promise<ApiCertificate[]> {
     // 1. Direct Supabase Query (lightweight metadata)
@@ -872,7 +887,7 @@ export const forumApi = {
           status: c.status || 'VALID',
           issuedAt: c.issued_at,
           issuedBy: c.issued_by || 'ECE Forum Executive Council',
-          certificateImage: c.certificate_image || c.certificateImage || (c.template_bg && c.template_bg.startsWith('data:image/') ? c.template_bg : undefined),
+          certificateImage: resolveCertImg(c),
           canvasConfig: c.canvas_config || c.canvasConfig,
         }));
 
@@ -977,7 +992,7 @@ export const forumApi = {
           status: supa.status,
           issuedAt: supa.issued_at,
           issuedBy: supa.issued_by,
-          certificateImage: supa.certificate_image || supa.certificateImage || (supa.template_bg && supa.template_bg.startsWith('data:image/') ? supa.template_bg : undefined),
+          certificateImage: resolveCertImg(supa),
           canvasConfig: supa.canvas_config || supa.canvasConfig,
         };
       }
