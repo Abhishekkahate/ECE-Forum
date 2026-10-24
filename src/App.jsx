@@ -11,7 +11,6 @@ import { forumApi, DEFAULT_HERO_CONFIG } from './services/api';
 import { soundFx } from './utils/audio';
 import { RegisterPage } from './pages/RegisterPage';
 import { AdminPage } from './pages/AdminPage';
-import DeveloperPage from './pages/DeveloperPage';
 import { HomePage } from './pages/HomePage';
 import { CertificateVerificationPage } from './pages/CertificateVerificationPage';
 import { useAuth } from './context/AuthContext';
@@ -41,7 +40,7 @@ function MobileDock() {
   }, []);
 
   const go = (targetId) => {
-    try { navigator.vibrate?.(8); } catch {}
+    try { navigator.vibrate?.(8); } catch { }
     soundFx.playClick();
 
     if (location.pathname !== '/') {
@@ -97,7 +96,7 @@ function MobileDock() {
         <span className="w-px h-5 bg-white/15 mx-0.5" />
         <button
           onClick={() => {
-            try { navigator.vibrate?.(8); } catch {}
+            try { navigator.vibrate?.(8); } catch { }
             soundFx.playClick();
             if (window.__lenis) {
               window.__lenis.scrollTo(0, { duration: 1.2 });
@@ -116,7 +115,7 @@ function MobileDock() {
 }
 
 // --- COMMAND PALETTE (Ctrl+K / ⌘K) ---
-function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
+function CommandPalette({ open, setOpen, onOpenMyCertificates = () => { } }) {
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef(null);
@@ -139,7 +138,6 @@ function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
     { id: 'action:my_certificates', label: 'My Official Certificates — Honours & Badges', category: 'Account', icon: Award, kbd: 'C' },
     { id: '/register', label: 'Registration Portal — Passes & Booking', category: 'Portal', icon: Ticket, kbd: 'R' },
     { id: '/admin', label: 'Admin Command Center — Certificates & Roster', category: 'Portal', icon: Shield, kbd: 'A' },
-    { id: '/developer', label: 'Developer Specs & Architectural Dossier', category: 'Portal', icon: Sparkles, kbd: 'D' },
   ];
 
   const filtered = q.trim()
@@ -158,7 +156,7 @@ function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
   const executeNavigate = (targetId) => {
     setOpen(false);
     soundFx.playSuccess();
-    try { navigator.vibrate?.(8); } catch {}
+    try { navigator.vibrate?.(8); } catch { }
 
     if (targetId === 'action:my_certificates') {
       onOpenMyCertificates();
@@ -261,16 +259,14 @@ function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
                   key={it.id}
                   onMouseEnter={() => setSel(idx)}
                   onClick={() => executeNavigate(it.id)}
-                  className={`w-full text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl transition-all cursor-pointer ${
-                    active
+                  className={`w-full text-left flex items-center gap-3 px-3.5 py-3 rounded-2xl transition-all cursor-pointer ${active
                       ? 'bg-[#FF4A15] text-black font-semibold shadow-md translate-x-1'
                       : 'text-white/80 hover:bg-white/[0.06]'
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`w-8 h-8 rounded-xl grid place-items-center border shrink-0 transition-colors ${
-                      active ? 'bg-black/10 border-black/20 text-black' : 'bg-white/5 border-white/10 text-white/70'
-                    }`}
+                    className={`w-8 h-8 rounded-xl grid place-items-center border shrink-0 transition-colors ${active ? 'bg-black/10 border-black/20 text-black' : 'bg-white/5 border-white/10 text-white/70'
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                   </span>
@@ -278,9 +274,8 @@ function CommandPalette({ open, setOpen, onOpenMyCertificates = () => {} }) {
                     <div className="text-xs sm:text-sm font-medium truncate">{it.label}</div>
                   </div>
                   <span
-                    className={`hidden sm:inline-flex px-2 py-0.5 rounded-full border text-[9.5px] font-mono font-bold items-center justify-center shrink-0 uppercase ${
-                      active ? 'border-black/30 text-black bg-black/5' : 'bg-white/5 border-white/10 text-white/40'
-                    }`}
+                    className={`hidden sm:inline-flex px-2 py-0.5 rounded-full border text-[9.5px] font-mono font-bold items-center justify-center shrink-0 uppercase ${active ? 'border-black/30 text-black bg-black/5' : 'bg-white/5 border-white/10 text-white/40'
+                      }`}
                   >
                     {it.category}
                   </span>
@@ -323,22 +318,20 @@ function GlobalToast({ toasts }) {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className={`pointer-events-auto px-4 py-3 rounded-2xl border backdrop-blur-3xl shadow-glass-xl flex items-start gap-3 text-sm ${
-              t.type === 'success'
+            className={`pointer-events-auto px-4 py-3 rounded-2xl border backdrop-blur-3xl shadow-glass-xl flex items-start gap-3 text-sm ${t.type === 'success'
                 ? 'bg-[rgba(10,20,16,0.95)] border-emerald-500/30 text-white'
                 : t.type === 'error'
-                ? 'bg-[rgba(24,10,10,0.95)] border-red-500/30 text-white'
-                : 'bg-[rgba(10,14,20,0.95)] border-white/[0.12] text-white'
-            }`}
+                  ? 'bg-[rgba(24,10,10,0.95)] border-red-500/30 text-white'
+                  : 'bg-[rgba(10,14,20,0.95)] border-white/[0.12] text-white'
+              }`}
           >
             <span
-              className={`mt-0.5 w-6 h-6 rounded-full grid place-items-center shrink-0 ${
-                t.type === 'success'
+              className={`mt-0.5 w-6 h-6 rounded-full grid place-items-center shrink-0 ${t.type === 'success'
                   ? 'bg-emerald-400 text-black'
                   : t.type === 'error'
-                  ? 'bg-red-400 text-black'
-                  : 'bg-[#FF4A15] text-black'
-              }`}
+                    ? 'bg-red-400 text-black'
+                    : 'bg-[#FF4A15] text-black'
+                }`}
             >
               {t.type === 'success' ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
             </span>
@@ -416,7 +409,7 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
       }
-    } catch {}
+    } catch { }
     return [];
   });
   const [heroConfig, setHeroConfig] = useState(DEFAULT_HERO_CONFIG);
@@ -659,28 +652,28 @@ export default function App() {
               eventsList={eventsList}
               onAddEvent={async (newEvent) => {
                 setEventsList((prev) => [newEvent, ...prev.filter((e) => e.id !== newEvent.id)]);
-                await forumApi.createEvent(newEvent).catch(() => {});
+                await forumApi.createEvent(newEvent).catch(() => { });
               }}
               onUpdateEvents={setEventsList}
               onUpdateAnnouncement={async (notice) => {
                 setAnnouncement(notice);
-                await forumApi.setAnnouncement(notice).catch(() => {});
+                await forumApi.setAnnouncement(notice).catch(() => { });
               }}
               currentAnnouncement={announcement}
               heroConfig={heroConfig}
               onUpdateHeroConfig={async (cfg) => {
                 setHeroConfig(cfg);
-                await forumApi.updateSiteHeroConfig(cfg).catch(() => {});
+                await forumApi.updateSiteHeroConfig(cfg).catch(() => { });
               }}
               galleryList={galleryList}
               onUpdateGallery={async (g) => {
                 setGalleryList(g);
-                await forumApi.updateGalleryItems(g).catch(() => {});
+                await forumApi.updateGalleryItems(g).catch(() => { });
               }}
             />
           }
         />
-        <Route path="/developer" element={<DeveloperPage />} />
+        <Route path="/developer" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

@@ -4,7 +4,7 @@ import { ArrowRight, ArrowDown, Cpu, Bot, Radio, Brain, ArrowUpRight, Play, Zap,
 import { soundFx } from '../utils/audio';
 import { type SiteHeroConfig, DEFAULT_HERO_CONFIG } from '../services/api';
 
-const Chip3DViewer = React.lazy(() => import('./Chip3DViewer').then(m => ({ default: m.Chip3DViewer })) );
+const Chip3DViewer = React.lazy(() => import('./Chip3DViewer').then(m => ({ default: m.Chip3DViewer })));
 
 interface HeroSectionProps {
   onExploreEvents: () => void;
@@ -90,32 +90,87 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="relative grid lg:grid-cols-12 gap-8 lg:gap-6 xl:gap-10 items-start">
             {/* LEFT — type */}
             <div data-hero-item className="lg:col-span-7 xl:col-span-7 relative min-w-0">
-              {/* eyebrow — smaller, lighter */}
-              <div className="inline-flex items-center gap-2.5 mb-5 sm:mb-7">
-                <span className="inline-flex items-center gap-1.5 border border-[#FF4A15]/20 bg-[#FF4A15]/[0.08] px-2.5 py-1 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_8px_rgba(255,74,21,0.5)] animate-pulse" />
-                  <span className="text-[9px] font-mono font-bold tracking-[0.14em] text-[#FF4A15]">FIELD MANUAL — EDITION 2026</span>
+              {/* Category / Telemetry Strip */}
+              <div className="inline-flex items-center gap-2.5 mb-4 sm:mb-6 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 border border-[#FF4A15]/25 bg-[#FF4A15]/[0.08] px-3 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15] shadow-[0_0_8px_rgba(255,74,21,0.6)] animate-pulse" />
+                  <span className="text-[9.5px] font-mono font-bold tracking-[0.16em] text-[#FF4A15]">PCE-NAGPUR · EST. 2026</span>
                 </span>
-                <span className="hidden sm:inline h-px w-8 bg-white/10" />
-                <span className="hidden sm:inline text-[9px] font-mono tracking-[0.13em] text-white/25">21.14°N 79.08°E — EST. 2012</span>
+                <span className="hidden sm:inline h-px w-6 bg-white/10" />
+                <span className="hidden sm:inline text-[9.5px] font-mono tracking-[0.14em] text-white/35">21.14°N 79.08°E</span>
+                <span className="hidden md:inline-flex items-center gap-1.5 text-[9.5px] font-mono font-normal tracking-[0.12em] text-[#00E5CC] border border-[#00E5CC]/20 rounded-full px-2.5 py-0.5 bg-[#00E5CC]/[0.04]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00E5CC] animate-ping" />
+                  DUAL ATELIER
+                </span>
               </div>
 
-              <h1 className="font-[Syne] font-[800] tracking-[-0.055em] leading-[0.86] text-[42px] xs:text-[48px] sm:text-[64px] lg:text-[78px] xl:text-[88px] max-w-[640px]">
-                <span className="block text-[#F5F3EF]">Architecting</span>
-                <span className="block font-['Instrument_Serif'] font-normal italic tracking-[-0.03em] text-[#FF4A15] -mt-1 sm:-mt-1.5 pb-1">tomorrow&apos;s</span>
-                <span className="flex flex-wrap items-baseline gap-[0.12em] text-[#F5F3EF]">
-                  silicon <span className="font-light text-[#FF4A15] text-[0.72em]">&</span> systems
-                  <span className="hidden sm:inline-flex ml-3 translate-y-[-0.18em] items-center gap-2 text-[9px] font-mono font-normal tracking-[0.14em] text-white/30 border border-white/[0.07] rounded-full px-2.5 py-1 bg-white/[0.04] backdrop-blur">VERIFIED — REF 08-26</span>
+              {/* Creative Hero Headline */}
+              <h1 className="font-[Syne] font-[800] tracking-[-0.045em] leading-[0.88] text-[46px] xs:text-[54px] sm:text-[68px] lg:text-[74px] xl:text-[84px] max-w-[620px]">
+                <span className="block text-[#F5F3EF]">
+                  Department
+                </span>
+                <span className="flex items-baseline gap-2.5 sm:gap-4 -mt-1 sm:-mt-2 pb-1">
+                  <span className="font-['Instrument_Serif'] font-normal italic tracking-[-0.02em] text-[#FF4A15] text-[1.1em]">
+                    of
+                  </span>
+                  <span className="relative inline-block tracking-[-0.02em]">
+                    <span className="bg-gradient-to-r from-[#FF4A15] via-[#FF7A45] to-[#FFA07A] bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(255,74,21,0.25)]">
+                      ECE
+                    </span>
+                    <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-gradient-to-r from-[#FF4A15] via-[#FF7A45] to-transparent rounded-full" />
+                  </span>
                 </span>
               </h1>
 
-              {/* description — more whitespace */}
-              <div className="mt-6 sm:mt-7 max-w-[560px] flex gap-3">
-                <span className="hidden sm:block w-px self-stretch bg-gradient-to-b from-[#FF4A15]/40 via-white/10 to-transparent mt-1 shrink-0" />
-                <p className="text-[14px] sm:text-[15px] leading-[1.7] text-white/50">
-                  PCE-NAGPUR&apos;s premier dual-council atelier — <span className="text-[#F5F3EF] font-semibold">SPACE</span> for research, IEEE &amp; symposiums, and <span className="text-[#FF4A15] font-semibold">SINC</span> for hardware — rovers, RISC-V, LoRa mesh &amp; patents.
-                  <span className="hidden sm:inline text-white/35"> — Fold this manual. Build the future.</span>
+              {/* Engineering Discipline Pill Ribbon */}
+              <div className="mt-4 sm:mt-5 flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur text-[12px] sm:text-[13px] font-mono text-white/90">
+                  <Cpu className="w-3.5 h-3.5 text-[#FF4A15]" />
+                  <span className="font-semibold text-white/80">Electronics &amp; Communication Engineering</span>
+                </div>
+              </div>
+
+              {/* description */}
+              <div className="mt-4 sm:mt-5 max-w-[540px] flex gap-3">
+                <span className="hidden sm:block w-px self-stretch bg-gradient-to-b from-[#FF4A15]/50 via-white/10 to-transparent mt-1 shrink-0" />
+                <p className="text-[14px] sm:text-[15px] leading-[1.7] text-white/55">
+                  PCE-NAGPUR&apos;s premier dual-council atelier — <strong className="text-white font-semibold">SPACE</strong> for Cultural, Sports, &amp; Other Events, and <strong className="text-[#FF4A15] font-semibold">SINC</strong> for Technical skills, Competitions &amp; Workshops.
                 </p>
+              </div>
+
+              {/* CTAs */}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button onClick={() => { soundFx.playLaser(); onExploreEvents(); }} className="group inline-flex items-center gap-2.5 bg-[#FF4A15] text-white pl-5 pr-1.5 py-1.5 rounded-full font-bold text-[13px] tracking-[-0.01em] hover:bg-[#E84410] hover:shadow-[0_10px_30px_rgba(255,74,21,0.35)] transition-all">
+                  <Zap className="w-3.5 h-3.5 fill-white" /> Explore Events <span className="ml-1 w-7 h-7 rounded-full bg-white text-[#FF4A15] grid place-items-center group-hover:translate-x-0.5 transition-transform"><ArrowRight className="w-3.5 h-3.5" /></span>
+                </button>
+                <button onClick={() => { soundFx.playClick(); onJoinCommunity(); }} className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.04] backdrop-blur px-4 py-2 text-[13px] font-medium text-[#F5F3EF] hover:bg-white/[0.08] hover:border-white/20 transition-colors">
+                  <span className="w-5 h-5 rounded-full bg-[#F5F3EF] text-[#08080A] grid place-items-center"><Play className="w-2.5 h-2.5 ml-0.5 fill-current" /></span> Meet the leaders <ArrowRight className="w-3.5 h-3.5 text-white/30" />
+                </button>
+              </div>
+
+              {/* Telemetry Council Row — anchors bottom of column */}
+              <div className="mt-7 pt-5 border-t border-white/[0.08] grid grid-cols-3 gap-3 max-w-[500px]">
+                <div>
+                  <div className="text-[9.5px] font-mono tracking-[0.14em] text-white/35 uppercase">Council 01</div>
+                  <div className="text-[15px] sm:text-[17px] font-[Syne] font-extrabold text-white mt-0.5 flex items-center gap-1.5">
+                    <span>SPACE</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E5CC]" />
+                  </div>
+                  <div className="text-[10px] font-mono text-white/45 mt-0.5">Cultural &amp; Forum</div>
+                </div>
+                <div className="border-l border-white/[0.08] pl-3.5">
+                  <div className="text-[9.5px] font-mono tracking-[0.14em] text-white/35 uppercase">Council 02</div>
+                  <div className="text-[15px] sm:text-[17px] font-[Syne] font-extrabold text-white mt-0.5 flex items-center gap-1.5">
+                    <span>SINC</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15]" />
+                  </div>
+                  <div className="text-[10px] font-mono text-[#FF4A15] mt-0.5 font-medium">Technical Club</div>
+                </div>
+                <div className="border-l border-white/[0.08] pl-3.5">
+                  <div className="text-[9.5px] font-mono tracking-[0.14em] text-white/35 uppercase">Edition</div>
+                  <div className="text-[15px] sm:text-[17px] font-[Syne] font-extrabold text-white mt-0.5">2026–27</div>
+                  <div className="text-[10px] font-mono text-[#00FF88] mt-0.5 font-medium">Active Council</div>
+                </div>
               </div>
             </div>
 
@@ -136,23 +191,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <span className="hidden sm:inline-flex items-center gap-1 text-white/25"><span className="w-1 h-1 rounded-full bg-white/20" /> XILINX ARTIX-7</span>
                   </div>
                 </div>
-                {/* spec callout — blueprint label */}
-                <div className="hidden sm:flex absolute -left-3 bottom-7 items-center gap-2 rounded-full bg-[#F5F3EF] text-[#08080A] pl-1 pr-3 py-1 shadow-[0_10px_30px_rgba(0,0,0,0.35)] border border-black/5">
-                  <span className="w-6 h-6 rounded-full bg-[#FF4A15] text-white grid place-items-center"><Cpu className="w-3 h-3" /></span>
-                  <span className="text-[11px] font-bold tracking-[-0.01em]">Tape-out Ready</span>
-                  <span className="text-[10px] font-mono tracking-[0.06em] text-black/45">— 32-bit RISC-V</span>
-                </div>
               </div>
               {/* COUNCIL STRIP — under figure */}
               <div className="mt-3 grid grid-cols-2 gap-2 max-w-[400px] lg:ml-auto mx-auto lg:mx-0">
                 <button onClick={() => { soundFx.playLaser(); onJoinCommunity(); }} className="group flex items-center gap-2 rounded-full bg-[#F5F3EF] text-[#08080A] pl-1 pr-2.5 py-1 text-left hover:bg-white transition-colors">
                   <span className="w-7 h-7 rounded-full bg-white border border-black/10 p-1 grid place-items-center shrink-0"><img src="/space_logo.webp" alt="SPACE" className="w-full h-full object-contain" /></span>
-                  <span className="min-w-0"><span className="block text-[11px] font-extrabold leading-none">SPACE</span><span className="block text-[9px] font-mono tracking-[0.06em] text-black/45 leading-none mt-0.5">2012 · RESEARCH</span></span>
+                  <span className="min-w-0"><span className="block text-[11px] font-extrabold leading-none">SPACE</span><span className="block text-[9px] font-mono tracking-[0.06em] text-black/45 leading-none mt-0.5">2026 · Overall</span></span>
                   <ArrowUpRight className="ml-auto w-3 h-3 text-black/30 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
                 <button onClick={() => { soundFx.playLaser(); onJoinCommunity(); }} className="group flex items-center gap-2 rounded-full bg-[#FF4A15] text-white pl-1 pr-2.5 py-1 text-left hover:bg-[#E84410] transition-colors shadow-[0_6px_20px_rgba(255,74,21,0.35)]">
                   <span className="w-7 h-7 rounded-full bg-white p-1 grid place-items-center shrink-0"><img src="/sinc_logo.webp" alt="SINC" className="w-full h-full object-contain" /></span>
-                  <span className="min-w-0"><span className="block text-[11px] font-extrabold leading-none">SINC</span><span className="block text-[9px] font-mono tracking-[0.06em] text-white/70 leading-none mt-0.5">2018 · HW</span></span>
+                  <span className="min-w-0"><span className="block text-[11px] font-extrabold leading-none">SINC</span><span className="block text-[9px] font-mono tracking-[0.06em] text-white/70 leading-none mt-0.5">2026 · Technical</span></span>
                   <ArrowUpRight className="ml-auto w-3 h-3 text-white/80 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
               </div>
@@ -163,10 +212,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div data-hero-item className="mt-10 lg:mt-12 overflow-hidden rounded-2xl lg:rounded-none border border-white/[0.06] lg:border-x-0 lg:border-y bg-[rgba(12,12,14,0.55)] backdrop-blur-xl">
             <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-white/[0.06]">
               {[
-                { k: '01', icon: Cpu, label: 'VLSI & Silicon', spec: 'RISC-V · FPGA · 450 MHz' },
-                { k: '02', icon: Bot, label: 'Robotics', spec: 'ROS 2 · LiDAR · NAV2' },
-                { k: '03', icon: Radio, label: 'IoT Systems', spec: 'LoRaWAN · MESH · EDGE' },
-                { k: '04', icon: Brain, label: 'Edge AI', spec: 'TinyML · STM32 · INT8' },
+                { k: '01', icon: Cpu, label: 'Electronics', spec: 'VLSI & Semconductors' },
+                { k: '02', icon: Bot, label: 'Robotics', spec: 'Industrial Robots & Drones' },
+                { k: '03', icon: Radio, label: 'IoT Systems', spec: 'Arduino , ESP , STM32' },
+                { k: '04', icon: Brain, label: 'Communication', spec: '5G , Antennas , RF' },
               ].map((r) => {
                 const Icon = r.icon;
                 return (
@@ -180,22 +229,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </div>
 
-          {/* CTAs — less bulky */}
-          <div data-hero-item className="mt-8 flex flex-wrap items-center gap-3">
-            <button onClick={() => { soundFx.playLaser(); onExploreEvents(); }} className="group inline-flex items-center gap-2.5 bg-[#FF4A15] text-white pl-5 pr-1.5 py-1.5 rounded-full font-bold text-[13px] tracking-[-0.01em] hover:bg-[#E84410] hover:shadow-[0_10px_30px_rgba(255,74,21,0.30)] transition-all">
-              <Zap className="w-3.5 h-3.5 fill-white" /> Explore flagship — Tarang <span className="ml-1 w-7 h-7 rounded-full bg-white text-[#FF4A15] grid place-items-center group-hover:translate-x-0.5 transition-transform"><ArrowRight className="w-3.5 h-3.5" /></span>
-            </button>
-            <button onClick={() => { soundFx.playClick(); onJoinCommunity(); }} className="inline-flex items-center gap-2 rounded-full border border-white/[0.10] bg-white/[0.04] backdrop-blur px-4 py-2 text-[13px] font-medium text-[#F5F3EF] hover:bg-white/[0.07] hover:border-white/15 transition-colors">
-              <span className="w-5 h-5 rounded-full bg-[#F5F3EF] text-[#08080A] grid place-items-center"><Play className="w-2.5 h-2.5 ml-0.5 fill-current" /></span> Meet the atelier — 30 leaders <ArrowRight className="w-3.5 h-3.5 text-white/30" />
-            </button>
-            <span className="hidden lg:inline-flex items-center gap-1.5 ml-1 text-[11px] text-white/30"><ShieldCheck className="w-3.5 h-3.5 text-[#00E5CC]" /> IEEE Top 1% · Patent 492026/IN</span>
-          </div>
-
           {/* FOOTNOTE — lighter */}
           <div data-hero-item className="mt-7 flex flex-wrap items-center gap-2.5 text-[11px]">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.04] px-3 py-1 font-medium text-white/70 backdrop-blur"><Sparkles className="w-3 h-3 text-[#FF4A15]" /> 12× National Champions</span>
-            <span className="hidden sm:inline text-white/10">—</span>
-            <span className="text-white/35 font-mono text-[11px] tracking-[0.05em]">REF: PCE-NAGPUR/ECE/2026-27 · FIELD MANUAL COVER — VERIFIED</span>
+            <span className="text-white/35 font-mono text-[11px] tracking-[0.05em]">REF: PCE-NAGPUR/ECE/2026-27  — VERIFIED</span>
           </div>
         </div>
 

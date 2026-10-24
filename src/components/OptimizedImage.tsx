@@ -30,9 +30,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     setIsLoaded(true);
   };
 
-  // Replace file extension with .webp if it's pointing to old formats
-  const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
-  const currentSrc = hasError ? (fallbackSrc || '/space_logo.webp') : webpSrc;
+  const currentSrc = hasError ? (fallbackSrc || '/space_logo.webp') : src;
 
   return (
     <div className={`relative overflow-hidden ${wrapperClassName}`}>

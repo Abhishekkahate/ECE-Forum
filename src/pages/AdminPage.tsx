@@ -350,6 +350,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
           rejectionReason: p.rejection_reason,
           registeredAt: p.registered_at || new Date().toISOString(),
           qrData: p.qr_data,
+          securityHash: p.security_hash || '',
         }));
         setPasses(mappedPasses);
       } else {

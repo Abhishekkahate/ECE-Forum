@@ -92,7 +92,7 @@ export const supabaseDb = {
   },
 
   // Passes (Lightweight column list without heavy payment_screenshot to minimize database egress)
-  async getPasses(eventId?: string, email?: string, includeScreenshot = false) {
+  async getPasses(eventId?: string, email?: string, includeScreenshot = false): Promise<any[] | null> {
     try {
       const columns = includeScreenshot
         ? '*'
@@ -100,7 +100,7 @@ export const supabaseDb = {
 
       let query = supabase
         .from('passes')
-        .select(columns)
+        .select(columns as any)
         .order('created_at', { ascending: false });
 
       if (eventId && eventId !== 'all') {
@@ -137,7 +137,7 @@ export const supabaseDb = {
   },
 
   async insertPass(pass: any) {
-    const payload = {
+    const payload: Record<string, any> = {
       pass_id: pass.passId || pass.pass_id,
       event_id: pass.eventId || pass.event_id,
       event_title: pass.eventTitle || pass.event_title || 'Event',
@@ -391,7 +391,7 @@ export const supabaseDb = {
   },
 
   // Certificates (Bandwidth-Optimized with graceful fallback for all schema variations)
-  async getCertificates(eventId?: string, email?: string, certType?: string, includeImage = false) {
+  async getCertificates(eventId?: string, email?: string, certType?: string, includeImage = false): Promise<any[] | null> {
     try {
       const summaryColumns =
         'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, template_bg, certificate_image, signatories, qr_data, security_hash, status, issued_at, issued_by, canvas_config, created_at';
@@ -399,7 +399,7 @@ export const supabaseDb = {
 
       let query = supabase
         .from('certificates')
-        .select(columns)
+        .select(columns as any)
         .order('created_at', { ascending: false });
 
       if (eventId && eventId !== 'all' && eventId !== 'ALL') {
@@ -422,7 +422,7 @@ export const supabaseDb = {
           'cert_id, event_id, event_title, event_date, user_name, user_email, user_photo, department, college_name, cert_type, title, rank_text, description, template_id, template_bg, certificate_image, signatories, qr_data, security_hash, status, issued_at, issued_by, created_at';
         let fallbackQuery = supabase
           .from('certificates')
-          .select(coreColumns)
+          .select(coreColumns as any)
           .order('created_at', { ascending: false });
 
         if (eventId && eventId !== 'all' && eventId !== 'ALL') fallbackQuery = fallbackQuery.eq('event_id', eventId);
@@ -440,7 +440,7 @@ export const supabaseDb = {
     }
   },
 
-  async getCertificateById(certId: string, includeImage = true) {
+  async getCertificateById(certId: string, includeImage = true): Promise<any> {
     try {
       const clean = certId.trim();
       const summaryColumns =
@@ -450,7 +450,7 @@ export const supabaseDb = {
       // 1. Direct cert_id lookup
       const { data: byId, error: err1 } = await supabase
         .from('certificates')
-        .select(columns)
+        .select(columns as any)
         .eq('cert_id', clean)
         .maybeSingle();
 
@@ -459,7 +459,7 @@ export const supabaseDb = {
       // 2. Security Hash lookup
       const { data: byHash, error: err2 } = await supabase
         .from('certificates')
-        .select(columns)
+        .select(columns as any)
         .eq('security_hash', clean)
         .maybeSingle();
 
@@ -468,7 +468,7 @@ export const supabaseDb = {
       // 3. Case-insensitive cert_id lookup
       const { data: byIlike, error: err3 } = await supabase
         .from('certificates')
-        .select(columns)
+        .select(columns as any)
         .ilike('cert_id', clean)
         .maybeSingle();
 

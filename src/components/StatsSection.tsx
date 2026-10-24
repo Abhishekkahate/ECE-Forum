@@ -25,12 +25,11 @@ export const StatsSection: React.FC = () => {
   }, []);
 
   const stats: StatItem[] = [
-    { index: '01', icon: Users, value: 1500, suffix: '+', label: 'Active Members', tag: '+38% YoY', percent: 94, accent: 'signal' },
-    { index: '02', icon: Calendar, value: 80, suffix: '+', label: 'Events & Symposia', tag: 'Annual high', percent: 88, accent: 'cyan' },
-    { index: '03', icon: Wrench, value: 45, suffix: '+', label: 'Hardware Workshops', tag: 'Hands-on', percent: 92, accent: 'violet' },
-    { index: '04', icon: Cpu, value: 120, suffix: '+', label: 'Prototypes Shipped', tag: 'Lab to field', percent: 96, accent: 'signal' },
-    { index: '05', icon: Award, value: 30, suffix: '+', label: 'Industry Mentors', tag: 'Tier-1 silicon', percent: 85, accent: 'cyan' },
-    { index: '06', icon: Trophy, value: 12, suffix: '+', label: 'National Victories', tag: 'Patented', percent: 100, accent: 'violet' },
+    { index: '01', icon: Users, value: 360, suffix: '+', label: 'Active Students', tag: 'AY 2026-27', percent: 94, accent: 'signal' },
+    { index: '02', icon: Calendar, value: 30, suffix: '+', label: 'Events Conducted', tag: 'Till Now', percent: 88, accent: 'cyan' },
+    { index: '03', icon: Wrench, value: 15, suffix: '+', label: 'Faculties', tag: 'With High Experience', percent: 92, accent: 'violet' },
+    { index: '04', icon: Cpu, value: 10, suffix: '+', label: 'Practical Labs', tag: 'Equipped Labs', percent: 96, accent: 'signal' },
+
   ];
 
   return (

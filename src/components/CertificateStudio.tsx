@@ -1061,8 +1061,9 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
         await document.fonts.ready;
       } catch {}
     }
-    const recipient = recipients[previewRowIdx] || {
+    const recipient: StudioRecipient = recipients[previewRowIdx] || {
       name: '',
+      email: '',
       certId: '',
     };
     const b64 = await generateCertificatePngBase64(recipient, previewRowIdx);

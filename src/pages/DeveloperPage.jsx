@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion'
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, MeshDistortMaterial, Environment } from '@react-three/drei'
 import { Link } from 'react-router-dom'
@@ -89,115 +89,6 @@ function CoreOrb({ mouse }) {
   )
 }
 
-/* ============ CINEMATIC BOOT LOADER ============ */
-const BOOT_LINES = [
-  '> initializing lead developer profile [ABHISHEK KAHATE]...',
-  '> mounting react-19 virtual dom [ok]',
-  '> compiling webgl 3d shaders [ok]',
-  '> loading cyber particle field [ok]',
-  '> syncing supabase cloud & cryptographic pass matrix [ok]',
-  '> initializing 300dpi certificate engine [ok]',
-  '> verified student dossier — profile online.',
-]
-
-function DevLoader({ onDone }) {
-  const [progress, setProgress] = useState(0)
-  const [lineIdx, setLineIdx] = useState(0)
-  const [exiting, setExiting] = useState(false)
-
-  useEffect(() => {
-    const p = setInterval(() => {
-      setProgress(prev => {
-        const next = prev + Math.random() * 16 + 5
-        if (next >= 100) {
-          clearInterval(p)
-          setTimeout(() => setExiting(true), 320)
-          setTimeout(onDone, 950)
-          return 100
-        }
-        return next
-      })
-    }, 120)
-    return () => clearInterval(p)
-  }, [onDone])
-
-  useEffect(() => {
-    const l = setInterval(() => setLineIdx(i => Math.min(i + 1, BOOT_LINES.length - 1)), 220)
-    return () => clearInterval(l)
-  }, [])
-
-  return (
-    <AnimatePresence>
-      {!exiting && (
-        <motion.div
-          exit={{ clipPath: 'inset(0 0 100% 0)' }}
-          transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-          className="fixed inset-0 z-[999] bg-[#050505] flex flex-col items-center justify-center overflow-hidden"
-        >
-          {/* scanlines */}
-          <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #CCFF00 2px, #CCFF00 3px)' }} />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#050505_85%)]" />
-
-          {/* corner brackets */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute top-6 left-6 w-8 h-8 border-t-2 border-l-2 border-[#CCFF00]/50" />
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute top-6 right-6 w-8 h-8 border-t-2 border-r-2 border-[#CCFF00]/50" />
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute bottom-6 left-6 w-8 h-8 border-b-2 border-l-2 border-[#CCFF00]/50" />
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute bottom-6 right-6 w-8 h-8 border-b-2 border-r-2 border-[#CCFF00]/50" />
-
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-[min(92vw,560px)]">
-            <div className="relative text-center mb-8">
-              <motion.h1
-                initial={{ opacity: 0, letterSpacing: '0.4em' }}
-                animate={{ opacity: 1, letterSpacing: '-0.03em' }}
-                transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display font-black text-[9vw] sm:text-5xl leading-none text-white select-none"
-              >
-                ABHISHEK
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
-                className="font-mono text-[11px] tracking-[0.5em] text-[#CCFF00] mt-2 font-bold"
-              >
-                KAHATE &bull; LEAD ARCHITECT
-              </motion.p>
-
-              {/* glitch bars */}
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                animate={{ opacity: [0, 0.6, 0, 0.4, 0] }}
-                transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2 }}
-              >
-                <div className="absolute top-[30%] left-0 right-0 h-[2px] bg-[#CCFF00] mix-blend-screen" />
-                <div className="absolute top-[55%] left-0 right-0 h-[1px] bg-[#7000FF] mix-blend-screen" />
-              </motion.div>
-            </div>
-
-            {/* terminal */}
-            <div className="rounded-2xl border border-[#CCFF00]/20 bg-black/70 backdrop-blur p-4 font-mono text-[11px] leading-[1.9] min-h-[160px]">
-              {BOOT_LINES.slice(0, lineIdx + 1).map((l, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2">
-                  <span className="text-[#CCFF00]">▸</span>
-                  <span className="text-white/70">{l}</span>
-                </motion.div>
-              ))}
-              <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.8, repeat: Infinity }} className="inline-block w-2 h-3 bg-[#CCFF00] mt-1" />
-            </div>
-
-            {/* progress */}
-            <div className="mt-5 flex items-center gap-4">
-              <div className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
-                <motion.div className="h-full bg-gradient-to-r from-[#CCFF00] to-[#7000FF]" style={{ width: `${Math.min(progress, 100)}%` }} />
-              </div>
-              <span className="font-mono text-xs text-[#CCFF00] font-black w-12 text-right">{Math.floor(Math.min(progress, 100))}%</span>
-            </div>
-            <p className="text-center text-[10px] font-mono tracking-[0.35em] text-white/30 mt-6">DEVELOPER.DOSSIER — ECE FORUM 2026</p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
 /* ============ KINETIC HEADLINE ============ */
 function KineticWord({ word, delay, className }) {
   return (
@@ -265,7 +156,7 @@ const ARCH_PILLARS = [
 
 /* ============ MAIN COMPONENT ============ */
 export default function DeveloperPage() {
-  const [booted, setBooted] = useState(false)
+  const booted = true
   const [activePillar, setActivePillar] = useState(0)
   const [copiedEmail, setCopiedEmail] = useState(false)
 
@@ -334,9 +225,7 @@ export default function DeveloperPage() {
 
   return (
     <div className="bg-[#08080A]">
-      <DevLoader onDone={() => setBooted(true)} />
-
-      <div ref={ref} className={`min-h-screen text-white selection:bg-[#CCFF00] selection:text-black transition-opacity duration-700 ${booted ? 'opacity-100' : 'opacity-0'}`}>
+      <div ref={ref} className="min-h-screen text-white selection:bg-[#CCFF00] selection:text-black">
         <div className="grain" aria-hidden />
         <div className="fixed inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`, backgroundSize: '80px 80px' }} />
 
@@ -503,7 +392,7 @@ export default function DeveloperPage() {
                 {/* Real Developer Photo */}
                 <div className="relative aspect-[4/4.8] overflow-hidden bg-black">
                   <img
-                    src="/team_images/Abhi.webp"
+                    src="/team_images/abhi.jpeg"
                     alt="Abhishek Kahate - Lead Architect"
                     className="w-full h-full object-cover object-[center_15%] group-hover:scale-105 transition-transform duration-700 opacity-95"
                   />

@@ -180,145 +180,140 @@ export const AchievementsSection: React.FC = () => {
               </div>
             </div>
             <div className="reveal stagger-2 max-w-[380px] space-y-3">
-              <p className="text-[13.5px] leading-relaxed font-mono text-white/60 border-l-2 border-[#FF4A15]/40 pl-4">
-                Student breakthroughs in national robotics expos, sovereign patent grants &amp; core silicon careers — documented, stamped, and traceable.
-              </p>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-white/40">
-                <Verified className="w-3.5 h-3.5 text-[#FF4A15]" /> OFFICIAL REGISTRY — PCE-NAGPUR AUTONOMOUS
-              </div>
+
+
             </div>
           </div>
 
-        {/* Milestone Stat Ribbon */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-10 reveal">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="p-4 sm:p-5 rounded-2xl bg-[#0F0F11] border border-white/[0.08] backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-[#FF4A15]/30 transition-colors"
-            >
-              <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#FF4A15]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="text-[9.5px] font-mono tracking-[0.12em] text-white/40 uppercase font-bold">{s.label}</div>
-              <div className="font-[Syne] font-[800] text-[22px] sm:text-[26px] text-white tracking-tight mt-1 leading-none group-hover:text-[#FF4A15] transition-colors">
-                {s.val}
+          {/* Milestone Stat Ribbon */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-10 reveal">
+            {stats.map((s) => (
+              <div
+                key={s.label}
+                className="p-4 sm:p-5 rounded-2xl bg-[#0F0F11] border border-white/[0.08] backdrop-blur-xl shadow-lg relative overflow-hidden group hover:border-[#FF4A15]/30 transition-colors"
+              >
+                <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#FF4A15]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="text-[9.5px] font-mono tracking-[0.12em] text-white/40 uppercase font-bold">{s.label}</div>
+                <div className="font-[Syne] font-[800] text-[22px] sm:text-[26px] text-white tracking-tight mt-1 leading-none group-hover:text-[#FF4A15] transition-colors">
+                  {s.val}
+                </div>
+                <div className="text-[10.5px] font-mono text-white/40 mt-1.5">{s.sub}</div>
               </div>
-              <div className="text-[10.5px] font-mono text-white/40 mt-1.5">{s.sub}</div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.06] w-full sm:w-fit mb-8 reveal overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap">
-          {(['All', 'Competition', 'Patent', 'Academic', 'Placement'] as const).map((cat) => {
-            const count = cat === 'All' ? items.length : items.filter((i) => i.category === cat).length;
-            const active = activeCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => {
-                  soundFx.playClick();
-                  setActiveCategory(cat);
-                }}
-                className={`px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs font-mono transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-                  active
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl sm:rounded-full bg-[#0F0F11] border border-white/[0.06] w-full sm:w-fit mb-8 reveal overflow-x-auto hide-scrollbar flex-nowrap sm:flex-wrap">
+            {(['All', 'Competition', 'Patent', 'Academic', 'Placement'] as const).map((cat) => {
+              const count = cat === 'All' ? items.length : items.filter((i) => i.category === cat).length;
+              const active = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    soundFx.playClick();
+                    setActiveCategory(cat);
+                  }}
+                  className={`px-3.5 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs font-mono transition-all cursor-pointer shrink-0 whitespace-nowrap ${active
                     ? 'bg-[#FF4A15] text-white font-bold shadow-[0_4px_14px_rgba(255,74,21,0.35)]'
                     : 'text-white/50 hover:text-white'
-                }`}
-              >
-                {cat} <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold ${active ? 'bg-white text-[#FF4A15]' : 'bg-white/10 text-white/60'}`}>{count}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Timeline Sheets */}
-        <div className="relative ml-0 lg:ml-2">
-          <div className="hidden sm:block absolute left-[28px] top-0 bottom-0 w-px bg-gradient-to-b from-[#FF4A15]/40 via-white/[0.08] to-transparent" />
-          <div className="space-y-6">
-            {filteredItems.map((it, idx) => {
-              const Icon = it.Icon;
-              return (
-                <div
-                  key={it.index}
-                  onClick={() => {
-                    soundFx.playLaser();
-                    if (it.action) {
-                      setSelectedPatent(true);
-                    } else {
-                      setSelectedItem(it);
-                    }
-                  }}
-                  className="reveal group relative flex gap-4 sm:gap-6 cursor-pointer"
-                  style={{ transitionDelay: `${idx * 80}ms` }}
+                    }`}
                 >
-                  {/* Timeline Node */}
-                  <div className="hidden sm:flex flex-col items-center shrink-0 w-[56px]">
-                    <span className="w-8 h-8 rounded-full bg-[#0F0F11] border border-white/[0.12] text-white/70 grid place-items-center group-hover:bg-[#FF4A15] group-hover:text-white group-hover:border-[#FF4A15] group-hover:shadow-[0_0_18px_rgba(255,74,21,0.5)] transition-all">
-                      <Icon className="w-4 h-4" />
-                    </span>
-                    <span className="mt-2 text-[10.5px] font-mono tracking-[0.12em] text-white/30 font-bold">{it.index}</span>
-                    <span className="mt-2 w-px flex-1 bg-white/[0.06] group-hover:bg-[#FF4A15]/20 transition-colors hidden lg:block" />
-                  </div>
-
-                  {/* Achievement Sheet Card */}
-                  <div className="flex-1 relative rounded-[24px] bg-[#0F0F11]/90 backdrop-blur-2xl border border-white/[0.08] overflow-hidden flex flex-col sm:flex-row hover:border-[#FF4A15]/40 hover:shadow-[0_20px_48px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-400">
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-[#FF4A15]/50 transition-colors" />
-                    <div className={`absolute inset-0 bg-gradient-to-br ${it.color} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`} />
-
-                    {/* Left Highlight Stripe */}
-                    <div className="hidden sm:block w-1.5 self-stretch bg-white/[0.06] group-hover:bg-[#FF4A15] transition-colors shrink-0" />
-
-                    <div className="relative flex-1 p-5 sm:p-7 flex flex-col gap-3.5 justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-mono tracking-[0.14em] font-bold px-3 py-1 rounded-full bg-[#FF4A15]/15 border border-[#FF4A15]/30 text-[#FF4A15]">
-                            {it.type}
-                          </span>
-                          <span className="text-[10px] font-mono tracking-[0.08em] text-white/40">{it.dossier}</span>
-                          <span className="ml-auto hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/50">
-                            <Layers className="w-3 h-3 text-[#FF4A15]" /> SHEET {it.index}
-                          </span>
-                        </div>
-
-                        <h3 className="font-[Syne] font-[800] leading-[1.15] tracking-[-0.02em] text-[19px] sm:text-[21px] text-[#F5F3EF] mt-2 group-hover:text-white transition-colors pr-16 sm:pr-24">
-                          {it.title}
-                        </h3>
-                        <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-white/50 mt-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15]" /> {it.team}
-                        </div>
-                        <p className="text-[13px] leading-relaxed text-white/60 max-w-[700px] mt-2">{it.desc}</p>
-                      </div>
-
-                      <div className="flex items-center gap-3 pt-2 border-t border-white/[0.06]">
-                        <span className="inline-flex text-[11.5px] font-mono font-black px-3.5 py-1.5 rounded-full bg-[#FF4A15] text-white shadow-[0_6px_16px_rgba(255,74,21,0.35)]">
-                          {it.metric}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[#FF4A15] group-hover:translate-x-0.5 transition-transform">
-                          VIEW DOSSIER <ChevronRight className="w-3.5 h-3.5" />
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Stamp Watermark */}
-                    <div className="hidden sm:grid absolute top-5 right-5 rotate-[-8deg] w-24 h-24 rounded-full border-2 border-[#FF4A15]/40 text-[#FF4A15]/40 place-items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[10.5px] font-mono font-black tracking-[0.14em] text-center px-1">
-                        {it.stamp}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  {cat} <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold ${active ? 'bg-white text-[#FF4A15]' : 'bg-white/10 text-white/60'}`}>{count}</span>
+                </button>
               );
             })}
           </div>
-        </div>
 
-        {/* Footnote */}
-        <div className="reveal mt-10 flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-white/40 border-t border-white/[0.06] pt-4">
-          <span className="inline-flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#00FF88]" /> All records cross-verified with institute registry &amp; IP India.
-          </span>
-          <span className="text-white/30">Official Patent Registration: IN 492026</span>
+          {/* Timeline Sheets */}
+          <div className="relative ml-0 lg:ml-2">
+            <div className="hidden sm:block absolute left-[28px] top-0 bottom-0 w-px bg-gradient-to-b from-[#FF4A15]/40 via-white/[0.08] to-transparent" />
+            <div className="space-y-6">
+              {filteredItems.map((it, idx) => {
+                const Icon = it.Icon;
+                return (
+                  <div
+                    key={it.index}
+                    onClick={() => {
+                      soundFx.playLaser();
+                      if (it.action) {
+                        setSelectedPatent(true);
+                      } else {
+                        setSelectedItem(it);
+                      }
+                    }}
+                    className="reveal group relative flex gap-4 sm:gap-6 cursor-pointer"
+                    style={{ transitionDelay: `${idx * 80}ms` }}
+                  >
+                    {/* Timeline Node */}
+                    <div className="hidden sm:flex flex-col items-center shrink-0 w-[56px]">
+                      <span className="w-8 h-8 rounded-full bg-[#0F0F11] border border-white/[0.12] text-white/70 grid place-items-center group-hover:bg-[#FF4A15] group-hover:text-white group-hover:border-[#FF4A15] group-hover:shadow-[0_0_18px_rgba(255,74,21,0.5)] transition-all">
+                        <Icon className="w-4 h-4" />
+                      </span>
+                      <span className="mt-2 text-[10.5px] font-mono tracking-[0.12em] text-white/30 font-bold">{it.index}</span>
+                      <span className="mt-2 w-px flex-1 bg-white/[0.06] group-hover:bg-[#FF4A15]/20 transition-colors hidden lg:block" />
+                    </div>
+
+                    {/* Achievement Sheet Card */}
+                    <div className="flex-1 relative rounded-[24px] bg-[#0F0F11]/90 backdrop-blur-2xl border border-white/[0.08] overflow-hidden flex flex-col sm:flex-row hover:border-[#FF4A15]/40 hover:shadow-[0_20px_48px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-400">
+                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-[#FF4A15]/50 transition-colors" />
+                      <div className={`absolute inset-0 bg-gradient-to-br ${it.color} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`} />
+
+                      {/* Left Highlight Stripe */}
+                      <div className="hidden sm:block w-1.5 self-stretch bg-white/[0.06] group-hover:bg-[#FF4A15] transition-colors shrink-0" />
+
+                      <div className="relative flex-1 p-5 sm:p-7 flex flex-col gap-3.5 justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-mono tracking-[0.14em] font-bold px-3 py-1 rounded-full bg-[#FF4A15]/15 border border-[#FF4A15]/30 text-[#FF4A15]">
+                              {it.type}
+                            </span>
+                            <span className="text-[10px] font-mono tracking-[0.08em] text-white/40">{it.dossier}</span>
+                            <span className="ml-auto hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/50">
+                              <Layers className="w-3 h-3 text-[#FF4A15]" /> SHEET {it.index}
+                            </span>
+                          </div>
+
+                          <h3 className="font-[Syne] font-[800] leading-[1.15] tracking-[-0.02em] text-[19px] sm:text-[21px] text-[#F5F3EF] mt-2 group-hover:text-white transition-colors pr-16 sm:pr-24">
+                            {it.title}
+                          </h3>
+                          <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-white/50 mt-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF4A15]" /> {it.team}
+                          </div>
+                          <p className="text-[13px] leading-relaxed text-white/60 max-w-[700px] mt-2">{it.desc}</p>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2 border-t border-white/[0.06]">
+                          <span className="inline-flex text-[11.5px] font-mono font-black px-3.5 py-1.5 rounded-full bg-[#FF4A15] text-white shadow-[0_6px_16px_rgba(255,74,21,0.35)]">
+                            {it.metric}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[#FF4A15] group-hover:translate-x-0.5 transition-transform">
+                            VIEW DOSSIER <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Stamp Watermark */}
+                      <div className="hidden sm:grid absolute top-5 right-5 rotate-[-8deg] w-24 h-24 rounded-full border-2 border-[#FF4A15]/40 text-[#FF4A15]/40 place-items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10.5px] font-mono font-black tracking-[0.14em] text-center px-1">
+                          {it.stamp}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footnote */}
+          <div className="reveal mt-10 flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-white/40 border-t border-white/[0.06] pt-4">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#00FF88]" /> All records cross-verified with institute registry &amp; IP India.
+            </span>
+            <span className="text-white/30">Official Patent Registration: IN 492026</span>
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Patent Dossier Lightbox — Rendered via createPortal */}

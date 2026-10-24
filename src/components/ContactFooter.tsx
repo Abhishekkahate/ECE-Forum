@@ -247,8 +247,8 @@ export const ContactFooter: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-[#FF4A15]" /> QUICK ACTIONS
             </h4>
             <div className="space-y-2">
-              <a href="/developer" onClick={() => soundFx.playLaser()} className="w-full inline-flex items-center justify-between rounded-full bg-[#CCFF00]/15 border border-[#CCFF00]/35 text-[#CCFF00] font-mono font-bold text-[12px] px-5 py-3 hover:bg-[#CCFF00] hover:text-black transition-all shadow-[0_0_20px_rgba(204,255,0,0.12)]">
-                Meet the Developer <ArrowUpRight className="w-4 h-4" />
+              <a href="/verify" onClick={() => soundFx.playLaser()} className="w-full inline-flex items-center justify-between rounded-full bg-[#00E5CC]/15 border border-[#00E5CC]/35 text-[#00E5CC] font-mono font-bold text-[12px] px-5 py-3 hover:bg-[#00E5CC] hover:text-black transition-all shadow-[0_0_20px_rgba(0,229,204,0.12)]">
+                Certificate Verification <ArrowUpRight className="w-4 h-4" />
               </a>
               <a href="/register" className="w-full inline-flex items-center justify-between rounded-full bg-white text-[#08080A] font-mono font-bold text-[12px] px-5 py-3 hover:bg-[#F5F3EF] transition-colors">
                 Registration Portal <ArrowUpRight className="w-4 h-4" />
@@ -268,7 +268,7 @@ export const ContactFooter: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-[#FF4A15] shadow-[0_0_10px_rgba(255,74,21,0.5)] animate-pulse" /> © 2026–27 SPACE &amp; SINC · PCE-NAGPUR ECE FORUM — ATELIER No.08
           </span>
           <div className="flex flex-wrap items-center gap-4 text-white/25">
-            <a href="/developer" className="text-[#CCFF00] hover:underline underline-offset-4 inline-flex items-center gap-1 transition-colors font-medium">Meet the Developer <ArrowUpRight className="w-3 h-3" /></a>
+            <a href="/verify" className="hover:text-white inline-flex items-center gap-1 transition-colors">Verify Certificate <ArrowUpRight className="w-3 h-3" /></a>
             <span className="hidden sm:inline w-px h-3 bg-white/10" />
             <a href="/register" className="hover:text-white inline-flex items-center gap-1 transition-colors">Registration Portal <ArrowUpRight className="w-3 h-3" /></a>
             <span className="hidden sm:inline w-px h-3 bg-white/10" />

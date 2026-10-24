@@ -953,7 +953,7 @@ export const forumApi = {
 
     // 1. Supabase
     try {
-      const supa = await supabaseDb.getCertificateById(cleanId);
+      const supa: any = await supabaseDb.getCertificateById(cleanId);
       if (supa) {
         return {
           certId: supa.cert_id,
@@ -1153,6 +1153,8 @@ export const forumApi = {
       canvasConfig?: any;
       certId?: string;
       securityHash?: string;
+      templateBg?: string;
+      [key: string]: any;
     }>;
   }): Promise<{ success: boolean; count: number; certificates: ApiCertificate[] }> {
     const issueDate = new Date().toLocaleDateString('en-IN', {
