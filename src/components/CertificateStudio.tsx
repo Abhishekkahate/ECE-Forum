@@ -1218,8 +1218,9 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
       setProgressStatus(`Processing ${i + 1} of ${recipients.length}: ${r.name}`);
 
       try {
-        // 1. Render lightweight storage image for Supabase database (~120 KB vs 3.5 MB)
-        const certImageForStorage = await generateCertificatePngBase64(r, i, 'storage');
+        // 1. Storage optimization: for preset vector templates, do not generate massive base64 images into database
+        const isCustomTemplate = templateName === 'custom_upload';
+        const certImageForStorage = isCustomTemplate ? await generateCertificatePngBase64(r, i, 'storage') : undefined;
 
         // 2. Prepare Database Record (ALWAYS save to official student account registry)
         issuedDatabaseCerts.push({
@@ -1232,7 +1233,7 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
           rankText: r.rankText || certRankText,
           certType: certAwardType,
           certificateImage: certImageForStorage,
-          templateBg: templateName || 'custom_upload',
+          templateBg: templateName || 'classic_gold',
           canvasConfig: {
             templateName,
             fields,
@@ -1307,8 +1308,8 @@ export const CertificateStudio: React.FC<CertificateStudioProps> = ({
         title: certTitle,
         rankText: certRankText,
         description: certDescription,
-        templateId: 'custom_upload',
-        templateBg: templateName || 'custom_upload',
+        templateId: (templateName as any) || 'classic_gold',
+        templateBg: templateName || 'classic_gold',
         participants: issuedDatabaseCerts,
       });
 

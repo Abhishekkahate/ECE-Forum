@@ -61,18 +61,13 @@ export const MyCertificatesModal: React.FC<MyCertificatesModalProps> = ({
       const localList = certificateService.getUserCertificates(cleanEmail);
       if (localList.length > 0) setCertificates(localList);
 
-      // 2. Fresh remote fetch from Supabase
+      // 2. Remote sync with 15-minute cooldown to prevent database egress exhaustion
       try {
-        const remote = await forumApi.getCertificates(undefined, cleanEmail);
-        if (remote && Array.isArray(remote)) {
-          // Authoritative sync: removes any deleted or revoked certificates
-          certificateService.syncUserCertificates(cleanEmail, remote);
-          setCertificates(remote);
-          if (selectedCert && !remote.some((c) => c.certId === selectedCert.certId)) {
-            setSelectedCert(null);
-          }
-          setIsLoading(false);
-          return;
+        await certificateService.syncWithBackend(false, cleanEmail);
+        const userCerts = certificateService.getUserCertificates(cleanEmail);
+        setCertificates(userCerts);
+        if (selectedCert && !userCerts.some((c) => c.certId === selectedCert.certId)) {
+          setSelectedCert(null);
         }
       } catch {}
       setIsLoading(false);
@@ -270,7 +265,7 @@ export const MyCertificatesModal: React.FC<MyCertificatesModalProps> = ({
                           onClick={async () => {
                             soundFx.playClick();
                             setSelectedCert(cert);
-                            if (!cert.certificateImage) {
+                            if (!cert.certificateImage && cert.templateId === 'custom_upload') {
                               try {
                                 const full = await forumApi.getCertificateById(cert.certId);
                                 if (full && full.certificateImage) {

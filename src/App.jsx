@@ -465,7 +465,7 @@ export default function App() {
           forumApi.getGalleryItems().catch(() => null),
         ]);
 
-        if (Array.isArray(remoteEvents)) {
+        if (Array.isArray(remoteEvents) && remoteEvents.length > 0) {
           const formatted = remoteEvents.map((e) => ({
             id: e.id,
             title: e.title,
@@ -492,13 +492,13 @@ export default function App() {
         if (typeof remoteAnn === 'string' && remoteAnn) {
           setAnnouncement((prev) => (prev === remoteAnn ? prev : remoteAnn));
         }
-        if (remoteHero && typeof remoteHero === 'object') {
+        if (remoteHero && typeof remoteHero === 'object' && Object.keys(remoteHero).length > 0) {
           setHeroConfig((prev) => {
             const next = { ...prev, ...remoteHero };
             return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
           });
         }
-        if (Array.isArray(remoteGallery)) {
+        if (Array.isArray(remoteGallery) && remoteGallery.length > 0) {
           setGalleryList((prev) => (JSON.stringify(prev) === JSON.stringify(remoteGallery) ? prev : remoteGallery));
         }
       } catch (err) {
@@ -530,24 +530,10 @@ export default function App() {
     window.addEventListener('ece_events_updated', handleEventsUpdate);
     window.addEventListener('ece_gallery_updated', handleGalleryUpdate);
 
-    // Smart liveness revalidation on tab focus if away for > 3 minutes (0 constant background polling)
-    let lastActiveTime = Date.now();
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        const elapsed = Date.now() - lastActiveTime;
-        if (elapsed > 180000) {
-          loadData();
-        }
-        lastActiveTime = Date.now();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
     return () => {
       window.removeEventListener('ece_hero_config_updated', handleHeroUpdate);
       window.removeEventListener('ece_events_updated', handleEventsUpdate);
       window.removeEventListener('ece_gallery_updated', handleGalleryUpdate);
-      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 

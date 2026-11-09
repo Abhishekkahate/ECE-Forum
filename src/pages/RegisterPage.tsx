@@ -310,15 +310,16 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ eventsList, heroConf
       }
       setScreenshotFileName(file.name);
       try {
-        // Compress phone screenshots to ~20KB-30KB WebP to protect database egress limits
-        const compressedBase64 = await compressImage(file, 600, 800, 0.5);
+        // Compress phone screenshots to ~15KB-20KB WebP to protect database egress limits
+        const compressedBase64 = await compressImage(file, 480, 640, 0.4);
         setPaymentScreenshot(compressedBase64);
       } catch (err) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPaymentScreenshot(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+        try {
+          const fallbackCompressed = await compressImage(file, 360, 480, 0.35);
+          setPaymentScreenshot(fallbackCompressed);
+        } catch {
+          alert('Could not compress screenshot. Please choose a smaller photo.');
+        }
       }
     }
   };

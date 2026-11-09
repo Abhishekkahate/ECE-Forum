@@ -263,7 +263,8 @@ class CertificateService {
 
   public async syncWithBackend(force = false, userEmail?: string, isAdmin = false): Promise<ApiCertificate[]> {
     const now = Date.now();
-    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 15000)) {
+    // 15-minute sync cooldown to eliminate unnecessary egress
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 900000)) {
       return this.certificates;
     }
 

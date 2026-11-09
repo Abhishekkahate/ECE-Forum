@@ -133,7 +133,7 @@ export interface VerificationResponse {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const CACHE_TTL_MS = 300000; // 5-minute persistent cache to minimize Supabase free-tier egress
+const CACHE_TTL_MS = 1800000; // 30-minute persistent cache to minimize Supabase free-tier egress
 const memoryCache = {
   events: { data: null as ApiEvent[] | null, timestamp: 0 },
   announcement: { data: null as string | null, timestamp: 0 },
@@ -186,11 +186,13 @@ export const forumApi = {
       try {
         const cachedStr = localStorage.getItem('ece_forum_events_cache');
         const cachedTime = localStorage.getItem('ece_forum_events_cache_time');
-        if (cachedStr && cachedTime && now - Number(cachedTime) < CACHE_TTL_MS) {
+        if (cachedStr) {
           const parsed = JSON.parse(cachedStr);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            memoryCache.events = { data: parsed, timestamp: Number(cachedTime) };
-            return parsed;
+            memoryCache.events = { data: parsed, timestamp: cachedTime ? Number(cachedTime) : now };
+            if (cachedTime && now - Number(cachedTime) < CACHE_TTL_MS) {
+              return parsed;
+            }
           }
         }
       } catch {}
@@ -528,19 +530,40 @@ export const forumApi = {
       return memoryCache.announcement.data;
     }
 
+    if (!force) {
+      try {
+        const cachedStr = localStorage.getItem('ece_forum_announcement_cache');
+        const cachedTime = localStorage.getItem('ece_forum_announcement_cache_time');
+        if (cachedStr !== null && cachedTime && now - Number(cachedTime) < CACHE_TTL_MS) {
+          memoryCache.announcement = { data: cachedStr, timestamp: Number(cachedTime) };
+          return cachedStr;
+        }
+      } catch {}
+    }
+
     try {
       const ann = await supabaseDb.getAnnouncement();
       const text = typeof ann === 'string' ? ann : '';
       memoryCache.announcement = { data: text, timestamp: now };
+      try {
+        localStorage.setItem('ece_forum_announcement_cache', text);
+        localStorage.setItem('ece_forum_announcement_cache_time', String(now));
+      } catch {}
       return text;
     } catch {
-      memoryCache.announcement = { data: '', timestamp: now };
-      return '';
+      const fallback = localStorage.getItem('ece_forum_announcement_cache') || '';
+      memoryCache.announcement = { data: fallback, timestamp: now };
+      return fallback;
     }
   },
 
   async setAnnouncement(announcement: string): Promise<boolean> {
-    memoryCache.announcement = { data: announcement, timestamp: Date.now() };
+    const now = Date.now();
+    memoryCache.announcement = { data: announcement, timestamp: now };
+    try {
+      localStorage.setItem('ece_forum_announcement_cache', announcement);
+      localStorage.setItem('ece_forum_announcement_cache_time', String(now));
+    } catch {}
     try {
       const res = await fetch(`${API_BASE}/announcements`, {
         method: 'POST',
@@ -643,11 +666,28 @@ export const forumApi = {
       return memoryCache.heroConfig.data;
     }
 
+    // Check localStorage cache first to avoid hitting Supabase on every page reload
+    if (!force) {
+      try {
+        const saved = localStorage.getItem('ece_hero_flagship_config');
+        const savedTime = localStorage.getItem('ece_hero_flagship_config_time');
+        if (saved && savedTime && now - Number(savedTime) < CACHE_TTL_MS) {
+          const full = { ...DEFAULT_HERO_CONFIG, ...JSON.parse(saved) };
+          memoryCache.heroConfig = { data: full, timestamp: Number(savedTime) };
+          return full;
+        }
+      } catch {}
+    }
+
     try {
       const supaConfig = await supabaseDb.getSiteSettings('hero_flagship');
       if (supaConfig && typeof supaConfig === 'object') {
         const full = { ...DEFAULT_HERO_CONFIG, ...supaConfig };
         memoryCache.heroConfig = { data: full, timestamp: now };
+        try {
+          localStorage.setItem('ece_hero_flagship_config', JSON.stringify(supaConfig));
+          localStorage.setItem('ece_hero_flagship_config_time', String(now));
+        } catch {}
         return full;
       }
     } catch {}
@@ -666,9 +706,11 @@ export const forumApi = {
   },
 
   async updateSiteHeroConfig(config: SiteHeroConfig): Promise<boolean> {
-    memoryCache.heroConfig = { data: config, timestamp: Date.now() };
+    const now = Date.now();
+    memoryCache.heroConfig = { data: config, timestamp: now };
     try {
       localStorage.setItem('ece_hero_flagship_config', JSON.stringify(config));
+      localStorage.setItem('ece_hero_flagship_config_time', String(now));
     } catch {}
 
     if (typeof window !== 'undefined') {
@@ -686,6 +728,21 @@ export const forumApi = {
       return memoryCache.gallery.data;
     }
 
+    // Check localStorage cache first to prevent downloading gallery items on every reload
+    if (!force) {
+      try {
+        const saved = localStorage.getItem('ece_gallery_archive_items');
+        const savedTime = localStorage.getItem('ece_gallery_archive_items_time');
+        if (saved && savedTime && now - Number(savedTime) < CACHE_TTL_MS) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            memoryCache.gallery = { data: parsed, timestamp: Number(savedTime) };
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+
     // 1. Supabase Cloud Database (Primary source of truth)
     try {
       const supaGallery = await supabaseDb.getSiteSettings('gallery_archive');
@@ -693,6 +750,7 @@ export const forumApi = {
         memoryCache.gallery = { data: supaGallery, timestamp: now };
         try {
           localStorage.setItem('ece_gallery_archive_items', JSON.stringify(supaGallery));
+          localStorage.setItem('ece_gallery_archive_items_time', String(now));
         } catch {}
         return supaGallery;
       }
@@ -707,6 +765,7 @@ export const forumApi = {
           memoryCache.gallery = { data: backendGallery, timestamp: now };
           try {
             localStorage.setItem('ece_gallery_archive_items', JSON.stringify(backendGallery));
+            localStorage.setItem('ece_gallery_archive_items_time', String(now));
           } catch {}
           return backendGallery;
         }
@@ -730,9 +789,11 @@ export const forumApi = {
   },
 
   async updateGalleryItems(items: any[]): Promise<boolean> {
-    memoryCache.gallery = { data: items, timestamp: Date.now() };
+    const now = Date.now();
+    memoryCache.gallery = { data: items, timestamp: now };
     try {
       localStorage.setItem('ece_gallery_archive_items', JSON.stringify(items));
+      localStorage.setItem('ece_gallery_archive_items_time', String(now));
     } catch {}
 
     if (typeof window !== 'undefined') {
@@ -959,12 +1020,12 @@ export const forumApi = {
     return [];
   },
 
-  async getCertificateById(certId: string): Promise<ApiCertificate | null> {
+  async getCertificateById(certId: string, includeImage = false): Promise<ApiCertificate | null> {
     const cleanId = certId.trim();
 
-    // 1. Supabase
+    // 1. Supabase (lightweight metadata by default; image fetched lazily)
     try {
-      const supa: any = await supabaseDb.getCertificateById(cleanId);
+      const supa: any = await supabaseDb.getCertificateById(cleanId, includeImage);
       if (supa) {
         return {
           certId: supa.cert_id,
@@ -1018,9 +1079,9 @@ export const forumApi = {
   async verifyCertificate(certId: string): Promise<CertificateVerificationResponse> {
     const cleanId = certId.trim();
 
-    // 1. Direct Supabase verification (instant, zero backend delay)
+    // 1. Direct Supabase verification (instant, lightweight metadata without heavy images)
     try {
-      const cert = await this.getCertificateById(cleanId);
+      const cert = await this.getCertificateById(cleanId, false);
       if (cert) {
         if (cert.status === 'REVOKED') {
           return {
@@ -1219,7 +1280,7 @@ export const forumApi = {
         status: 'VALID',
         issuedAt: issueDate,
         issuedBy: payload.issuedBy || 'ECE Forum Executive Council',
-        certificateImage: p.certificateImage || payload.certificateImage,
+        certificateImage: payload.templateId === 'custom_upload' ? (p.certificateImage || payload.certificateImage) : undefined,
         canvasConfig: p.canvasConfig || payload.canvasConfig,
       };
 

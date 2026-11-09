@@ -40,40 +40,19 @@ export const MyPassesModal: React.FC<MyPassesModalProps> = ({
   const refreshPasses = async () => {
     if (user?.email) {
       const cleanEmail = user.email.trim().toLowerCase();
+      // 1. Initial cached list
+      const localList = passService.getUserPasses(cleanEmail);
+      if (localList.length > 0) setPasses(localList);
+
+      // 2. Sync with backend (respects 15-minute cooldown to prevent database egress exhaustion)
       try {
-        const remote = await api.getPasses(undefined, cleanEmail);
-        if (remote && Array.isArray(remote)) {
-          const mappedRemote: EventPass[] = remote.map((p: any) => ({
-            ...p,
-            qrData:
-              p.qrData ||
-              JSON.stringify({
-                passId: p.passId,
-                name: p.userName,
-                email: p.userEmail,
-                event: p.eventTitle,
-                hash: p.securityHash,
-                date: p.eventDate,
-                venue: p.eventVenue,
-                verified: p.status === 'CONFIRMED' || p.status === 'CHECKED_IN',
-              }),
-          }));
-
-          // Authoritative sync: wipe any pass deleted by Admin from local cache
-          passService.syncUserPasses(cleanEmail, mappedRemote);
-          setPasses(mappedRemote);
-
-          // If current open pass was deleted, return to pass list
-          if (selectedPass && !mappedRemote.some((p) => p.passId === selectedPass.passId)) {
-            setSelectedPass(null);
-          }
-          return;
+        await passService.syncWithBackend(false, cleanEmail);
+        const updated = passService.getUserPasses(cleanEmail);
+        setPasses(updated);
+        if (selectedPass && !updated.some((p) => p.passId === selectedPass.passId)) {
+          setSelectedPass(null);
         }
       } catch {}
-
-      // Fallback only if network/offline
-      const localList = passService.getUserPasses(cleanEmail);
-      setPasses(localList);
     } else {
       setPasses([]);
     }

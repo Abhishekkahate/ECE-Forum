@@ -23,6 +23,10 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
   },
 });
 
+// Supabase In-Memory Caches to guarantee Zero-Egress on repeated lookups
+const passScreenshotCache = new Map<string, string>();
+const certImageCache = new Map<string, string>();
+
 // Supabase Database Query Helpers (Dual-Mode: Cloud Supabase + Fallback)
 export const supabaseDb = {
   // Events
@@ -30,8 +34,9 @@ export const supabaseDb = {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('id, title, category, status, date, time, venue, description, badge, image, price, total_seats, custom_fields')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) throw error;
       return data;
@@ -63,7 +68,7 @@ export const supabaseDb = {
       const { data, error } = await supabase
         .from('events')
         .upsert([payload])
-        .select()
+        .select('id')
         .maybeSingle();
 
       if (error) {
@@ -101,7 +106,8 @@ export const supabaseDb = {
       let query = supabase
         .from('passes')
         .select(columns as any)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (eventId && eventId !== 'all') {
         query = query.eq('event_id', eventId);
@@ -119,17 +125,25 @@ export const supabaseDb = {
     }
   },
 
-  // On-demand fetch for payment screenshot (avoids loading base64 images into passes list)
+  // On-demand fetch for payment screenshot (avoids loading base64 images into passes list, cached in-memory)
   async getPassScreenshot(passId: string): Promise<string | null> {
+    const cleanId = passId.trim();
+    if (passScreenshotCache.has(cleanId)) {
+      return passScreenshotCache.get(cleanId) || null;
+    }
+
     try {
       const { data, error } = await supabase
         .from('passes')
         .select('payment_screenshot')
-        .eq('pass_id', passId)
+        .eq('pass_id', cleanId)
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
-      return data?.payment_screenshot || null;
+      const shot = data?.payment_screenshot || null;
+      if (shot) passScreenshotCache.set(cleanId, shot);
+      return shot;
     } catch (err) {
       console.warn('Supabase getPassScreenshot error:', err);
       return null;
@@ -182,7 +196,7 @@ export const supabaseDb = {
       const { data, error } = await supabase
         .from('passes')
         .upsert([payload])
-        .select()
+        .select('pass_id')
         .maybeSingle();
 
       if (error) {
@@ -232,7 +246,7 @@ export const supabaseDb = {
         .from('passes')
         .update(updateData)
         .eq('pass_id', passId)
-        .select()
+        .select('pass_id, status, admin_verified')
         .maybeSingle();
 
       if (error) throw error;
@@ -253,7 +267,7 @@ export const supabaseDb = {
           checked_in_by: checkedInBy || null,
         })
         .eq('pass_id', passId)
-        .select()
+        .select('pass_id, status')
         .maybeSingle();
 
       if (error) throw error;
@@ -403,7 +417,8 @@ export const supabaseDb = {
       let query = supabase
         .from('certificates')
         .select(columns as any)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (eventId && eventId !== 'all' && eventId !== 'ALL') {
         query = query.eq('event_id', eventId);
@@ -418,13 +433,14 @@ export const supabaseDb = {
       const { data, error } = await query;
       if (!error && data) return data;
 
-      // Fallback: select * directly if specific projection encounters cache discrepancy
+      // Fallback: select lightweight columns without heavy template_bg
       if (error) {
-        console.warn('Supabase getCertificates select error, retrying with select(*):', error.message);
+        console.warn('Supabase getCertificates select error, retrying with lightweight projection:', error.message);
         let fallbackQuery = supabase
           .from('certificates')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select(listColumns as any)
+          .order('created_at', { ascending: false })
+          .limit(200);
 
         if (eventId && eventId !== 'all' && eventId !== 'ALL') fallbackQuery = fallbackQuery.eq('event_id', eventId);
         if (email) fallbackQuery = fallbackQuery.ilike('user_email', email.trim().toLowerCase());
@@ -441,63 +457,67 @@ export const supabaseDb = {
     }
   },
 
-  async getCertificateById(certId: string, includeImage = true): Promise<any> {
+  async getCertificateById(certId: string, includeImage = false): Promise<any> {
     try {
       const clean = certId.trim();
+      const columns = includeImage
+        ? '*'
+        : 'id, cert_id, event_id, event_title, event_date, user_name, user_email, department, college_name, cert_type, title, rank_text, description, template_id, signatories, qr_data, security_hash, status, issued_at, issued_by, created_at';
 
-      // 1. Direct cert_id lookup
-      const { data: byId, error: err1 } = await supabase
+      // Single optimized lookup via OR instead of 3 sequential roundtrips
+      const { data, error } = await supabase
         .from('certificates')
-        .select('*')
+        .select(columns)
+        .or(`cert_id.ilike."${clean}",security_hash.eq."${clean}"`)
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) return data;
+
+      // Direct fallback if OR syntax encountered an edge case
+      const { data: fallbackData } = await supabase
+        .from('certificates')
+        .select(columns)
         .eq('cert_id', clean)
+        .limit(1)
         .maybeSingle();
 
-      if (!err1 && byId) return byId;
-
-      // 2. Security Hash lookup
-      const { data: byHash, error: err2 } = await supabase
-        .from('certificates')
-        .select('*')
-        .eq('security_hash', clean)
-        .maybeSingle();
-
-      if (!err2 && byHash) return byHash;
-
-      // 3. Case-insensitive cert_id lookup
-      const { data: byIlike, error: err3 } = await supabase
-        .from('certificates')
-        .select('*')
-        .ilike('cert_id', clean)
-        .maybeSingle();
-
-      if (!err3 && byIlike) return byIlike;
-
-      return null;
+      return fallbackData || null;
     } catch (err) {
       console.warn('Supabase getCertificateById error:', err);
       return null;
     }
   },
 
-  // Lazy-load certificate image on-demand to avoid loading heavy image blobs into list queries
+  // Lazy-load certificate image on-demand (cached in memory to guarantee zero repeat egress)
   async getCertificateImage(certId: string): Promise<string | null> {
-    try {
-      const clean = certId.trim();
+    const clean = certId.trim();
+    if (certImageCache.has(clean)) {
+      return certImageCache.get(clean) || null;
+    }
 
+    try {
       const { data } = await supabase
         .from('certificates')
         .select('template_bg')
-        .or(`cert_id.eq."${clean}",cert_id.ilike."${clean}",security_hash.eq."${clean}"`)
+        .or(`cert_id.ilike."${clean}",security_hash.eq."${clean}"`)
+        .limit(1)
         .maybeSingle();
 
       if (!data) return null;
       const raw = (data as any).template_bg;
       if (!raw || typeof raw !== 'string') return null;
-      if (raw.startsWith('data:image/')) return raw;
-      if (raw.startsWith('/9j/')) return `data:image/jpeg;base64,${raw}`;
-      if (raw.startsWith('iVBOR')) return `data:image/png;base64,${raw}`;
-      if (raw.startsWith('UklGR')) return `data:image/webp;base64,${raw}`;
-      return null;
+
+      let resolved: string | null = null;
+      if (raw.startsWith('data:image/')) resolved = raw;
+      else if (raw.startsWith('/9j/')) resolved = `data:image/jpeg;base64,${raw}`;
+      else if (raw.startsWith('iVBOR')) resolved = `data:image/png;base64,${raw}`;
+      else if (raw.startsWith('UklGR')) resolved = `data:image/webp;base64,${raw}`;
+
+      if (resolved) {
+        certImageCache.set(clean, resolved);
+      }
+      return resolved;
     } catch (err) {
       console.warn('Supabase getCertificateImage error:', err);
       return null;
@@ -506,8 +526,13 @@ export const supabaseDb = {
 
   async insertCertificate(cert: any) {
     const certId = cert.certId || cert.cert_id;
-    const certImg = cert.certificateImage || cert.certificate_image || null;
-    const templateBg = certImg || cert.templateBg || cert.templateId || 'classic_gold';
+    const templateId = cert.templateId || cert.template_id || 'classic_gold';
+    // Strictly prevent storing 370KB base64 images into PostgreSQL for standard preset templates
+    const isCustom = templateId === 'custom_upload';
+    const rawBg = cert.templateBg || cert.template_bg || cert.certificateImage || cert.certificate_image;
+    const templateBg = isCustom && rawBg && typeof rawBg === 'string' && rawBg.length < 150000
+      ? rawBg
+      : templateId;
 
     const payload: any = {
       cert_id: certId,
@@ -522,7 +547,7 @@ export const supabaseDb = {
       title: cert.title || 'Certificate of Participation',
       rank_text: cert.rankText || cert.rank_text || 'Participant',
       description: cert.description || '',
-      template_id: cert.templateId || cert.template_id || 'classic_gold',
+      template_id: templateId,
       template_bg: templateBg,
       signatories: cert.signatories || [],
       qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),
@@ -562,8 +587,12 @@ export const supabaseDb = {
   async insertCertificatesBulk(certs: any[]) {
     const buildPayload = (cert: any, nullEvent = false) => {
       const certId = cert.certId || cert.cert_id;
-      const certImg = cert.certificateImage || cert.certificate_image || null;
-      const templateBg = certImg || cert.templateBg || cert.templateId || 'classic_gold';
+      const templateId = cert.templateId || cert.template_id || 'classic_gold';
+      const isCustom = templateId === 'custom_upload';
+      const rawBg = cert.templateBg || cert.template_bg || cert.certificateImage || cert.certificate_image;
+      const templateBg = isCustom && rawBg && typeof rawBg === 'string' && rawBg.length < 150000
+        ? rawBg
+        : templateId;
 
       const item: any = {
         cert_id: certId,
@@ -578,7 +607,7 @@ export const supabaseDb = {
         title: cert.title || 'Certificate of Participation',
         rank_text: cert.rankText || cert.rank_text || 'Participant',
         description: cert.description || '',
-        template_id: cert.templateId || cert.template_id || 'classic_gold',
+        template_id: templateId,
         template_bg: templateBg,
         signatories: cert.signatories || [],
         qr_data: cert.qrData || cert.qr_data || JSON.stringify({ certId, name: cert.userName }),

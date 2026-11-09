@@ -67,15 +67,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
 
   useEffect(() => {
     updateCounts();
-    if (user?.email) {
-      certificateService.syncWithBackend(false, user.email).then(() => updateCounts()).catch(() => {});
-      passService.syncWithBackend(false, user.email).then(() => updateCounts()).catch(() => {});
-    }
     const h = () => updateCounts();
     window.addEventListener('ece_passes_updated', h);
     window.addEventListener('ece_certificates_updated', h);
     const storageH = (e: StorageEvent) => {
-      if (e.key === 'ece_forum_certificates_cache' || e.key === 'ece_forum_passes_v2') updateCounts();
+      if (e.key === 'ece_forum_certificates_cache' || e.key === 'ece_forum_registered_passes_v1') updateCounts();
     };
     window.addEventListener('storage', storageH);
     return () => {
@@ -83,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenGoogleAuth, onOpenMyPasses
       window.removeEventListener('ece_certificates_updated', h);
       window.removeEventListener('storage', storageH);
     };
-  }, [user?.email]);
+  }, [user]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {

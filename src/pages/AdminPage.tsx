@@ -397,15 +397,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
     window.addEventListener('ece_passes_updated', onPassesUpdate);
     window.addEventListener('ece_certificates_updated', onCertsUpdate);
 
-    // 3-minute passive revalidation while actively in Admin Studio (pauses when tab is inactive)
-    const iv = setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      refreshLivePasses();
-      refreshCertificates();
-    }, 180000);
-
     return () => {
-      clearInterval(iv);
       window.removeEventListener('ece_passes_updated', onPassesUpdate);
       window.removeEventListener('ece_certificates_updated', onCertsUpdate);
     };
@@ -1598,16 +1590,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                         type="file"
                                         accept="image/*"
                                         className="hidden"
-                                        onChange={(e) => {
+                                        onChange={async (e) => {
                                           const file = e.target.files?.[0];
                                           if (!file) return;
-                                          const r = new FileReader();
-                                          r.onload = () => {
-                                            if (typeof r.result === 'string') {
-                                              setNewEvent((prev) => ({ ...prev, paymentQr: r.result as string }));
-                                            }
-                                          };
-                                          r.readAsDataURL(file);
+                                          try {
+                                            const compressed = await compressImage(file, 400, 400, 0.6);
+                                            setNewEvent((prev) => ({ ...prev, paymentQr: compressed }));
+                                          } catch {
+                                            const r = new FileReader();
+                                            r.onload = () => {
+                                              if (typeof r.result === 'string') {
+                                                setNewEvent((prev) => ({ ...prev, paymentQr: r.result as string }));
+                                              }
+                                            };
+                                            r.readAsDataURL(file);
+                                          }
                                         }}
                                       />
                                     </label>
@@ -2944,7 +2941,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
 
                           for (const file of fileArray) {
                             try {
-                              const c = await compressImage(file, 1200, 900, 0.75);
+                              const c = await compressImage(file, 800, 600, 0.55);
                               compressedArray.push(c);
                             } catch {
                               const r = new FileReader();
@@ -3609,16 +3606,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
-                                    const reader = new FileReader();
-                                    reader.onload = () => {
-                                      if (typeof reader.result === 'string') {
-                                        updateHeroField('paymentQrImage', reader.result as string);
-                                      }
-                                    };
-                                    reader.readAsDataURL(file);
+                                    try {
+                                      const compressed = await compressImage(file, 400, 400, 0.6);
+                                      updateHeroField('paymentQrImage', compressed);
+                                    } catch {
+                                      const reader = new FileReader();
+                                      reader.onload = () => {
+                                        if (typeof reader.result === 'string') {
+                                          updateHeroField('paymentQrImage', reader.result as string);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
                                   }}
                                 />
                               </label>

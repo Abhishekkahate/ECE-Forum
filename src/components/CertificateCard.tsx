@@ -45,7 +45,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
   const activeTemplate =
     CERTIFICATE_TEMPLATES.find((t) => t.id === certificate.templateId) || CERTIFICATE_TEMPLATES[0];
 
-  // Lazy-resolve crisp certificate image on demand if not preloaded in list query
+  // Lazy-resolve custom certificate image on demand only for custom-uploaded backgrounds
   useEffect(() => {
     const raw = certificate.certificateImage || (
       certificate.templateBg && (
@@ -64,10 +64,12 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
         else if (normalized.startsWith('UklGR')) normalized = `data:image/webp;base64,${normalized}`;
       }
       setLoadedImage(normalized);
+      setIsLoadingImage(false);
       return;
     }
 
-    if (certificate.certId) {
+    // Only query database for image if this certificate specifically uses a custom upload background
+    if (certificate.templateId === 'custom_upload' && certificate.certId) {
       setIsLoadingImage(true);
       supabaseDb
         .getCertificateImage(certificate.certId)
@@ -76,8 +78,10 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
         })
         .catch(() => {})
         .finally(() => setIsLoadingImage(false));
+    } else {
+      setIsLoadingImage(false);
     }
-  }, [certificate.certId, certificate.certificateImage, certificate.templateBg]);
+  }, [certificate.certId, certificate.certificateImage, certificate.templateBg, certificate.templateId]);
 
   useEffect(() => {
     const generateQR = async () => {

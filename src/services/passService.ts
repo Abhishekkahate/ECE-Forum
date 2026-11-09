@@ -78,7 +78,8 @@ class PassService {
 
   public async syncWithBackend(force = false, userEmail?: string) {
     const now = Date.now();
-    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 30000)) {
+    // 15-minute sync cooldown to eliminate unnecessary egress
+    if (!force && (this.isSyncing || now - this.lastSyncTimestamp < 900000)) {
       return this.passes;
     }
 
